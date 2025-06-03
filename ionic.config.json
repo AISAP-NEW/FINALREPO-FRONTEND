@@ -1,0 +1,7 @@
+{
+  "name": "AISAP-NEW",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
