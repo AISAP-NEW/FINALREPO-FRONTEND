@@ -1,0 +1,45 @@
+.register-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    margin-bottom: 30px;
+  }
+
+  form {
+    ion-item {
+      margin-bottom: 15px;
+      --background: transparent;
+      --border-color: var(--ion-color-medium);
+    }
+
+    ion-button {
+      margin-top: 30px;
+    }
+  }
+
+  .error-message {
+    font-size: 12px;
+    margin: -10px 0 15px 0;
+    text-align: left;
+    padding-left: 16px;
+  }
+
+  .login-link {
+    margin-top: 20px;
+
+    a {
+      color: var(--ion-color-primary);
+      text-decoration: none;
+      cursor: pointer;
+    }
+  }
+} 

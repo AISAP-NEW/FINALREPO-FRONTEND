@@ -1,0 +1,11 @@
+<div class="dataset-card" [class.selected]="isSelected">
+  <div class="dataset-thumbnail">
+    <img [src]="imageUrl" alt="{{ dataset.datasetName }}">
+  </div>
+  <div class="dataset-info">
+    <h2 class="dataset-name">{{ dataset.datasetName }}</h2>
+    <p class="dataset-creator">Created: {{ dataset.createdAt | date }}</p>
+    <p class="dataset-stats">{{ dataset.fileCount }} Files ({{ dataset.fileType }})</p>
+    <p class="dataset-description">{{ dataset.description }}</p>
+  </div>
+</div> 
