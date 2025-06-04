@@ -4,11 +4,6 @@ import { MainLayoutComponent } from './layouts/main-layout/main-layout.component
 
 export const routes: Routes = [
   {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
-  },
-  {
     path: 'login',
     loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent)
   },
@@ -21,6 +16,11 @@ export const routes: Routes = [
     component: MainLayoutComponent,
     canActivate: [AuthGuard],
     children: [
+      {
+        path: '',
+        redirectTo: 'home',
+        pathMatch: 'full'
+      },
       {
         path: 'home',
         loadComponent: () => import('./home/home.page').then((m) => m.HomePage)
@@ -66,5 +66,9 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/notifications/notifications.component').then((m) => m.NotificationsComponent)
       }
     ]
+  },
+  {
+    path: '**',
+    redirectTo: 'login'
   }
 ];
