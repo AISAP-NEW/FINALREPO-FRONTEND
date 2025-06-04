@@ -1,8 +1,9 @@
-import { enableProdMode } from '@angular/core';
+import { enableProdMode, importProvidersFrom } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { RouteReuseStrategy, provideRouter } from '@angular/router';
+import { RouteReuseStrategy, provideRouter, withHashLocation } from '@angular/router';
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
 import { provideHttpClient } from '@angular/common/http';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
@@ -16,7 +17,8 @@ bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
-    provideRouter(routes),
-    provideHttpClient()
+    provideRouter(routes, withHashLocation()),
+    provideHttpClient(),
+    provideAnimations()
   ],
-}).catch(err => console.log(err));
+}).catch(err => console.error('Error bootstrapping app:', err));

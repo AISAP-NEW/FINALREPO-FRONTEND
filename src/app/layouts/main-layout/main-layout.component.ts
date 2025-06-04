@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { 
   IonMenu, 
   IonHeader, 
@@ -14,7 +13,6 @@ import {
   IonMenuToggle,
   IonButtons,
   IonMenuButton,
-  IonRouterOutlet,
   IonSplitPane,
   IonBadge,
   AlertController
@@ -31,12 +29,13 @@ import {
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-main-layout',
   template: `
     <ion-split-pane contentId="main-content">
-      <ion-menu contentId="main-content" type="overlay">
+      <ion-menu contentId="main-content">
         <ion-header>
           <ion-toolbar>
             <ion-title>Menu</ion-title>
@@ -94,7 +93,7 @@ import { NotificationService } from '../../services/notification.service';
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          <ion-router-outlet></ion-router-outlet>
+          <router-outlet></router-outlet>
         </ion-content>
       </div>
     </ion-split-pane>
@@ -142,6 +141,10 @@ import { NotificationService } from '../../services/notification.service';
       width: 100%;
       border-top: 1px solid var(--ion-color-light);
     }
+
+    ion-menu-button {
+      display: block;
+    }
   `],
   standalone: true,
   imports: [
@@ -159,15 +162,15 @@ import { NotificationService } from '../../services/notification.service';
     IonMenuToggle,
     IonButtons,
     IonMenuButton,
-    IonRouterOutlet,
     IonSplitPane,
     IonBadge
-  ]
+  ],
 })
 export class MainLayoutComponent {
   unreadCount = 0;
 
   constructor(
+    private router: Router,
     private authService: AuthService,
     private notificationService: NotificationService,
     private alertController: AlertController
@@ -201,6 +204,7 @@ export class MainLayoutComponent {
           text: 'Logout',
           handler: () => {
             this.authService.logout();
+            this.router.navigate(['/login']);
           }
         }
       ]

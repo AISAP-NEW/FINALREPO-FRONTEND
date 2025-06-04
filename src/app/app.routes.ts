@@ -4,12 +4,19 @@ import { MainLayoutComponent } from './layouts/main-layout/main-layout.component
 
 export const routes: Routes = [
   {
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full'
+  },
+  {
     path: 'login',
-    loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent)
+    loadComponent: () => import('./auth/login/login.component')
+      .then(m => m.LoginComponent)
   },
   {
     path: 'register',
-    loadComponent: () => import('./auth/register/register.component').then((m) => m.RegisterComponent)
+    loadComponent: () => import('./auth/register/register.component')
+      .then(m => m.RegisterComponent)
   },
   {
     path: '',
@@ -17,53 +24,59 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       {
-        path: '',
-        redirectTo: 'home',
-        pathMatch: 'full'
-      },
-      {
         path: 'home',
-        loadComponent: () => import('./home/home.page').then((m) => m.HomePage)
+        loadComponent: () => import('./home/home.page')
+          .then(m => m.HomePage)
       },
       {
         path: 'projects',
-        loadComponent: () => import('./pages/projects/projects.component').then((m) => m.ProjectsComponent)
+        loadComponent: () => import('./pages/projects/projects.component')
+          .then(m => m.ProjectsComponent)
       },
       {
         path: 'datasets',
-        loadComponent: () => import('./pages/datasets/datasets.page').then((m) => m.DatasetsComponent)
+        loadComponent: () => import('./pages/datasets/datasets.page')
+          .then(m => m.DatasetsComponent)
       },
       {
         path: 'datasets/new',
-        loadComponent: () => import('./pages/dataset-form/dataset-form.page').then((m) => m.DatasetFormPage)
+        loadComponent: () => import('./pages/dataset-form/dataset-form.page')
+          .then(m => m.DatasetFormPage)
       },
       {
         path: 'datasets/:id',
-        loadComponent: () => import('./pages/dataset-detail/dataset-detail.page').then((m) => m.DatasetDetailPage)
+        loadComponent: () => import('./pages/dataset-detail/dataset-detail.page')
+          .then(m => m.DatasetDetailPage)
       },
       {
         path: 'datasets/:id/preprocess',
-        loadComponent: () => import('./pages/dataset-preprocess/dataset-preprocess.page').then((m) => m.DatasetPreprocessPage)
+        loadComponent: () => import('./pages/dataset-preprocess/dataset-preprocess.page')
+          .then(m => m.DatasetPreprocessPage)
       },
       {
         path: 'datasets/:id/validate',
-        loadComponent: () => import('./pages/dataset-validate/dataset-validate.page').then((m) => m.DatasetValidatePage)
+        loadComponent: () => import('./pages/dataset-validate/dataset-validate.page')
+          .then(m => m.DatasetValidatePage)
       },
       {
         path: 'datasets/:id/split',
-        loadComponent: () => import('./pages/dataset-split/dataset-split.page').then((m) => m.DatasetSplitPage)
+        loadComponent: () => import('./pages/dataset-split/dataset-split.page')
+          .then(m => m.DatasetSplitPage)
       },
       {
         path: 'developers',
-        loadComponent: () => import('./pages/developers/developers.component').then((m) => m.DevelopersComponent)
+        loadComponent: () => import('./pages/developers/developers.component')
+          .then(m => m.DevelopersComponent)
       },
       {
         path: 'access-levels',
-        loadComponent: () => import('./pages/access-levels/access-levels.component').then((m) => m.AccessLevelsComponent)
+        loadComponent: () => import('./pages/access-levels/access-levels.component')
+          .then(m => m.AccessLevelsComponent)
       },
       {
         path: 'notifications',
-        loadComponent: () => import('./pages/notifications/notifications.component').then((m) => m.NotificationsComponent)
+        loadComponent: () => import('./pages/notifications/notifications.component')
+          .then(m => m.NotificationsComponent)
       }
     ]
   },

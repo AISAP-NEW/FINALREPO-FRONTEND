@@ -15,10 +15,8 @@ import {
   IonButtons,
   IonButton,
   ModalController,
-  AlertController,
-  IonMenuButton
+  AlertController
 } from '@ionic/angular/standalone';
-import { RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   personOutline,
@@ -32,6 +30,7 @@ import {
 } from 'ionicons/icons';
 import { UserService, User, UserWithProjects } from '../../services/user.service';
 import { Project } from '../../services/project.service';
+import { AssignToProjectComponent } from './assign-to-project/assign-to-project.component';
 import { AuthService } from '../../services/auth.service';
 import type { OverlayEventDetail } from '@ionic/core';
 
@@ -40,9 +39,6 @@ import type { OverlayEventDetail } from '@ionic/core';
   template: `
     <ion-header>
       <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-menu-button></ion-menu-button>
-        </ion-buttons>
         <ion-title>Developers</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -211,7 +207,6 @@ import type { OverlayEventDetail } from '@ionic/core';
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -225,7 +220,7 @@ import type { OverlayEventDetail } from '@ionic/core';
     IonModal,
     IonButtons,
     IonButton,
-    IonMenuButton
+    AssignToProjectComponent
   ]
 })
 export class DevelopersComponent implements OnInit {

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +11,15 @@ import { CommonModule } from '@angular/common';
     </ion-app>
   `,
   standalone: true,
-  imports: [IonApp, IonRouterOutlet, CommonModule]
+  imports: [
+    CommonModule,
+    RouterModule,
+    IonApp,
+    IonRouterOutlet
+  ]
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor() {
+    console.log('App component initialized');
+  }
+}

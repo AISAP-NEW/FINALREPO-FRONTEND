@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { 
@@ -12,11 +12,11 @@ import {
   IonCardTitle,
   IonCardContent,
   ToastController,
-  LoadingController
+  LoadingController,
+  IonSpinner
 } from '@ionic/angular/standalone';
-import { IonicModule } from '@ionic/angular';
-import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -28,7 +28,6 @@ import { CommonModule } from '@angular/common';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    IonicModule,
     IonContent,
     IonItem,
     IonLabel,
@@ -37,11 +36,12 @@ import { CommonModule } from '@angular/common';
     IonCard,
     IonCardHeader,
     IonCardTitle,
-    IonCardContent
+    IonCardContent,
+    IonSpinner
   ]
 })
-export class LoginComponent {
-  loginForm: FormGroup;
+export class LoginComponent implements OnInit {
+  loginForm!: FormGroup;
   isLoading = false;
 
   constructor(
@@ -51,6 +51,11 @@ export class LoginComponent {
     private toastController: ToastController,
     private loadingController: LoadingController
   ) {
+    console.log('Login component constructor');
+  }
+
+  ngOnInit() {
+    console.log('Login component initialized');
     this.loginForm = this.formBuilder.group({
       username: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]]
