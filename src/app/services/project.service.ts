@@ -40,6 +40,21 @@ export interface ProjectAccessRequestDTO {
   userId: number;
 }
 
+export interface PendingAccessRequest {
+  projectMemberId: number;
+  projectId: number;
+  userId: number;
+  username: string;
+  email: string;
+  requestDate: Date;
+}
+
+export interface AccessApprovalDTO {
+  userId: number;
+  projectId: number;
+  leadDeveloperId: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -101,28 +116,18 @@ export class ProjectService {
     return this.http.delete<void>(`${this.API_URL}/Project/${id}?userId=${currentUser.userId}`);
   }
 
-  getPendingRequests(projectId: number): Observable<any[]> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('No user logged in');
-    }
-    return this.http.get<any[]>(`${this.API_URL}/ProjectMember/pending/${projectId}?userId=${currentUser.userId}`);
-  }
-
-  approveAccess(projectId: number, userId: number, approverUserId: number): Observable<any> {
-    return this.http.post(`${this.API_URL}/ProjectMember/approve`, {
-      projectId,
-      userId,
-      approverUserId
+  getPendingRequests(projectId: number, leadDeveloperId: number): Observable<PendingAccessRequest[]> {
+    return this.http.get<PendingAccessRequest[]>(`${this.API_URL}/ProjectMember/pendingRequests`, {
+      params: { projectId, leadDeveloperId }
     });
   }
 
-  denyAccess(projectId: number, userId: number, approverUserId: number): Observable<any> {
-    return this.http.post(`${this.API_URL}/ProjectMember/deny`, {
-      projectId,
-      userId,
-      approverUserId
-    });
+  approveAccess(approvalDto: AccessApprovalDTO): Observable<any> {
+    return this.http.put(`${this.API_URL}/ProjectMember/approveAccess`, approvalDto);
+  }
+
+  denyAccess(approvalDto: AccessApprovalDTO): Observable<any> {
+    return this.http.put(`${this.API_URL}/ProjectMember/denyAccess`, approvalDto);
   }
 
   requestAccess(projectId: number): Observable<any> {

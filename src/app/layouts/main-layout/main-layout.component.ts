@@ -21,7 +21,7 @@ import { addIcons } from 'ionicons';
 import { 
   homeOutline, 
   folderOutline, 
-  barChartOutline, 
+  documentsOutline, 
   peopleOutline, 
   notificationsOutline,
   logOutOutline,
@@ -48,22 +48,27 @@ import { CommonModule } from '@angular/common';
                 <ion-icon slot="start" name="home-outline"></ion-icon>
                 <ion-label>Home</ion-label>
               </ion-item>
+
               <ion-item routerLink="/projects" routerLinkActive="selected" detail="false">
                 <ion-icon slot="start" name="folder-outline"></ion-icon>
                 <ion-label>Projects</ion-label>
               </ion-item>
+
               <ion-item routerLink="/datasets" routerLinkActive="selected" detail="false">
-                <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
+                <ion-icon slot="start" name="documents-outline"></ion-icon>
                 <ion-label>Datasets</ion-label>
               </ion-item>
+
               <ion-item routerLink="/developers" routerLinkActive="selected" detail="false">
                 <ion-icon slot="start" name="people-outline"></ion-icon>
                 <ion-label>Developers</ion-label>
               </ion-item>
-              <ion-item routerLink="/access-levels" routerLinkActive="selected" detail="false">
+
+              <ion-item *ngIf="isLeadDeveloper()" routerLink="/access-levels" routerLinkActive="selected" detail="false">
                 <ion-icon slot="start" name="key-outline"></ion-icon>
                 <ion-label>Access Levels</ion-label>
               </ion-item>
+
               <ion-item routerLink="/notifications" routerLinkActive="selected" detail="false">
                 <ion-icon slot="start" name="notifications-outline"></ion-icon>
                 <ion-label>Notifications</ion-label>
@@ -112,13 +117,16 @@ import { CommonModule } from '@angular/common';
     }
 
     ion-menu ion-item {
-      --padding-start: 20px;
-      --padding-end: 20px;
-      --min-height: 50px;
+      --padding-start: 16px;
+      --padding-end: 16px;
+      --min-height: 48px;
+      margin: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
     }
 
     ion-menu ion-item.selected {
-      --background: var(--ion-color-light);
+      --background: rgba(var(--ion-color-primary-rgb), 0.14);
       --color: var(--ion-color-primary);
     }
 
@@ -127,7 +135,7 @@ import { CommonModule } from '@angular/common';
     }
 
     ion-menu ion-icon {
-      font-size: 24px;
+      font-size: 20px;
       margin-right: 12px;
     }
 
@@ -178,7 +186,7 @@ export class MainLayoutComponent {
     addIcons({ 
       homeOutline, 
       folderOutline, 
-      barChartOutline, 
+      documentsOutline, 
       peopleOutline, 
       notificationsOutline,
       logOutOutline,
@@ -189,6 +197,11 @@ export class MainLayoutComponent {
     this.notificationService.unreadCount$.subscribe(count => {
       this.unreadCount = count;
     });
+  }
+
+  isLeadDeveloper(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    return currentUser?.role === 'LeadDeveloper';
   }
 
   async confirmLogout() {

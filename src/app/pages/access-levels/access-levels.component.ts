@@ -36,7 +36,8 @@ interface PendingRequest {
   userId: number;
   username: string;
   email: string;
-  requestDate: string;
+  requestDate: Date;
+  projectName?: string;
 }
 
 @Component({
@@ -217,9 +218,14 @@ export class AccessLevelsComponent implements OnInit {
       
       // Get pending requests for each project
       for (const project of this.projects) {
-        const requests = await firstValueFrom(this.projectService.getPendingRequests(project.projectId));
+        const requests = await firstValueFrom(
+          this.projectService.getPendingRequests(project.projectId, currentUser.userId)
+        );
         if (requests && requests.length > 0) {
-          this.pendingRequests.push(...requests);
+          this.pendingRequests.push(...requests.map(r => ({
+            ...r,
+            projectName: project.name
+          })));
         }
       }
 
@@ -245,16 +251,22 @@ export class AccessLevelsComponent implements OnInit {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return;
 
-      await firstValueFrom(this.projectService.approveAccess(request.projectId, request.userId, currentUser.userId));
+      await firstValueFrom(this.projectService.approveAccess({
+        userId: request.userId,
+        projectId: request.projectId,
+        leadDeveloperId: currentUser.userId
+      }));
       
       // Remove the request from the list
-      this.pendingRequests = this.pendingRequests.filter(r => r.projectMemberId !== request.projectMemberId);
-      
-      // If no more requests for this project, remove the project
-      if (!this.getPendingRequestsForProject({ projectId: request.projectId } as Project).length) {
+      this.pendingRequests = this.pendingRequests.filter(r => 
+        r.projectMemberId !== request.projectMemberId
+      );
+
+      // Update projects list if no more requests for this project
+      if (this.getPendingRequestsForProject({ projectId: request.projectId } as Project).length === 0) {
         this.projects = this.projects.filter(p => p.projectId !== request.projectId);
       }
-      
+
       this.showToast('Access request approved', 'success');
     } catch (error) {
       console.error('Error approving request:', error);
@@ -267,16 +279,22 @@ export class AccessLevelsComponent implements OnInit {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return;
 
-      await firstValueFrom(this.projectService.denyAccess(request.projectId, request.userId, currentUser.userId));
+      await firstValueFrom(this.projectService.denyAccess({
+        userId: request.userId,
+        projectId: request.projectId,
+        leadDeveloperId: currentUser.userId
+      }));
       
       // Remove the request from the list
-      this.pendingRequests = this.pendingRequests.filter(r => r.projectMemberId !== request.projectMemberId);
-      
-      // If no more requests for this project, remove the project
-      if (!this.getPendingRequestsForProject({ projectId: request.projectId } as Project).length) {
+      this.pendingRequests = this.pendingRequests.filter(r => 
+        r.projectMemberId !== request.projectMemberId
+      );
+
+      // Update projects list if no more requests for this project
+      if (this.getPendingRequestsForProject({ projectId: request.projectId } as Project).length === 0) {
         this.projects = this.projects.filter(p => p.projectId !== request.projectId);
       }
-      
+
       this.showToast('Access request denied', 'success');
     } catch (error) {
       console.error('Error denying request:', error);

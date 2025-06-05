@@ -119,4 +119,12 @@ export class AuthService {
   isLoggedIn(): boolean {
     return this.isAuthenticated();
   }
+
+  getCurrentUserId(): number {
+    const user = this.getCurrentUser();
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+    return user.userId;
+  }
 } 
