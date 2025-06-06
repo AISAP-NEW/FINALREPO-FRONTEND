@@ -12,12 +12,14 @@ import {
   IonBadge,
   IonSpinner,
   IonButtons,
-  IonMenuButton
+  IonMenuButton,
+  IonSearchbar
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { addOutline } from 'ionicons/icons';
+import { addOutline, searchOutline, closeOutline } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { DatasetService, Dataset } from '../../services/dataset.service';
 
 @Component({
@@ -54,8 +56,16 @@ import { DatasetService, Dataset } from '../../services/dataset.service';
 
       <!-- Data State -->
       <div *ngIf="!loading && !error" class="ion-padding">
-        <ion-list *ngIf="datasets.length > 0">
-          <ion-item *ngFor="let dataset of datasets" [routerLink]="['/datasets', dataset.datasetId]" detail="true">
+        <ion-searchbar
+          [(ngModel)]="searchTerm"
+          (ionInput)="handleSearch($event)"
+          placeholder="Search datasets..."
+          [animated]="true"
+          showClearButton="focus">
+        </ion-searchbar>
+
+        <ion-list *ngIf="filteredDatasets.length > 0">
+          <ion-item *ngFor="let dataset of filteredDatasets" [routerLink]="['/datasets', dataset.datasetId]" detail="true">
             <ion-label>
               <h2>{{ dataset.datasetName }}</h2>
               <p>{{ dataset.description }}</p>
@@ -66,8 +76,9 @@ import { DatasetService, Dataset } from '../../services/dataset.service';
         </ion-list>
 
         <!-- Empty State -->
-        <div *ngIf="datasets.length === 0" class="ion-text-center ion-padding">
-          <p>No datasets found. Click the "New Dataset" button to create one.</p>
+        <div *ngIf="filteredDatasets.length === 0" class="ion-text-center ion-padding">
+          <p *ngIf="searchTerm">No datasets found matching "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">No datasets found. Click the "New Dataset" button to create one.</p>
         </div>
       </div>
     </ion-content>
@@ -92,6 +103,7 @@ import { DatasetService, Dataset } from '../../services/dataset.service';
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -104,16 +116,19 @@ import { DatasetService, Dataset } from '../../services/dataset.service';
     IonBadge,
     IonSpinner,
     IonButtons,
-    IonMenuButton
+    IonMenuButton,
+    IonSearchbar
   ]
 })
 export class DatasetsComponent implements OnInit {
   datasets: Dataset[] = [];
+  filteredDatasets: Dataset[] = [];
   loading = true;
   error: string | null = null;
+  searchTerm: string = '';
 
   constructor(private datasetService: DatasetService) {
-    addIcons({ addOutline });
+    addIcons({ addOutline, searchOutline, closeOutline });
   }
 
   ngOnInit() {
@@ -127,6 +142,7 @@ export class DatasetsComponent implements OnInit {
     this.datasetService.getAllDatasets().subscribe({
       next: (datasets) => {
         this.datasets = datasets;
+        this.filteredDatasets = datasets;
         this.loading = false;
       },
       error: (error) => {
@@ -134,6 +150,32 @@ export class DatasetsComponent implements OnInit {
         this.error = 'Failed to load datasets. Please try again later.';
         this.loading = false;
       }
+    });
+  }
+
+  handleSearch(event: any) {
+    const searchTerm = event.target.value.toLowerCase();
+    this.searchTerm = searchTerm;
+    
+    if (!searchTerm) {
+      this.filteredDatasets = this.datasets;
+      return;
+    }
+
+    this.filteredDatasets = this.datasets.filter(dataset => {
+      const searchableFields = [
+        dataset.datasetName,
+        dataset.description,
+        dataset.fileType
+      ].map(field => field?.toLowerCase() || '');
+
+      // Split search term into words for multi-term search
+      const searchTerms = searchTerm.split(' ').filter((term: string) => term.length > 0);
+
+      // Check if all search terms are found in any of the searchable fields
+      return searchTerms.every((term: string) =>
+        searchableFields.some(field => field.includes(term))
+      );
     });
   }
 } 

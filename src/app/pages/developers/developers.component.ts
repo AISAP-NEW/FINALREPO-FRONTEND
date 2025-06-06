@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   IonHeader,
   IonToolbar,
@@ -15,7 +16,8 @@ import {
   IonButtons,
   IonButton,
   ModalController,
-  AlertController
+  AlertController,
+  IonSearchbar
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -26,7 +28,8 @@ import {
   closeOutline,
   codeOutline,
   addOutline,
-  trashOutline
+  trashOutline,
+  searchOutline
 } from 'ionicons/icons';
 import { UserService, User, UserWithProjects } from '../../services/user.service';
 import { Project } from '../../services/project.service';
@@ -44,13 +47,21 @@ import type { OverlayEventDetail } from '@ionic/core';
     </ion-header>
 
     <ion-content class="ion-padding">
+      <ion-searchbar
+        [(ngModel)]="searchTerm"
+        (ionInput)="handleSearch($event)"
+        placeholder="Search developers..."
+        [animated]="true"
+        showClearButton="focus">
+      </ion-searchbar>
+
       <div *ngIf="loading" class="ion-text-center">
         <ion-spinner></ion-spinner>
         <p>Loading developers...</p>
       </div>
 
       <ion-list *ngIf="!loading">
-        <ion-item *ngFor="let user of users" [button]="true" (click)="showUserDetails(user)">
+        <ion-item *ngFor="let user of filteredUsers" [button]="true" (click)="showUserDetails(user)">
           <ion-icon slot="start" name="person-outline"></ion-icon>
           <ion-label>
             <h2>{{ user.username }}</h2>
@@ -79,6 +90,11 @@ import type { OverlayEventDetail } from '@ionic/core';
           </ion-button>
         </ion-item>
       </ion-list>
+
+      <div *ngIf="!loading && filteredUsers.length === 0" class="ion-text-center ion-padding">
+        <p *ngIf="searchTerm">No developers found matching "{{ searchTerm }}"</p>
+        <p *ngIf="!searchTerm">No developers found</p>
+      </div>
 
       <!-- User Details Modal -->
       <ion-modal [isOpen]="!!selectedUser">
@@ -207,6 +223,7 @@ import type { OverlayEventDetail } from '@ionic/core';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -220,13 +237,16 @@ import type { OverlayEventDetail } from '@ionic/core';
     IonModal,
     IonButtons,
     IonButton,
-    AssignToProjectComponent
+    AssignToProjectComponent,
+    IonSearchbar
   ]
 })
 export class DevelopersComponent implements OnInit {
   loading = true;
   users: User[] = [];
+  filteredUsers: User[] = [];
   selectedUser: UserWithProjects | null = null;
+  searchTerm: string = '';
 
   constructor(
     private userService: UserService,
@@ -242,7 +262,8 @@ export class DevelopersComponent implements OnInit {
       closeOutline,
       codeOutline,
       addOutline,
-      trashOutline
+      trashOutline,
+      searchOutline
     });
   }
 
@@ -253,11 +274,38 @@ export class DevelopersComponent implements OnInit {
   private async loadUsers() {
     try {
       this.users = await this.userService.getUsers().toPromise() || [];
+      this.filteredUsers = this.users;
       this.loading = false;
     } catch (error) {
       console.error('Error loading users:', error);
       this.loading = false;
     }
+  }
+
+  handleSearch(event: any) {
+    const searchTerm = event.target.value.toLowerCase();
+    this.searchTerm = searchTerm;
+    
+    if (!searchTerm) {
+      this.filteredUsers = this.users;
+      return;
+    }
+
+    this.filteredUsers = this.users.filter(user => {
+      const searchableFields = [
+        user.username,
+        user.email,
+        user.role
+      ].map(field => field?.toLowerCase() || '');
+
+      // Split search term into words for multi-term search
+      const searchTerms = searchTerm.split(' ').filter((term: string) => term.length > 0);
+
+      // Check if all search terms are found in any of the searchable fields
+      return searchTerms.every((term: string) =>
+        searchableFields.some(field => field.includes(term))
+      );
+    });
   }
 
   getRoleColor(role: string): string {

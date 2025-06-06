@@ -21,8 +21,10 @@ import { DatasetCardComponent } from '../../components/dataset-card/dataset-card
 })
 export class DatasetsComponent implements OnInit {
   datasets: Dataset[] = [];
+  filteredDatasets: Dataset[] = [];
   loading = true;
   error: string | null = null;
+  searchTerm: string = '';
 
   constructor(private datasetService: DatasetService) {}
 
@@ -38,6 +40,7 @@ export class DatasetsComponent implements OnInit {
       next: (data) => {
         console.log('Received datasets:', data);
         this.datasets = data;
+        this.filteredDatasets = data;
         this.loading = false;
       },
       error: (err) => {
@@ -45,6 +48,32 @@ export class DatasetsComponent implements OnInit {
         this.error = 'Failed to load datasets. Please try again later.';
         this.loading = false;
       }
+    });
+  }
+
+  handleSearch(event: any) {
+    const searchTerm = event.target.value.toLowerCase();
+    this.searchTerm = searchTerm;
+    
+    if (!searchTerm) {
+      this.filteredDatasets = this.datasets;
+      return;
+    }
+
+    this.filteredDatasets = this.datasets.filter(dataset => {
+      const searchableFields = [
+        dataset.datasetName,
+        dataset.description,
+        dataset.fileType
+      ].map(field => field?.toLowerCase() || '');
+
+      // Split search term into words for multi-term search
+      const searchTerms = searchTerm.split(' ').filter((term: string) => term.length > 0);
+
+      // Check if all search terms are found in any of the searchable fields
+      return searchTerms.every((term: string) =>
+        searchableFields.some(field => field.includes(term))
+      );
     });
   }
 } 

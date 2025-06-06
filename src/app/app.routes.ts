@@ -34,6 +34,11 @@ export const routes: Routes = [
           .then(m => m.ProjectsComponent)
       },
       {
+        path: 'clients',
+        loadComponent: () => import('./pages/clients/clients.component')
+          .then(m => m.ClientsComponent)
+      },
+      {
         path: 'datasets',
         loadComponent: () => import('./pages/datasets/datasets.page')
           .then(m => m.DatasetsComponent)

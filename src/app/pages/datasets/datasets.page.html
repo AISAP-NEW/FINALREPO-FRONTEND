@@ -14,6 +14,14 @@
       </ion-header>
 
       <div class="page-content">
+        <ion-searchbar
+          [(ngModel)]="searchTerm"
+          (ionInput)="handleSearch($event)"
+          placeholder="Search datasets..."
+          [animated]="true"
+          showClearButton="focus">
+        </ion-searchbar>
+
         <!-- Loading State -->
         <div *ngIf="loading" class="ion-padding ion-text-center">
           <ion-spinner></ion-spinner>
@@ -29,9 +37,19 @@
         <!-- Datasets Grid -->
         <ion-grid *ngIf="!loading && !error">
           <ion-row>
-            <ion-col size="12" size-md="6" size-lg="4" *ngFor="let dataset of datasets">
+            <ion-col size="12" size-md="6" size-lg="4" *ngFor="let dataset of filteredDatasets">
               <app-dataset-card [dataset]="dataset" [routerLink]="['/datasets', dataset.datasetId]">
               </app-dataset-card>
+            </ion-col>
+          </ion-row>
+
+          <!-- Empty State -->
+          <ion-row *ngIf="filteredDatasets.length === 0">
+            <ion-col>
+              <div class="ion-text-center ion-padding">
+                <p *ngIf="searchTerm">No datasets found matching "{{ searchTerm }}"</p>
+                <p *ngIf="!searchTerm">No datasets found. Click the "New Dataset" button to create one.</p>
+              </div>
             </ion-col>
           </ion-row>
         </ion-grid>

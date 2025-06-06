@@ -25,7 +25,8 @@ import {
   peopleOutline, 
   notificationsOutline,
   logOutOutline,
-  keyOutline
+  keyOutline,
+  businessOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -52,6 +53,11 @@ import { CommonModule } from '@angular/common';
               <ion-item routerLink="/projects" routerLinkActive="selected" detail="false">
                 <ion-icon slot="start" name="folder-outline"></ion-icon>
                 <ion-label>Projects</ion-label>
+              </ion-item>
+
+              <ion-item routerLink="/clients" routerLinkActive="selected" detail="false">
+                <ion-icon slot="start" name="business-outline"></ion-icon>
+                <ion-label>Clients</ion-label>
               </ion-item>
 
               <ion-item routerLink="/datasets" routerLinkActive="selected" detail="false">
@@ -190,7 +196,8 @@ export class MainLayoutComponent {
       peopleOutline, 
       notificationsOutline,
       logOutOutline,
-      keyOutline
+      keyOutline,
+      businessOutline
     });
 
     // Subscribe to unread notifications count

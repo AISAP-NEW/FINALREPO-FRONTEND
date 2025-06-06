@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { 
   IonHeader, 
   IonToolbar, 
@@ -21,7 +21,8 @@ import {
   IonChip,
   AlertController,
   ModalController,
-  IonToggle
+  IonToggle,
+  IonSearchbar
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -38,7 +39,9 @@ import {
   warningOutline,
   personAddOutline,
   handRightOutline,
-  personOutline
+  personOutline,
+  searchOutline,
+  closeOutline
 } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
 import { ProjectService, Project } from '../../services/project.service';
@@ -62,6 +65,14 @@ import { AuthService } from '../../services/auth.service';
       </ion-refresher>
 
       <div class="ion-padding">
+        <ion-searchbar
+          [(ngModel)]="searchTerm"
+          (ionInput)="handleSearch($event)"
+          placeholder="Search projects..."
+          [animated]="true"
+          showClearButton="focus">
+        </ion-searchbar>
+
         <ion-button expand="block" (click)="openCreateModal()" *ngIf="canCreateProject()">
           <ion-icon slot="start" name="add-outline"></ion-icon>
           Create New Project
@@ -72,7 +83,7 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
         <ion-list *ngIf="!loading">
-          <ion-item *ngFor="let project of projects" [button]="true" (click)="openProjectDetails(project)">
+          <ion-item *ngFor="let project of filteredProjects" [button]="true" (click)="openProjectDetails(project)">
             <ion-label>
               <h2>{{ project.name }}</h2>
               <p class="project-description">{{ project.objectives }}</p>
@@ -140,8 +151,9 @@ import { AuthService } from '../../services/auth.service';
           </ion-item>
         </ion-list>
 
-        <div *ngIf="!loading && projects.length === 0" class="ion-text-center ion-padding">
-          <p>No projects found. Create your first project!</p>
+        <div *ngIf="!loading && filteredProjects.length === 0" class="ion-text-center ion-padding">
+          <p *ngIf="searchTerm">No projects found matching "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">No projects found. Create your first project!</p>
         </div>
       </div>
 
@@ -264,6 +276,7 @@ import { AuthService } from '../../services/auth.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -281,7 +294,8 @@ import { AuthService } from '../../services/auth.service';
     IonRefresherContent,
     IonButtons,
     IonChip,
-    IonToggle
+    IonToggle,
+    IonSearchbar
   ]
 })
 export class ProjectsComponent implements OnInit {
@@ -299,6 +313,8 @@ export class ProjectsComponent implements OnInit {
     isActive: [true]
   });
   editingProject: Project | null = null;
+  searchTerm: string = '';
+  filteredProjects: Project[] = [];
 
   constructor(
     private projectService: ProjectService,
@@ -322,7 +338,9 @@ export class ProjectsComponent implements OnInit {
       warningOutline,
       personAddOutline,
       handRightOutline,
-      personOutline
+      personOutline,
+      searchOutline,
+      closeOutline
     });
   }
 
@@ -383,6 +401,7 @@ export class ProjectsComponent implements OnInit {
       )
       .subscribe(projects => {
         this.projects = projects;
+        this.filteredProjects = projects; // Initialize filtered projects
         this.loading = false;
       });
   }
@@ -555,5 +574,33 @@ export class ProjectsComponent implements OnInit {
       console.error('Error requesting access:', error);
       this.showToast('Failed to request access', 'danger');
     }
+  }
+
+  handleSearch(event: any) {
+    const searchTerm = event.target.value.toLowerCase();
+    this.searchTerm = searchTerm;
+    
+    if (!searchTerm) {
+      this.filteredProjects = this.projects;
+      return;
+    }
+
+    this.filteredProjects = this.projects.filter(project => {
+      const searchableFields = [
+        project.name,
+        project.objectives,
+        project.scope,
+        project.technologies,
+        project.createdByUsername
+      ].map(field => field?.toLowerCase() || '');
+
+      // Split search term into words for multi-term search
+      const searchTerms = searchTerm.split(' ').filter((term: string) => term.length > 0);
+
+      // Check if all search terms are found in any of the searchable fields
+      return searchTerms.every((term: string) =>
+        searchableFields.some(field => field.includes(term))
+      );
+    });
   }
 } 
