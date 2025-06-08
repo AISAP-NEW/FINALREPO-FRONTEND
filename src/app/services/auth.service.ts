@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
@@ -15,6 +15,16 @@ export interface RegisterDTO {
   email: string;
   password: string;
   role: string;
+}
+
+export interface ForgotPasswordDTO {
+  email: string;
+}
+
+export interface ResetPasswordDTO {
+  token: string;
+  newPassword: string;
+  confirmNewPassword: string;
 }
 
 export interface UserResponseDTO {
@@ -72,32 +82,106 @@ export class AuthService {
     }
   }
 
+  private handleError(error: HttpErrorResponse) {
+    console.error('API Error:', {
+      status: error.status,
+      statusText: error.statusText,
+      error: error.error,
+      message: error.message,
+      url: error.url
+    });
+
+    if (error.status === 0) {
+      return throwError(() => new Error('Unable to connect to the server. Please check your internet connection.'));
+    }
+    
+    if (error.status === 404) {
+      return throwError(() => new Error('The requested resource was not found.'));
+    }
+    
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      return throwError(() => new Error(error.error.message));
+    }
+    
+    // Server-side error
+    const message = error.error?.message || error.message || 'An unexpected error occurred';
+    return throwError(() => new Error(message));
+  }
+
   login(credentials: LoginDTO): Observable<LoginResponse> {
+    console.log('Attempting login for user:', credentials.username);
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, this.httpOptions)
       .pipe(
         tap(response => {
+          console.log('Login successful:', response);
           this.currentUserSubject.next(response);
           this.isAuthenticatedSubject.next(true);
           localStorage.setItem('currentUser', JSON.stringify(response));
           this.router.navigate(['/home']);
         }),
-        catchError(error => {
-          console.error('Login error:', error);
-          return throwError(() => new Error(error.error?.message || 'Login failed. Please try again.'));
-        })
+        catchError(this.handleError)
       );
   }
 
-  register(userData: RegisterDTO): Observable<RegisterResponse> {
-    return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, userData, this.httpOptions)
+  register(userData: RegisterDTO): Observable<any> {
+    console.log('Attempting registration for user:', userData.username);
+    return this.http.post(`${this.apiUrl}/register`, userData, this.httpOptions)
       .pipe(
         tap(response => {
           console.log('Registration successful:', response);
         }),
+        catchError(this.handleError)
+      );
+  }
+
+  forgotPassword(email: ForgotPasswordDTO): Observable<any> {
+    console.log('Sending forgot password request for email:', email.email);
+    const url = `${this.apiUrl}/forgot-password`;
+    console.log('Request URL:', url);
+    
+    return this.http.post(url, email, this.httpOptions)
+      .pipe(
+        tap(response => {
+          console.log('Forgot password request successful:', response);
+        }),
         catchError(error => {
-          console.error('Registration error:', error);
-          return throwError(() => new Error(error.error?.message || 'Registration failed. Please try again.'));
+          console.error('Forgot password request failed:', {
+            error,
+            status: error.status,
+            statusText: error.statusText,
+            url: error.url,
+            message: error.message,
+            errorObject: error.error
+          });
+          return this.handleError(error);
         })
+      );
+  }
+
+  validateResetCode(resetCode: string): Observable<any> {
+    console.log('Validating reset code:', resetCode);
+    // The backend expects the reset code in the request body as a JSON string
+    return this.http.post(`${this.apiUrl}/validate-reset-code`, JSON.stringify(resetCode), {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    }).pipe(
+      tap(response => {
+        console.log('Reset code validation successful:', response);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  resetPassword(resetData: ResetPasswordDTO): Observable<any> {
+    console.log('Attempting to reset password');
+    return this.http.post(`${this.apiUrl}/reset-password`, resetData, this.httpOptions)
+      .pipe(
+        tap(response => {
+          console.log('Password reset successful:', response);
+        }),
+        catchError(this.handleError)
       );
   }
 

@@ -27,6 +27,10 @@
           <span *ngIf="!isLoading">Login</span>
         </ion-button>
 
+        <ion-button expand="block" fill="clear" routerLink="/forgot-password" class="ion-margin-top" [disabled]="isLoading">
+          Forgot Password?
+        </ion-button>
+
         <ion-button expand="block" fill="clear" routerLink="/register" class="ion-margin-top" [disabled]="isLoading">
           Don't have an account? Register
         </ion-button>
