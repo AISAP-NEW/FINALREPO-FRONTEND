@@ -1,11 +1,56 @@
-<div class="dataset-card" [class.selected]="isSelected">
-  <div class="dataset-thumbnail">
-    <img [src]="imageUrl" alt="{{ dataset.datasetName }}">
+<div class="dataset-card" [class.selected]="isSelected" (click)="onClick()">
+  <div class="card-content">
+    <div class="dataset-thumbnail">
+      <div *ngIf="isLoading" class="thumbnail-loading">
+        <ion-spinner></ion-spinner>
+      </div>
+      <img 
+        [src]="thumbnailUrl" 
+        [alt]="dataset.datasetName" 
+        (load)="onImageLoad()"
+        (error)="onImageError()"
+        [hidden]="isLoading || hasImageError"
+        loading="lazy"
+      >
+      <div *ngIf="hasImageError" class="no-thumbnail">
+        <ion-icon name="document"></ion-icon>
+      </div>
+    </div>
+    <div class="dataset-info">
+      <div class="dataset-header">
+        <h2 class="dataset-name">{{ dataset.datasetName }}</h2>
+        <span class="dataset-status" [ngClass]="getStatusClass()">
+          {{ dataset.validationStatus || 'Pending' }}
+        </span>
+      </div>
+      <p class="dataset-meta">
+        <span class="file-count">
+          <ion-icon name="document"></ion-icon> 
+          {{ dataset.fileCount || 0 }} {{ (dataset.fileCount === 1 ? 'File' : 'Files') }}
+        </span>
+        <span class="file-size">
+          <ion-icon name="save"></ion-icon> 
+          {{ (dataset.totalFileSizeKB | number:'1.0-2') || '0.00' }} KB
+        </span>
+      </p>
+      <p class="dataset-description" *ngIf="dataset.description">
+        {{ dataset.description }}
+      </p>
+      <div class="dataset-footer">
+        <span class="created-date">
+          <ion-icon name="calendar"></ion-icon>
+          {{ (dataset.createdAt | date:'mediumDate') || 'N/A' }}
+        </span>
+        <span class="validation-errors" *ngIf="dataset.validationErrors && dataset.validationErrors > 0">
+          <ion-icon name="warning"></ion-icon>
+          {{ dataset.validationErrors }} issue{{ dataset.validationErrors !== 1 ? 's' : '' }}
+        </span>
+      </div>
+    </div>
   </div>
-  <div class="dataset-info">
-    <h2 class="dataset-name">{{ dataset.datasetName }}</h2>
-    <p class="dataset-creator">Created: {{ dataset.createdAt | date }}</p>
-    <p class="dataset-stats">{{ dataset.fileCount }} Files ({{ dataset.fileType }})</p>
-    <p class="dataset-description">{{ dataset.description }}</p>
+  <div class="card-actions">
+    <a [routerLink]="['/datasets', dataset.datasetId, 'details']" class="action-button">
+      <ion-icon name="eye"></ion-icon>
+    </a>
   </div>
-</div> 
+</div>

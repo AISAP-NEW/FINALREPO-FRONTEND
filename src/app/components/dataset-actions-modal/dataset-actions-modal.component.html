@@ -1,0 +1,26 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Dataset Actions</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="onClose()">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    <ion-item *ngFor="let action of actions" button (click)="onActionClick(action)" [routerLink]="action.route.replace(':id', dataset.datasetId)">
+      <ion-icon slot="start" [name]="action.icon"></ion-icon>
+      <ion-label>
+        <h2>{{ action.title }}</h2>
+        <p>{{ action.description }}</p>
+      </ion-label>
+      <ion-badge slot="end" [color]="action.status === 'completed' ? 'success' : 'medium'">
+        <ion-icon *ngIf="action.status === 'completed'" name="checkmark-circle"></ion-icon>
+        <span>{{ action.status | titlecase }}</span>
+      </ion-badge>
+    </ion-item>
+  </ion-list>
+</ion-content>

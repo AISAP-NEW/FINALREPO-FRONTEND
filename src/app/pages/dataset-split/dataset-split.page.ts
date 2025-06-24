@@ -4,7 +4,15 @@ import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatasetService, SplitResponse } from '../../services/dataset.service';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ToastService } from '../../services/toast.service';
 
+/**
+ * Dataset Split Page Component
+ * 
+ * This component is responsible for handling the dataset split functionality.
+ * It provides a form for the user to input the training set ratio and 
+ * displays the split results.
+ */
 @Component({
   selector: 'app-dataset-split',
   template: `
@@ -19,21 +27,29 @@ import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } 
     <ion-content>
       <form [formGroup]="splitForm" (ngSubmit)="onSubmit()" class="ion-padding">
         <ion-item>
-          <ion-label position="floating">Training Set Ratio (0.1 - 0.9)</ion-label>
+          <ion-label position="floating">Training Set Percentage (10% - 90%)</ion-label>
           <ion-input
             type="number"
             formControlName="trainRatio"
-            min="0.1"
-            max="0.9"
-            step="0.1"
+            min="10"
+            max="90"
+            step="5"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Test Set Percentage</ion-label>
+          <ion-input
+            type="number"
+            readonly
+            [value]="testRatio"
           ></ion-input>
         </ion-item>
         <div *ngIf="splitForm.get('trainRatio')?.touched && splitForm.get('trainRatio')?.invalid" class="error-message">
           <ion-text color="danger" *ngIf="splitForm.get('trainRatio')?.errors?.['required']">
-            Train ratio is required
+            Training percentage is required
           </ion-text>
           <ion-text color="danger" *ngIf="splitForm.get('trainRatio')?.errors?.['min'] || splitForm.get('trainRatio')?.errors?.['max']">
-            Train ratio must be between 0.1 and 0.9
+            Training percentage must be between 10% and 90%
           </ion-text>
         </div>
 
@@ -121,6 +137,7 @@ export class DatasetSplitPage implements OnInit {
   splitting = false;
   error: string | null = null;
   splitResult: SplitResponse | null = null;
+  testRatio: number = 20; // Default to 20% since train is 80% by default
 
   constructor(
     private route: ActivatedRoute,
@@ -129,7 +146,12 @@ export class DatasetSplitPage implements OnInit {
     private datasetService: DatasetService
   ) {
     this.splitForm = this.formBuilder.group({
-      trainRatio: [0.8, [Validators.required, Validators.min(0.1), Validators.max(0.9)]]
+      trainRatio: [80, [Validators.required, Validators.min(10), Validators.max(90)]]
+    });
+
+    // Calculate test ratio based on train ratio
+    this.splitForm.get('trainRatio')?.valueChanges.subscribe((value) => {
+      this.testRatio = 100 - value;
     });
   }
 
@@ -149,8 +171,9 @@ export class DatasetSplitPage implements OnInit {
       this.splitResult = null;
 
       const trainRatio = this.splitForm.get('trainRatio')?.value;
+      const testRatio = 100 - trainRatio;
 
-      this.datasetService.splitDataset(this.datasetId, trainRatio).subscribe({
+      this.datasetService.splitDataset(this.datasetId, trainRatio, testRatio).subscribe({
         next: (response) => {
           this.splitting = false;
           this.splitResult = response;

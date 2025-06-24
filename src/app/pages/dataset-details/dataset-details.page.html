@@ -1,0 +1,124 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/datasets"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Dataset Details</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="showDebugInfo = !showDebugInfo">
+        <ion-icon [name]="showDebugInfo ? 'bug' : 'bug-outline'" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-segment [value]="activeTab" (ionChange)="onSegmentChange($event)" slot="end">
+      <ion-segment-button value="preview">
+        <ion-label>Preview</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="schema">
+        <ion-label>Schema</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading dataset details...</p>
+  </div>
+
+  <!-- Debug Info -->
+  <ion-card *ngIf="showDebugInfo" class="ion-margin-bottom">
+    <ion-card-header>
+      <ion-card-title>Debug Info</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p><strong>Dataset ID:</strong> {{ datasetId || 'Not set' }}</p>
+      <p><strong>Preview Rows:</strong> {{ previewData.data?.length || 0 }} of {{ previewData.totalRows || 0 }}</p>
+      <p><strong>Headers:</strong> {{ previewData.headers?.join(', ') || 'None' }}</p>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Preview Tab -->
+  <div *ngIf="!isLoading && activeTab === 'preview'" class="tab-content">
+    <!-- Error State -->
+    <div *ngIf="previewData.data.length === 0" class="ion-text-center ion-padding">
+      <ion-icon name="warning-outline" size="large" color="warning"></ion-icon>
+      <h3>No Preview Data Available</h3>
+      <p class="ion-text-wrap">Unable to load preview data for this dataset.</p>
+      <ion-button (click)="refreshDataset()" fill="clear">
+        <ion-icon slot="start" name="refresh"></ion-icon>
+        Try Again
+      </ion-button>
+    </div>
+
+    <!-- Data Preview -->
+    <div *ngIf="hasPreviewData" class="preview-container">
+      <ion-card>
+        <ion-card-content>
+          <div class="table-responsive">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th class="row-number">#</th>
+                  <th *ngFor="let header of previewData.headers" class="header-cell">
+                    <div class="header-content" [title]="header">
+                      {{ header }}
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of previewData.data; let i = index" class="data-row">
+                  <td class="row-number">{{ row['rowNumber'] || (i + 1) }}</td>
+                  <td *ngFor="let header of previewData.headers" class="data-cell">
+                    <div class="cell-content" [title]="getCellValue(row, header) | safeHtml" [innerHTML]="getCellValue(row, header) | safeHtml">
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ion-note class="ion-margin-top" *ngIf="previewData.totalRows > previewRowCount">
+            Showing {{ previewRowCount }} of {{ previewData.totalRows | number }} rows
+          </ion-note>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Schema Tab -->
+  <div *ngIf="!isLoading && activeTab === 'schema'" class="tab-content">
+    <ion-accordion-group>
+      <ion-accordion *ngFor="let field of previewData.schema">
+        <ion-item slot="header" color="light">
+          <ion-label>
+            <h3>{{ field.name }}</h3>
+            <p>{{ field.type }} {{ field.nullable ? '(nullable)' : '' }}</p>
+          </ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="12" size-md="6">
+                <p><strong>Type:</strong> {{ field.type }}</p>
+                <p><strong>Nullable:</strong> {{ field.nullable ? 'Yes' : 'No' }}</p>
+              </ion-col>
+              <ion-col size="12" size-md="6">
+                <p><strong>Sample Values:</strong></p>
+                <ul>
+                  <li *ngFor="let value of field.sampleValues">{{ value }}</li>
+                </ul>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </div>
+      </ion-accordion>
+    </ion-accordion-group>
+
+    <ion-note *ngIf="!previewData.schema?.length" class="ion-margin-top">
+      No schema information available
+    </ion-note>
+  </div>
+</ion-content>

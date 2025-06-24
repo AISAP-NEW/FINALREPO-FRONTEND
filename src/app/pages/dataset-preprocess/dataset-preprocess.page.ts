@@ -4,6 +4,45 @@ import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatasetService, PreprocessOptions } from '../../services/dataset.service';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ToastService, ToastType } from '../../services/toast.service';
+
+/**
+ * Dataset Preprocess Page Component
+ *
+ * This component handles the preprocessing of a dataset. It provides a form for the user to select
+ * preprocessing options and displays the results of the preprocessing process.
+ */
+/**
+ * 🧠 Preprocessing Page — AI Model Management System
+ * 
+ * ✅ Purpose:
+ * - Provide UI to run preprocessing on a dataset.
+ * - Interact with backend endpoint: POST /Preprocess/preprocess-by-id?datasetId={id}
+ * 
+ * ✅ Backend Requirements:
+ * - Endpoint accepts: PreprocessOptions (handleMissingValues, removeDuplicates, fixDataTypes, scalingMethod)
+ * - Returns: { message, datasetId, results[] }
+ * 
+ * ✅ Component Features:
+ * - Angular Reactive Form to collect preprocessing options.
+ * - Calls DatasetService.preprocessDataset(datasetId, options).
+ * - Shows processing status, errors, and results.
+ * 
+ * 🛠️ Cursor Tasks:
+ * - Check datasetId from ActivatedRoute.
+ * - Bind form controls for options.
+ * - Show result rows: original path + cleaned path.
+ * - Show toast on success (optional).
+ */
+
+interface PreprocessResult {
+  message: string;
+  datasetId: string;
+  results: Array<{
+    original: string;
+    cleaned: string;
+  }>;
+}
 
 @Component({
   selector: 'app-dataset-preprocess',
@@ -48,16 +87,24 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
           <ion-text color="danger">{{ error }}</ion-text>
         </div>
 
-        <div *ngIf="results" class="results ion-padding-top">
-          <h2>Processing Results</h2>
-          <ion-list>
-            <ion-item *ngFor="let result of results">
-              <ion-label>
-                <h3>Original: {{ result.original }}</h3>
-                <p>Cleaned: {{ result.cleaned }}</p>
-              </ion-label>
-            </ion-item>
-          </ion-list>
+        <div *ngIf="preprocessResults" class="ion-padding-top">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Preprocessing Results</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-list>
+                <ion-item *ngFor="let result of preprocessResults.results">
+                  <ion-label>
+                    <h3>Original Path:</h3>
+                    <p>{{ result.original }}</p>
+                    <h3>Cleaned Path:</h3>
+                    <p>{{ result.cleaned }}</p>
+                  </ion-label>
+                </ion-item>
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
         </div>
       </form>
     </ion-content>
@@ -99,13 +146,14 @@ export class DatasetPreprocessPage implements OnInit {
   preprocessForm: FormGroup;
   processing = false;
   error: string | null = null;
-  results: any[] | null = null;
+  preprocessResults: PreprocessResult | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private formBuilder: FormBuilder,
-    private datasetService: DatasetService
+    private datasetService: DatasetService,
+    private toastService: ToastService
   ) {
     this.preprocessForm = this.formBuilder.group({
       handleMissingValues: [true],
@@ -119,7 +167,18 @@ export class DatasetPreprocessPage implements OnInit {
     this.datasetId = this.route.snapshot.paramMap.get('id');
   }
 
-  onSubmit() {
+  /**
+   * 🧠 Cursor Note:
+   * Submits preprocessing options to backend for selected dataset.
+   * 
+   * - Calls: DatasetService.preprocessDataset(datasetId, options)
+   * - Handles success:
+   *   - Displays cleaned dataset paths.
+   *   - Shows success toast using ToastController.
+   * - Handles errors:
+   *   - Displays message in <ion-text color="danger">.
+   */
+  async onSubmit() {
     if (!this.datasetId) {
       this.error = 'Dataset ID is missing';
       return;
@@ -127,19 +186,35 @@ export class DatasetPreprocessPage implements OnInit {
 
     this.processing = true;
     this.error = null;
-    this.results = null;
 
     const options: PreprocessOptions = this.preprocessForm.value;
 
-    this.datasetService.preprocessDataset(this.datasetId, options).subscribe({
-      next: (response) => {
-        this.processing = false;
-        this.results = response.results;
-      },
-      error: (err) => {
-        this.processing = false;
-        this.error = 'Error processing dataset: ' + (err.error?.message || err.message || 'Unknown error');
+    try {
+      // First, call the preprocessing endpoint
+      const response = await this.datasetService.preprocessDataset(this.datasetId, options).toPromise();
+      
+      if (!response) {
+        throw new Error('No response from preprocessing service');
       }
-    });
+
+      // Then update the dataset status
+      await this.datasetService.updateDatasetStatus(this.datasetId, {
+        preprocessingStatus: 'complete'
+      }).toPromise();
+
+      // Show success message
+      this.toastService.presentToast('success' as ToastType, response.message || 'Preprocessing completed successfully');
+      
+      // Navigate back to dataset details
+      this.router.navigate(['/datasets', this.datasetId]);
+      
+    } catch (error: any) {
+      console.error('Preprocessing error:', error);
+      const errorMessage = error.error?.message || error.message || 'Failed to preprocess dataset';
+      this.error = errorMessage;
+      this.toastService.presentToast('error' as ToastType, errorMessage);
+    } finally {
+      this.processing = false;
+    }
   }
-} 
+}

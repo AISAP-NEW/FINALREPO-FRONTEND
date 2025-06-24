@@ -1,0 +1,357 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Dataset Preview</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container ion-text-center ion-padding">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading preview data...</p>
+  </div>
+
+  <!-- Debug Info (Collapsible) -->
+  <ion-button expand="block" fill="clear" size="small" (click)="showDebugInfo = !showDebugInfo">
+    <ion-icon [name]="showDebugInfo ? 'chevron-up' : 'bug'" slot="start"></ion-icon>
+    {{ showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info' }}
+  </ion-button>
+
+  <div *ngIf="showDebugInfo" class="debug-info ion-margin-bottom">
+    <h4>Debug Info:</h4>
+    <p><strong>Component State:</strong></p>
+    <ul>
+      <li>Loading: {{isLoading}}</li>
+      <li>Has Data: {{hasPreviewData}}</li>
+      <li>Dataset ID: <code>{{datasetId || 'Not set'}}</code></li>
+    </ul>
+  </div>
+
+  <!-- Preview Tab -->
+  <div *ngIf="activeTab === 'preview'" class="tab-content">
+    <!-- Data Preview -->
+    <div *ngIf="previewData.data.length > 0" class="preview-container">
+      <ion-card>
+        <ion-card-content>
+          <div class="table-responsive">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th *ngFor="let header of previewData.headers">
+                    <div class="header-cell">
+                      <span>{{ header }}</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of previewData.data; let i = index">
+                  <td class="row-number">{{ i + 1 }}</td>
+                  <td *ngFor="let header of previewData.headers" class="data-cell">
+                    <div class="cell-content" [title]="getCellValue(row, header)">
+                      {{ getCellValue(row, header) }}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <ion-note class="ion-margin-top" *ngIf="previewData.totalRows > previewRowCount">
+            Showing {{ previewData.data.length }} of {{ previewData.totalRows | number }} rows
+          </ion-note>
+        </ion-card-content>
+      </ion-card>
+    </div>
+    
+    <!-- No Data Message -->
+    <div *ngIf="!isLoading && previewData.data.length === 0" class="ion-text-center ion-padding">
+      <ion-icon name="warning-outline" size="large" color="warning"></ion-icon>
+      <h3>No Preview Data Available</h3>
+      <p class="ion-text-wrap">Unable to load preview data for this dataset.</p>
+      <ion-button (click)="loadPreviewData(true)" fill="clear">
+        <ion-icon slot="start" name="refresh"></ion-icon>
+        Try Again
+      </ion-button>
+    </div>
+    
+    <!-- Raw Data Toggle -->
+    <ion-accordion-group class="ion-margin-top">
+      <ion-accordion value="raw">
+        <ion-item slot="header" color="light">
+          <ion-label>View Raw Data</ion-label>
+        </ion-item>
+        <div slot="content">
+          <pre class="raw-data">{{previewData.data | json}}</pre>
+        </div>
+      </ion-accordion>
+    </ion-accordion-group>
+  </div>
+
+  <!-- Preprocess Tab -->
+  <div *ngIf="activeTab === 'preprocess'" class="tab-content">
+    <h2>🧹 Data Cleaning</h2>
+    
+    <!-- Data Cleaning Options -->
+    <ion-list>
+          <ion-item>
+            <ion-label>🧹 Remove Duplicates</ion-label>
+            <ion-toggle [(ngModel)]="preprocessOptions.removeDuplicates"></ion-toggle>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label>🔄 Fix Data Types</ion-label>
+            <ion-toggle [(ngModel)]="preprocessOptions.fixDataTypes"></ion-toggle>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label>✂️ Text Cleaning</ion-label>
+            <ion-toggle [(ngModel)]="preprocessOptions.stripWhitespace"></ion-toggle>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label>🧼 Remove Special Chars</ion-label>
+            <ion-toggle [(ngModel)]="preprocessOptions.removeSpecialChars"></ion-toggle>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label>➕ Add Custom Column</ion-label>
+            <ion-button (click)="addCustomColumn()" fill="clear">
+              <ion-icon name="add-circle"></ion-icon>
+            </ion-button>
+          </ion-item>
+          
+          <ion-item *ngFor="let col of preprocessOptions.customColumns; let i = index">
+            <ion-label>
+              <h3>{{col.name}}</h3>
+              <p>{{col.expression}}</p>
+            </ion-label>
+            <ion-button (click)="removeCustomColumn(i)" fill="clear" color="danger">
+              <ion-icon name="trash"></ion-icon>
+            </ion-button>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label>📏 Scaling Method</ion-label>
+            <ion-select [(ngModel)]="preprocessOptions.scalingMethod" interface="popover">
+              <ion-select-option value="minmax">Min-Max Scaling</ion-select-option>
+              <ion-select-option value="standard">Standard Scaling</ion-select-option>
+              <ion-select-option value="robust">Robust Scaling</ion-select-option>
+              <ion-select-option value="">None</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-list>
+        
+        <ion-button expand="block" (click)="runPreprocessing()" [disabled]="isLoading" class="ion-margin-top">
+          <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+          <span *ngIf="!isLoading">Apply Cleaning</span>
+        </ion-button>
+  </div>
+
+  <!-- Validation Tab -->
+  <div *ngIf="activeTab === 'validate'" class="tab-content">
+    <h2>🔍 Data Validation</h2>
+    
+    <ion-list>
+      <!-- Basic Validation -->
+      <ion-item>
+        <ion-label>🔍 Check for null values</ion-label>
+        <ion-toggle [(ngModel)]="validationOptions.checkNulls"></ion-toggle>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label>🔍 Check for duplicates</ion-label>
+        <ion-toggle [(ngModel)]="validationOptions.checkDuplicates"></ion-toggle>
+      </ion-item>
+      
+      <!-- Unique Columns -->
+      <ion-item>
+        <ion-label>🔑 Unique Columns</ion-label>
+        <ion-select multiple [(ngModel)]="validationOptions.uniqueColumns" interface="popover">
+          <ion-select-option *ngFor="let col of columns" [value]="col">
+            {{col}}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <!-- Outlier Detection -->
+      <ion-item>
+        <ion-label>📊 Outlier Detection</ion-label>
+        <ion-toggle [(ngModel)]="validationOptions.outlierDetection.enabled"></ion-toggle>
+      </ion-item>
+      
+      <ion-item *ngIf="validationOptions.outlierDetection.enabled">
+        <ion-label>Method</ion-label>
+        <ion-select [(ngModel)]="validationOptions.outlierDetection.method" interface="popover">
+          <ion-select-option value="zscore">Z-Score</ion-select-option>
+          <ion-select-option value="iqr">IQR</ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <ion-item *ngIf="validationOptions.outlierDetection.enabled">
+        <ion-label>Threshold: {{validationOptions.outlierDetection.threshold}}</ion-label>
+        <ion-range 
+          min="1" 
+          max="5" 
+          step="0.1" 
+          [(ngModel)]="validationOptions.outlierDetection.threshold"
+          pin>
+          <ion-label slot="start">1</ion-label>
+          <ion-label slot="end">5</ion-label>
+        </ion-range>
+      </ion-item>
+      
+      <!-- Data Type Checks -->
+      <ion-item>
+        <ion-label>🔤 Data Type Validation</ion-label>
+        <ion-toggle [(ngModel)]="validationOptions.dataTypeChecks.enabled"></ion-toggle>
+      </ion-item>
+      
+      <ion-item *ngIf="validationOptions.dataTypeChecks.enabled">
+        <ion-label>Strict Mode</ion-label>
+        <ion-toggle [(ngModel)]="validationOptions.dataTypeChecks.strict"></ion-toggle>
+      </ion-item>
+      
+      <!-- Custom Validation Rules -->
+      <ion-item>
+        <ion-label>➕ Add Custom Rule</ion-label>
+        <ion-button (click)="addValidationRule()" fill="clear">
+          <ion-icon name="add-circle"></ion-icon>
+        </ion-button>
+      </ion-item>
+      
+      <!-- Custom Rules List -->
+      <ion-item *ngFor="let rule of validationOptions.validationRules; let i = index">
+        <ion-label>
+          <h3>{{rule.column}} {{rule.rule}} {{rule.value}}</h3>
+          <p>{{rule.message}}</p>
+        </ion-label>
+        <ion-button (click)="removeValidationRule(i)" fill="clear" color="danger">
+          <ion-icon name="trash"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-list>
+    
+    <ion-button expand="block" (click)="runValidation()" [disabled]="isLoading">
+      <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+      <span *ngIf="!isLoading">Run Validation</span>
+    </ion-button>
+    
+    <!-- Validation Results -->
+    <ion-card *ngIf="validationResult">
+      <ion-card-header>
+        <ion-card-title>
+          Validation Results
+          <ion-badge [color]="validationResult.status === 'Passed' ? 'success' : 'danger'">
+            {{validationResult.status}}
+          </ion-badge>
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p *ngIf="validationResult.status !== 'Not Validated'">
+          {{validationResult.errorCount}} errors found in {{validationResult.errorLines.length}} rows out of {{validationResult.totalRows}} total rows.
+        </p>
+        
+        <div *ngIf="validationResult.details">
+          <h4>Details:</h4>
+          <div *ngIf="hasKeys(validationResult.details.nullValues)">
+            <h5>Null Values:</h5>
+            <pre>{{validationResult.details.nullValues | json}}</pre>
+          </div>
+          <div *ngIf="validationResult.details.duplicates !== undefined">
+            <h5>Duplicate Rows: {{validationResult.details.duplicates}}</h5>
+          </div>
+          <div *ngIf="hasKeys(validationResult.details.outliers)">
+            <h5>Outliers Detected:</h5>
+            <pre>{{validationResult.details.outliers | json}}</pre>
+          </div>
+          <div *ngIf="hasKeys(validationResult.details.typeErrors)">
+            <h5>Type Errors:</h5>
+            <pre>{{validationResult.details.typeErrors | json}}</pre>
+          </div>
+          <div *ngIf="hasKeys(validationResult.details.customErrors)">
+            <h5>Custom Validation Errors:</h5>
+            <pre>{{validationResult.details.customErrors | json}}</pre>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Split Tab -->
+  <div *ngIf="activeTab === 'split'" class="tab-content">
+    <h2>✂️ Train/Test Split</h2>
+    
+    <ion-list>
+      <!-- Train/Test Ratio -->
+      <ion-item>
+        <ion-label>Train/Test Ratio: {{splitOptions.trainRatio}}/{{100 - splitOptions.trainRatio}}</ion-label>
+        <ion-range 
+          min="50" 
+          max="95" 
+          step="5" 
+          [(ngModel)]="splitOptions.trainRatio"
+          pin>
+          <ion-label slot="start">50%</ion-label>
+          <ion-label slot="end">95%</ion-label>
+        </ion-range>
+      </ion-item>
+      
+      <!-- Shuffle Data -->
+      <ion-item>
+        <ion-label>🔀 Shuffle Data</ion-label>
+        <ion-toggle [(ngModel)]="splitOptions.shuffle"></ion-toggle>
+      </ion-item>
+      
+      <!-- Stratify By -->
+      <ion-item>
+        <ion-label>Stratify By</ion-label>
+        <ion-select [(ngModel)]="splitOptions.stratifyBy" interface="popover">
+          <ion-select-option [value]="undefined">None</ion-select-option>
+          <ion-select-option *ngFor="let col of columns" [value]="col">
+            {{col}}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <!-- Random Seed -->
+      <ion-item>
+        <ion-label>Random Seed</ion-label>
+        <ion-input type="number" [(ngModel)]="splitOptions.randomState"></ion-input>
+      </ion-item>
+    </ion-list>
+    
+    <ion-button expand="block" (click)="runSplit()" [disabled]="isLoading">
+      <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+      <span *ngIf="!isLoading">Split Dataset</span>
+    </ion-button>
+    
+    <!-- Split Results -->
+    <ion-card *ngIf="splitResult">
+      <ion-card-header>
+        <ion-card-title>Split Results</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-text color="primary">
+          <h3>Train Set: {{splitResult.trainCount}} rows</h3>
+          <h3>Test Set: {{splitResult.testCount}} rows</h3>
+        </ion-text>
+        
+        <ion-note *ngIf="splitResult.message">
+          {{splitResult.message}}
+        </ion-note>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

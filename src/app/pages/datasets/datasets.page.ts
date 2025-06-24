@@ -39,8 +39,13 @@ export class DatasetsComponent implements OnInit {
     this.datasetService.getAllDatasets().subscribe({
       next: (data) => {
         console.log('Received datasets:', data);
-        this.datasets = data;
-        this.filteredDatasets = data;
+        // Process each dataset to ensure thumbnail URLs are properly formatted
+        this.datasets = data.map(dataset => ({
+          ...dataset,
+          // Add a default thumbnail if none exists
+          thumbnailBase64: dataset.thumbnailBase64 || 'assets/images/default-dataset.png'
+        }));
+        this.filteredDatasets = [...this.datasets];
         this.loading = false;
       },
       error: (err) => {
@@ -52,14 +57,11 @@ export class DatasetsComponent implements OnInit {
   }
 
   handleSearch(event: any) {
-    const searchTerm = event.target.value.toLowerCase();
-    this.searchTerm = searchTerm;
-    
+    const searchTerm = event?.target?.value?.toLowerCase() || '';
     if (!searchTerm) {
-      this.filteredDatasets = this.datasets;
+      this.filteredDatasets = [...this.datasets];
       return;
     }
-
     this.filteredDatasets = this.datasets.filter(dataset => {
       const searchableFields = [
         dataset.datasetName,

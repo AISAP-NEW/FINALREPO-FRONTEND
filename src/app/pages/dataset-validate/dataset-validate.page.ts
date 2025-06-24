@@ -3,6 +3,36 @@ import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatasetService, ValidationResponse } from '../../services/dataset.service';
+import { FormsModule } from '@angular/forms';
+import { ToastService } from '../../services/toast.service';
+
+/**
+ * ✅ Dataset Validation Page — AI Model Management System
+ * 
+ * 🧠 Purpose:
+ * - Validate a dataset by checking CSV rows for formatting consistency.
+ * - Backend returns number of errors, their row indices, and status ("Passed" or "Failed").
+ * 
+ * ✅ Backend Endpoint:
+ * - POST /Dataset/validate/{datasetId}
+ * - Returns:
+ *   {
+ *     status: "Passed" | "Failed",
+ *     errorCount: number,
+ *     errorLines: number[],
+ *     totalRows: number,
+ *     validationId: string
+ *   }
+ * 
+ * 📦 Cursor Tasks:
+ * - Trigger validation on button click.
+ * - Display result summary with:
+ *    - Pass/fail status
+ *    - Total rows
+ *    - Number of errors
+ *    - Top 10 invalid row indices
+ * - Handle errors gracefully.
+ */
 
 @Component({
   selector: 'app-dataset-validate',
@@ -49,10 +79,10 @@ import { DatasetService, ValidationResponse } from '../../services/dataset.servi
                     <p>{{ validationResult.errorCount }}</p>
                   </ion-label>
                 </ion-item>
-                <ion-item *ngIf="validationResult.errorLines?.length">
+                <ion-item>
                   <ion-label>
-                    <h2>Error Lines</h2>
-                    <p>{{ validationResult.errorLines.join(', ') }}</p>
+                    <h2>Invalid Rows</h2>
+                    <p>{{ validationResult.errorLines?.length ? validationResult.errorLines.slice(0, 10).join(', ') : 'None' }}</p>
                   </ion-label>
                 </ion-item>
               </ion-list>
@@ -66,29 +96,11 @@ import { DatasetService, ValidationResponse } from '../../services/dataset.servi
     .error-message {
       color: var(--ion-color-danger);
       font-size: 14px;
-      margin: 16px 0;
     }
 
     .validation-results {
-      ion-card {
-        margin: 16px 0;
-      }
-
-      ion-card-title {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .status-badge {
-        font-size: 14px;
-        padding: 4px 8px;
-        border-radius: 12px;
-      }
-
       h2 {
         font-size: 16px;
-        font-weight: 500;
         margin: 0 0 4px 0;
       }
 
@@ -98,9 +110,14 @@ import { DatasetService, ValidationResponse } from '../../services/dataset.servi
         margin: 0;
       }
     }
+
+    .status-badge {
+      font-size: 14px;
+      margin-left: 8px;
+    }
   `],
   standalone: true,
-  imports: [CommonModule, IonicModule]
+  imports: [CommonModule, IonicModule, FormsModule]
 })
 export class DatasetValidatePage implements OnInit {
   datasetId: string | null = null;
@@ -111,32 +128,47 @@ export class DatasetValidatePage implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private datasetService: DatasetService
-  ) {}
-
-  ngOnInit() {
+    private datasetService: DatasetService,
+    private toastService: ToastService
+  ) {
     this.datasetId = this.route.snapshot.paramMap.get('id');
   }
 
+  ngOnInit() {}
+
+  /**
+   * 🚦 Triggers dataset validation by calling backend.
+   * 
+   * - Uses: DatasetService.validateDataset(datasetId)
+   * - Displays validation summary (status, error count, error lines).
+   * - Shows error toast/message on failure.
+   */
   startValidation() {
     if (!this.datasetId) {
-      this.error = 'Dataset ID is missing';
+      this.error = 'No dataset ID provided';
       return;
     }
 
     this.validating = true;
     this.error = null;
-    this.validationResult = null;
 
     this.datasetService.validateDataset(this.datasetId).subscribe({
       next: (response) => {
         this.validating = false;
         this.validationResult = response;
+        
+        // Show success toast
+        this.toastService.presentToast(
+          response.status === 'Passed' ? 'success' : 'warning',
+          `Validation ${response.status.toLowerCase()}: ${response.errorCount} errors found`,
+          3000
+        );
       },
       error: (err) => {
         this.validating = false;
-        this.error = 'Error validating dataset: ' + (err.error?.message || err.message || 'Unknown error');
+        this.error = err.error?.message || err.message || 'Failed to validate dataset';
+        console.error('Validation error:', err);
       }
     });
   }
-} 
+}

@@ -16,7 +16,6 @@ import {
   IonButtons,
   IonMenuButton,
   IonSearchbar,
-  IonChip,
   IonBadge,
   AlertController,
   ModalController,
@@ -205,8 +204,12 @@ import { ClientProjectFormComponent } from './client-project-form/client-project
     IonButtons,
     IonMenuButton,
     IonSearchbar,
-    IonChip,
-    IonBadge
+    IonBadge,
+    // These components are used in modal dialogs and need to be imported
+    // even though they're not used directly in the template
+    ClientFormComponent,
+    ClientDetailsComponent,
+    ClientProjectFormComponent
   ]
 })
 export class ClientsComponent implements OnInit {
