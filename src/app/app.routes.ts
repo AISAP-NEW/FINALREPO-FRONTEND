@@ -60,8 +60,13 @@ export const routes: Routes = [
       },
       {
         path: 'datasets/:id',
-        loadComponent: () => import('./pages/dataset-detail/dataset-detail.page')
-          .then(m => m.DatasetDetailPage)
+        loadComponent: () => import('./pages/dataset-details/dataset-details.page')
+          .then(m => m.DatasetDetailsPage)
+      },
+      {
+        path: 'datasets/:id/details',
+        loadComponent: () => import('./pages/dataset-details/dataset-details.page')
+          .then(m => m.DatasetDetailsPage)
       },
       {
         path: 'datasets/:id/preprocess',

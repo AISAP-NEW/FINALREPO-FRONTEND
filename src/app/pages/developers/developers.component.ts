@@ -237,8 +237,10 @@ import type { OverlayEventDetail } from '@ionic/core';
     IonModal,
     IonButtons,
     IonButton,
-    AssignToProjectComponent,
-    IonSearchbar
+    IonSearchbar,
+    // This component is used in modal dialogs and needs to be imported
+    // even though it's not used directly in the template
+    AssignToProjectComponent
   ]
 })
 export class DevelopersComponent implements OnInit {

@@ -18,6 +18,101 @@
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
+/* Modal Styles */
+.auto-height {
+  --height: auto;
+  --border-radius: 16px;
+  --max-height: 90vh;
+  --width: 90%;
+  --max-width: 600px;
+  
+  &::part(content) {
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+  
+  &::part(handle) {
+    background: var(--ion-color-medium);
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    margin: 12px auto;
+  }
+}
+
+/* Form Elements */
+ion-item {
+  --border-radius: 8px;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 12px;
+  
+  &.item-has-focus {
+    --highlight-background: var(--ion-color-primary);
+  }
+}
+
+/* Buttons */
+ion-button {
+  --border-radius: 8px;
+  font-weight: 600;
+  text-transform: none;
+  height: 48px;
+  
+  &[size="small"] {
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+/* Tabs */
+ion-segment {
+  --background: var(--ion-color-light);
+  border-radius: 8px;
+  padding: 4px;
+  margin: 16px 0;
+  
+  ion-segment-button {
+    --color: var(--ion-color-medium);
+    --color-checked: var(--ion-color-primary);
+    --indicator-color: var(--ion-color-primary-shade);
+    --indicator-height: 3px;
+    --border-radius: 8px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    
+    &::part(indicator) {
+      bottom: 4px;
+      height: 3px;
+      width: 50%;
+      left: 25%;
+    }
+  }
+}
+
+/* Cards */
+ion-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin: 16px 0;
+  
+  ion-card-header {
+    padding: 16px 16px 8px;
+    
+    ion-card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+  }
+  
+  ion-card-content {
+    padding: 16px;
+  }
+}
+
 /* Optional CSS utils that can be commented out */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
