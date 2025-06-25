@@ -26,7 +26,8 @@ import {
   notificationsOutline,
   logOutOutline,
   keyOutline,
-  businessOutline
+  businessOutline,
+  analyticsOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -68,6 +69,11 @@ import { CommonModule } from '@angular/common';
               <ion-item routerLink="/developers" routerLinkActive="selected" detail="false">
                 <ion-icon slot="start" name="people-outline"></ion-icon>
                 <ion-label>Developers</ion-label>
+              </ion-item>
+
+              <ion-item routerLink="/reports" routerLinkActive="selected" detail="false">
+                <ion-icon slot="start" name="analytics-outline"></ion-icon>
+                <ion-label>Reports</ion-label>
               </ion-item>
 
               <ion-item *ngIf="isLeadDeveloper()" routerLink="/access-levels" routerLinkActive="selected" detail="false">
@@ -197,7 +203,8 @@ export class MainLayoutComponent {
       notificationsOutline,
       logOutOutline,
       keyOutline,
-      businessOutline
+      businessOutline,
+      analyticsOutline
     });
 
     // Subscribe to unread notifications count

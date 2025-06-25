@@ -84,6 +84,11 @@ export const routes: Routes = [
           .then(m => m.DevelopersComponent)
       },
       {
+        path: 'reports',
+        loadComponent: () => import('./pages/reports/reports.component')
+          .then(m => m.ReportsComponent)
+      },
+      {
         path: 'access-levels',
         loadComponent: () => import('./pages/access-levels/access-levels.component')
           .then(m => m.AccessLevelsComponent)
