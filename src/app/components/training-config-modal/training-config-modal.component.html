@@ -1,0 +1,69 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Training Configuration</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="onDismiss()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="trainingForm" (ngSubmit)="onSubmit()">
+    <!-- Learning Rate -->
+    <ion-item>
+      <ion-label position="floating">Learning Rate</ion-label>
+      <ion-input 
+        type="number" 
+        formControlName="learningRate" 
+        step="0.0001" 
+        min="0.0001" 
+        max="1"
+        required>
+      </ion-input>
+      <ion-note slot="helper">Recommended: 0.001 (smaller values train slower but more accurately)</ion-note>
+    </ion-item>
+
+    <!-- Epochs -->
+    <ion-item>
+      <ion-label>Epochs</ion-label>
+      <ion-select formControlName="epochs" interface="popover">
+        <ion-select-option *ngFor="let epoch of epochsOptions" [value]="epoch">
+          {{ epoch }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Batch Size -->
+    <ion-item>
+      <ion-label>Batch Size</ion-label>
+      <ion-select formControlName="batchSize" interface="popover">
+        <ion-select-option *ngFor="let size of batchSizes" [value]="size">
+          {{ size }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Dataset Selection -->
+    <ion-item>
+      <ion-label>Dataset</ion-label>
+      <ion-select formControlName="datasetValidationId" interface="popover" required>
+        <ion-select-option *ngFor="let dataset of datasetOptions" [value]="dataset.id">
+          {{ dataset.name }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+  </form>
+</ion-content>
+
+<ion-footer class="ion-padding">
+  <ion-button 
+    expand="block" 
+    color="primary" 
+    (click)="onSubmit()"
+    [disabled]="!trainingForm.valid || isLoading">
+    <ion-spinner name="dots" *ngIf="isLoading"></ion-spinner>
+    <span *ngIf="!isLoading">Start Training</span>
+  </ion-button>
+</ion-footer>

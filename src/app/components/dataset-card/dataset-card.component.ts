@@ -22,6 +22,17 @@ import { ModalController } from '@ionic/angular';
   ]
 })
 export class DatasetCardComponent implements OnChanges {
+
+  // Opens the DatasetOperationsModal for this dataset
+  async openOperationsModal() {
+    const modal = await this.modalCtrl.create({
+      component: (await import('../dataset-operations-modal/dataset-operations-modal.component')).DatasetOperationsModal,
+      componentProps: {
+        datasetId: this.dataset.datasetId
+      }
+    });
+    return modal.present();
+  }
   @Input() dataset!: Dataset;
   @Input() isSelected = false;
   

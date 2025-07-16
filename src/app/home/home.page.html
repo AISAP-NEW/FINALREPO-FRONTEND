@@ -7,7 +7,8 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<div class="app-bg"></div>
+<ion-content class="ai-glass">
   <!-- Summary Cards -->
   <ion-grid class="ion-padding">
     <ion-row>
@@ -84,7 +85,12 @@
                 </ion-avatar>
                 <ion-label>
                   <h3>{{ activity.action }}</h3>
-                  <p>{{ activity.timestamp | date:'short' }}</p>
+                  <p>
+  <ng-container *ngIf="activity.timestamp && (activity.timestamp | date:'short') !== 'Invalid Date'; else invalidDate">
+    {{ activity.timestamp | date:'short' }}
+  </ng-container>
+  <ng-template #invalidDate>N/A</ng-template>
+</p>
                 </ion-label>
               </ion-item>
             </ion-list>

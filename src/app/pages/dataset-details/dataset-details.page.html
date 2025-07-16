@@ -16,6 +16,9 @@
       <ion-segment-button value="schema">
         <ion-label>Schema</ion-label>
       </ion-segment-button>
+      <ion-segment-button value="operations">
+        <ion-label>Operations</ion-label>
+      </ion-segment-button>
     </ion-segment>
   </ion-toolbar>
 </ion-header>
@@ -39,6 +42,50 @@
     </ion-card-content>
   </ion-card>
 
+  <!-- Dataset Metadata -->
+  <ion-card *ngIf="!isLoading && dataset" class="dataset-metadata">
+    <ion-card-header>
+      <ion-card-title>{{ dataset.datasetName || 'Unnamed Dataset' }}</ion-card-title>
+      <ion-card-subtitle *ngIf="dataset.description">{{ dataset.description }}</ion-card-subtitle>
+    </ion-card-header>
+    
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6">
+            <ion-item lines="none">
+              <ion-icon name="document-text-outline" slot="start"></ion-icon>
+              <ion-label>File Type</ion-label>
+              <ion-note slot="end">{{ dataset.fileType || 'Unknown' }}</ion-note>
+            </ion-item>
+            <ion-item lines="none">
+              <ion-icon name="calendar-outline" slot="start"></ion-icon>
+              <ion-label>Created</ion-label>
+              <ion-note slot="end">{{ dataset.createdAt | date:'mediumDate' }}</ion-note>
+            </ion-item>
+          </ion-col>
+          <ion-col size="6">
+            <ion-item lines="none">
+              <ion-icon name="stats-chart-outline" slot="start"></ion-icon>
+              <ion-label>Size</ion-label>
+              <ion-note slot="end">{{ dataset.totalFileSizeKB / 1024 | number:'1.1-1' }} MB</ion-note>
+            </ion-item>
+            <ion-item lines="none">
+              <ion-icon [name]="dataset.isValidated ? 'checkmark-circle' : 'alert-circle'" 
+                       [color]="dataset.isValidated ? 'success' : 'warning'" 
+                       slot="start">
+              </ion-icon>
+              <ion-label>Validation</ion-label>
+              <ion-note slot="end" [color]="dataset.isValidated ? 'success' : 'warning'">
+                {{ dataset.isValidated ? 'Validated' : 'Not Validated' }}
+              </ion-note>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
   <!-- Preview Tab -->
   <div *ngIf="!isLoading && activeTab === 'preview'" class="tab-content">
     <!-- Error State -->
@@ -46,7 +93,9 @@
       <ion-icon name="warning-outline" size="large" color="warning"></ion-icon>
       <h3>No Preview Data Available</h3>
       <p class="ion-text-wrap">Unable to load preview data for this dataset.</p>
-      <ion-button (click)="refreshDataset()" fill="clear">
+      <ion-button (click)="datasetId && loadDatasetPreview(datasetId)" 
+                 [disabled]="!datasetId" 
+                 fill="clear">
         <ion-icon slot="start" name="refresh"></ion-icon>
         Try Again
       </ion-button>
@@ -56,6 +105,21 @@
     <div *ngIf="hasPreviewData" class="preview-container">
       <ion-card>
         <ion-card-content>
+          <div class="preview-toolbar ion-margin-bottom">
+            <ion-button color="primary" size="small" (click)="exportPreviewToCsv()">
+              <ion-icon name="download-outline" slot="start"></ion-icon>
+              Export CSV
+            </ion-button>
+            <div class="pagination-controls" *ngIf="previewData.totalRows > previewRowCount">
+              <ion-button size="small" fill="clear" [disabled]="previewPage === 1" (click)="changePreviewPage(previewPage - 1)">
+                <ion-icon name="chevron-back-outline"></ion-icon>
+              </ion-button>
+              <span>Page {{ previewPage }} of {{ totalPreviewPages }}</span>
+              <ion-button size="small" fill="clear" [disabled]="previewPage === totalPreviewPages" (click)="changePreviewPage(previewPage + 1)">
+                <ion-icon name="chevron-forward-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
           <div class="table-responsive">
             <table class="preview-table">
               <thead>
@@ -69,8 +133,8 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of previewData.data; let i = index" class="data-row">
-                  <td class="row-number">{{ row['rowNumber'] || (i + 1) }}</td>
+                <tr *ngFor="let row of pagedPreviewRows; let i = index" class="data-row">
+                  <td class="row-number">{{ row['rowNumber'] || ((previewPage - 1) * previewRowsToShow + i + 1) }}</td>
                   <td *ngFor="let header of previewData.headers" class="data-cell">
                     <div class="cell-content" [title]="getCellValue(row, header) | safeHtml" [innerHTML]="getCellValue(row, header) | safeHtml">
                     </div>
@@ -90,35 +154,266 @@
 
   <!-- Schema Tab -->
   <div *ngIf="!isLoading && activeTab === 'schema'" class="tab-content">
-    <ion-accordion-group>
-      <ion-accordion *ngFor="let field of previewData.schema">
-        <ion-item slot="header" color="light">
-          <ion-label>
-            <h3>{{ field.name }}</h3>
-            <p>{{ field.type }} {{ field.nullable ? '(nullable)' : '' }}</p>
-          </ion-label>
-        </ion-item>
-        <div class="ion-padding" slot="content">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="12" size-md="6">
-                <p><strong>Type:</strong> {{ field.type }}</p>
-                <p><strong>Nullable:</strong> {{ field.nullable ? 'Yes' : 'No' }}</p>
-              </ion-col>
-              <ion-col size="12" size-md="6">
-                <p><strong>Sample Values:</strong></p>
-                <ul>
-                  <li *ngFor="let value of field.sampleValues">{{ value }}</li>
-                </ul>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </div>
-      </ion-accordion>
-    </ion-accordion-group>
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Dataset Schema</ion-card-title>
+        <ion-card-subtitle>Structure and data types</ion-card-subtitle>
+      </ion-card-header>
 
-    <ion-note *ngIf="!previewData.schema?.length" class="ion-margin-top">
-      No schema information available
-    </ion-note>
+      <ion-card-content>
+        <div *ngIf="previewData.schema.length > 0; else noSchema">
+          <ion-list lines="full">
+            <ion-item *ngFor="let field of previewData.schema">
+              <ion-label>
+                <h3>{{ field.name }}</h3>
+                <p>
+                  <ion-badge [color]="field.nullable ? 'medium' : 'primary'">
+                    {{ field.nullable ? 'Optional' : 'Required' }}
+                  </ion-badge>
+                  <ion-badge color="tertiary" class="ion-margin-start">
+                    {{ field.type }}
+                  </ion-badge>
+                </p>
+              </ion-label>
+              <ion-note slot="end" *ngIf="field.sampleValues" class="sample-values">
+                <div class="sample-values">
+                  <ion-chip *ngFor="let value of field.sampleValues.slice(0, 3)" class="sample-value">
+                    {{ value | truncate:15 }}
+                  </ion-chip>
+                  <ion-chip *ngIf="field.sampleValues.length > 3" color="medium">
+                    +{{ field.sampleValues.length - 3 }} more
+                  </ion-chip>
+                </div>
+              </ion-note>
+            </ion-item>
+          </ion-list>
+        </div>
+
+        <ng-template #noSchema>
+          <div class="ion-text-center ion-padding">
+            <ion-icon name="alert-circle-outline" size="large" color="medium"></ion-icon>
+            <p>No schema information available for this dataset.</p>
+            <ion-button (click)="inferSchemaFromPreviewData()" fill="outline" size="small" class="ion-margin-top">
+              <ion-icon slot="start" name="analytics-outline"></ion-icon>
+              Infer Schema
+            </ion-button>
+          </div>
+        </ng-template>
+      </ion-card-content>
+    </ion-card>
+  </div>
+  
+  <!-- Operations Tab -->
+  <div *ngIf="!isLoading && activeTab === 'operations'" class="tab-content">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Dataset Operations</ion-card-title>
+        <ion-card-subtitle>Validate, split, and export your dataset</ion-card-subtitle>
+      </ion-card-header>
+      
+      <ion-card-content>
+        <!-- Validation Section -->
+        <ion-accordion-group>
+          <ion-accordion value="validation">
+            <ion-item slot="header" color="light">
+              <ion-icon name="checkmark-circle-outline" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h3>Data Validation</h3>
+                <p>Check data quality and integrity</p>
+              </ion-label>
+              <ion-badge *ngIf="validationResult" [color]="getValidationBadgeClass()" slot="end">
+                {{ validationResult.errorCount || 0 }} {{ validationResult.errorCount === 1 ? 'issue' : 'issues' }}
+              </ion-badge>
+            </ion-item>
+            
+            <div class="ion-padding" slot="content">
+              <p>Run validation checks on your dataset to identify any data quality issues.</p>
+              
+              <div *ngIf="validationResult" class="validation-result ion-margin-top">
+                <ion-item lines="none">
+                  <ion-icon 
+                    [name]="validationResult?.status === 'success' ? 'checkmark-circle' : 'alert-circle'" 
+                    [color]="getStatusColor(validationResult?.status || '')" 
+                    slot="start">
+                  </ion-icon>
+                  <ion-label>
+                    <h3>Validation {{ (validationResult?.status || '') | titlecase }}</h3>
+                    <p *ngIf="validationResult?.message">{{ validationResult.message }}</p>
+                  </ion-label>
+                </ion-item>
+                
+                <ion-list lines="none" class="ion-margin-top">
+                  <ion-item>
+                    <ion-label>Total Rows</ion-label>
+                    <ion-note slot="end">{{ (validationResult?.totalRows || 0) | number }}</ion-note>
+                  </ion-item>
+                  
+                  <ion-item>
+                    <ion-label>Issues Found</ion-label>
+                    <ion-note 
+                      slot="end" 
+                      [color]="(validationResult?.errorCount || 0) > 0 ? 'danger' : 'success'">
+                      {{ (validationResult?.errorCount || 0) | number }}
+                    </ion-note>
+                  </ion-item>
+                  
+                  <ion-item *ngIf="validationResult?.timestamp">
+                    <ion-label>Last Validated</ion-label>
+                    <ion-note slot="end">{{ validationResult.timestamp | date:'short' }}</ion-note>
+                  </ion-item>
+                </ion-list>
+                
+                <ion-button 
+                  expand="block" 
+                  color="primary" 
+                  (click)="showValidationResults(validationResult)" 
+                  [disabled]="!validationResult || (validationResult?.errorCount || 0) === 0" 
+                  class="ion-margin-top">
+                  <ion-icon slot="start" name="list-outline"></ion-icon>
+                  View Details
+                </ion-button>
+                
+                <ion-button 
+                  expand="block" 
+                  fill="outline" 
+                  color="medium" 
+                  (click)="validateDataset()" 
+                  class="ion-margin-top">
+                  <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                  Re-run Validation
+                </ion-button>
+              </div>
+              
+              <ion-button 
+                *ngIf="!validationResult" 
+                expand="block" 
+                color="primary" 
+                (click)="validateDataset()" 
+                [disabled]="isValidationInProgress || !datasetId" 
+                class="ion-margin-top">
+                <ion-spinner *ngIf="isValidationInProgress" name="crescent" slot="start"></ion-spinner>
+                <ion-icon *ngIf="!isValidationInProgress" name="checkmark-circle-outline" slot="start"></ion-icon>
+                {{ isValidationInProgress ? 'Validating...' : 'Run Validation' }}
+              </ion-button>
+              
+              <ion-note *ngIf="validationError" color="danger" class="ion-margin-top block">
+                <ion-icon name="warning-outline"></ion-icon>
+                {{ validationError }}
+              </ion-note>
+            </div>
+          </ion-accordion>
+          
+          <!-- Split Section -->
+          <ion-accordion value="split">
+            <ion-item slot="header" color="light">
+              <ion-icon name="git-branch-outline" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h3>Train/Test Split</h3>
+                <p>Split your dataset into training and testing sets</p>
+              </ion-label>
+              <ion-badge *ngIf="dataset?.splitStatus === 'complete'" color="success" slot="end">
+                SPLIT
+              </ion-badge>
+            </ion-item>
+            <div class="ion-padding" slot="content">
+              <p>Split your dataset into training and testing sets for model development. The training set will be used to train your model, while the testing set will be used to evaluate its performance.</p>
+              
+              <div class="ion-margin-vertical">
+                <ion-label>Select Split Ratio:</ion-label>
+                <div class="ion-margin-top ion-justify-content-center">
+                  <ion-segment [(ngModel)]="selectedRatio" (ionChange)="onRatioChange($event)">
+                    <ion-segment-button *ngFor="let ratio of splitRatios" [value]="ratio">
+                      <ion-label>{{ratio.label}}</ion-label>
+                    </ion-segment-button>
+                  </ion-segment>
+                </div>
+              </div>
+              
+              <ion-button expand="block" color="primary" 
+                         (click)="splitDataset(selectedRatio.train, selectedRatio.test)" 
+                         [disabled]="!datasetId || isSplitting"
+                         class="ion-margin-top">
+                <ion-spinner *ngIf="isSplitting" name="crescent" slot="start"></ion-spinner>
+                <ion-icon *ngIf="!isSplitting" name="git-branch-outline" slot="start"></ion-icon>
+                {{ isSplitting ? 'Splitting...' : 'Split Dataset' }}
+              </ion-button>
+              
+              <!-- Split Results -->
+              <ion-card *ngIf="splitResult" class="ion-margin-top">
+                <ion-card-header>
+                  <ion-card-title>Split Results</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+                  <ion-list>
+                    <ion-item>
+                      <ion-label>Training Set</ion-label>
+                      <ion-badge color="primary" slot="end">
+                        {{splitResult.TrainCount || 'N/A'}} ({{splitResult.TrainPercentage || 'N/A'}}%)
+                      </ion-badge>
+                    </ion-item>
+                    <ion-item>
+                      <ion-label>Testing Set</ion-label>
+                      <ion-badge color="secondary" slot="end">
+                        {{splitResult.TestCount || 'N/A'}} ({{splitResult.TestPercentage || 'N/A'}}%)
+                      </ion-badge>
+                    </ion-item>
+                    <ion-item *ngIf="splitResult.VersionId">
+                      <ion-label>Version ID</ion-label>
+                      <ion-text color="medium">
+                        <small>{{splitResult.VersionId}}</small>
+                      </ion-text>
+                    </ion-item>
+                  </ion-list>
+                </ion-card-content>
+              </ion-card>
+              
+              <ion-note *ngIf="splitError" color="danger" class="ion-margin-top block">
+                <ion-icon name="warning-outline"></ion-icon>
+                {{ splitError }}
+              </ion-note>
+                Dataset has been successfully split
+              </ion-note>
+            </div>
+          </ion-accordion>
+          
+          <!-- Export Section -->
+          <ion-accordion value="export">
+            <ion-item slot="header" color="light">
+              <ion-icon name="download-outline" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h3>Export Dataset</h3>
+                <p>Download your dataset in different formats</p>
+              </ion-label>
+            </ion-item>
+            <div class="ion-padding" slot="content">
+              <p>Export your dataset in various formats for further analysis or sharing. Choose the format that best suits your needs.</p>
+              
+              <ion-button expand="block" color="primary" (click)="downloadDataset('csv')" 
+                         class="ion-margin-top" [disabled]="!datasetId">
+                <ion-icon name="document-text-outline" slot="start"></ion-icon>
+                Download as CSV
+              </ion-button>
+              
+              <ion-button expand="block" color="secondary" (click)="downloadDataset('json')" 
+                         class="ion-margin-top" [disabled]="!datasetId">
+                <ion-icon name="code-outline" slot="start"></ion-icon>
+                Download as JSON
+              </ion-button>
+              
+              <ion-button expand="block" color="tertiary" (click)="downloadDataset('excel')" 
+                         class="ion-margin-top" [disabled]="!datasetId">
+                <ion-icon name="document-attach-outline" slot="start"></ion-icon>
+                Download as Excel
+              </ion-button>
+              
+              <ion-note color="medium" class="ion-margin-top block">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                Large datasets may take a moment to prepare for download.
+              </ion-note>
+            </div>
+          </ion-accordion>
+        </ion-accordion-group>
+      </ion-card-content>
+    </ion-card>
   </div>
 </ion-content>

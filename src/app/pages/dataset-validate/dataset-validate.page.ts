@@ -2,9 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DatasetService, ValidationResponse } from '../../services/dataset.service';
+import { DatasetService, ValidationResponse as BackendValidationResponse } from '../../services/dataset.service';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../services/toast.service';
+
+// Extended interface with normalized status
+type NormalizedValidationResponse = Omit<BackendValidationResponse, 'status'> & {
+  status: 'success' | 'error' | 'warning' | 'failed';
+  originalStatus: string;
+};
 
 /**
  * ✅ Dataset Validation Page — AI Model Management System
@@ -60,8 +66,8 @@ import { ToastService } from '../../services/toast.service';
             <ion-card-header>
               <ion-card-title>
                 Validation Results
-                <ion-badge [color]="validationResult.status === 'Passed' ? 'success' : 'danger'" class="status-badge">
-                  {{ validationResult.status }}
+                <ion-badge [color]="getStatusColor(validationResult.status)" class="status-badge">
+                  {{ getStatusDisplay(validationResult.status) }}
                 </ion-badge>
               </ion-card-title>
             </ion-card-header>
@@ -123,7 +129,7 @@ export class DatasetValidatePage implements OnInit {
   datasetId: string | null = null;
   validating = false;
   error: string | null = null;
-  validationResult: ValidationResponse | null = null;
+  validationResult: NormalizedValidationResponse | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -137,12 +143,59 @@ export class DatasetValidatePage implements OnInit {
   ngOnInit() {}
 
   /**
+   * Maps internal status to display text
+   */
+  getStatusDisplay(status: string): string {
+    switch (status) {
+      case 'success': return 'Passed';
+      case 'error': return 'Error';
+      case 'warning': return 'Warning';
+      case 'failed': return 'Failed';
+      default: return status;
+    }
+  }
+
+  /**
+   * Gets the color for a given status
+   */
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'success': return 'success';
+      case 'error':
+      case 'failed': return 'danger';
+      case 'warning': return 'warning';
+      default: return 'medium';
+    }
+  }
+
+  /**
    * 🚦 Triggers dataset validation by calling backend.
    * 
    * - Uses: DatasetService.validateDataset(datasetId)
    * - Displays validation summary (status, error count, error lines).
    * - Shows error toast/message on failure.
    */
+  private normalizeValidationResponse(response: BackendValidationResponse): NormalizedValidationResponse {
+    // Map the status to a normalized format
+    let normalizedStatus: 'success' | 'error' | 'warning' | 'failed';
+    const status = response.status.toLowerCase();
+    
+    if (status === 'passed') {
+      normalizedStatus = 'success';
+    } else if (status === 'error' || status === 'warning' || status === 'failed') {
+      normalizedStatus = status;
+    } else {
+      console.warn(`Unexpected status '${response.status}' received from server, defaulting to 'error'`);
+      normalizedStatus = 'error';
+    }
+    
+    return {
+      ...response,
+      status: normalizedStatus,
+      originalStatus: response.status
+    };
+  }
+
   startValidation() {
     if (!this.datasetId) {
       this.error = 'No dataset ID provided';
@@ -154,20 +207,28 @@ export class DatasetValidatePage implements OnInit {
 
     this.datasetService.validateDataset(this.datasetId).subscribe({
       next: (response) => {
-        this.validating = false;
-        this.validationResult = response;
-        
-        // Show success toast
-        this.toastService.presentToast(
-          response.status === 'Passed' ? 'success' : 'warning',
-          `Validation ${response.status.toLowerCase()}: ${response.errorCount} errors found`,
-          3000
-        );
+        try {
+          this.validationResult = this.normalizeValidationResponse(response);
+          
+          this.toastService.presentToast(
+            this.validationResult.status === 'success' ? 'success' : 'warning',
+            `Validation ${this.getStatusDisplay(this.validationResult.status)}: ${this.validationResult.errorCount} errors found`,
+            3000
+          );
+        } catch (error) {
+          console.error('Error normalizing validation response:', error);
+          this.error = 'Failed to process validation results';
+          this.toastService.presentToast('error', 'Failed to process validation results', 3000);
+        } finally {
+          this.validating = false;
+        }
       },
       error: (err) => {
-        this.validating = false;
-        this.error = err.error?.message || err.message || 'Failed to validate dataset';
         console.error('Validation error:', err);
+        const errorMessage = err?.message || 'Failed to validate dataset';
+        this.error = errorMessage;
+        this.validating = false;
+        this.toastService.presentToast('error', errorMessage, 3000);
       }
     });
   }

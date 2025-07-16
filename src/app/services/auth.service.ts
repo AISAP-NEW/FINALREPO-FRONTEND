@@ -6,8 +6,8 @@ import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface LoginDTO {
-  username: string;
-  password: string;
+  Username: string;
+  Password: string;
 }
 
 export interface RegisterDTO {
@@ -39,13 +39,23 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  // Add these for API response compatibility
+  UserId?: number;
+  Username?: string;
+  Email?: string;
+  Role?: string;
 }
 
 export interface LoginResponse {
-  userId: number;
-  username: string;
-  email: string;
-  role: string;
+  UserId: number;
+  Username: string;
+  Email: string;
+  Role: string;
+  // Add these for backward compatibility
+  userId?: number;
+  username?: string;
+  email?: string;
+  role?: string;
 }
 
 export interface RegisterResponse {
@@ -59,7 +69,7 @@ export interface RegisterResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/api/user`;
+  private apiUrl = `${environment.apiUrl}/api/User`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
 
@@ -88,11 +98,18 @@ export class AuthService {
       statusText: error.statusText,
       error: error.error,
       message: error.message,
-      url: error.url
+      url: error.url,
+      headers: error.headers,
+      name: error.name
     });
 
     if (error.status === 0) {
       return throwError(() => new Error('Unable to connect to the server. Please check your internet connection.'));
+    }
+    
+    if (error.status === 401) {
+      const serverMessage = error.error?.message || 'Invalid credentials';
+      return throwError(() => new Error(`Authentication failed: ${serverMessage}`));
     }
     
     if (error.status === 404) {
@@ -101,23 +118,41 @@ export class AuthService {
     
     if (error.error instanceof ErrorEvent) {
       // Client-side error
-      return throwError(() => new Error(error.error.message));
+      return throwError(() => new Error(`Client error: ${error.error.message}`));
     }
     
     // Server-side error
-    const message = error.error?.message || error.message || 'An unexpected error occurred';
+    let message = 'An unexpected error occurred';
+    if (error.error?.message) {
+      message = error.error.message;
+    } else if (error.message) {
+      message = error.message;
+    }
+    
     return throwError(() => new Error(message));
   }
 
   login(credentials: LoginDTO): Observable<LoginResponse> {
-    console.log('Attempting login for user:', credentials.username);
+    console.log('Attempting login for user:', credentials.Username);
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, this.httpOptions)
       .pipe(
-        tap(response => {
+        tap((response: LoginResponse) => {
           console.log('Login successful:', response);
-          this.currentUserSubject.next(response);
+          // Map the API response to our User model
+          const user: User = {
+            userId: response.UserId || response.userId || 0,
+            username: response.Username || response.username || '',
+            email: response.Email || response.email || '',
+            role: response.Role || response.role || 'user',
+            // Include the original response properties for backward compatibility
+            ...response
+          };
+          
+          this.currentUserSubject.next(user);
           this.isAuthenticatedSubject.next(true);
-          localStorage.setItem('currentUser', JSON.stringify(response));
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          
+          // Navigate to home page
           this.router.navigate(['/home']);
         }),
         catchError(this.handleError)
@@ -209,6 +244,7 @@ export class AuthService {
     if (!user) {
       throw new Error('No user logged in');
     }
-    return user.userId;
+    // Handle both userId and UserId properties
+    return user.userId || user.UserId || 0;
   }
 } 

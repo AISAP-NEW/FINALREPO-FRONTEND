@@ -1,0 +1,119 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/models"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Upload New Model</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Model Information</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Model Name <ion-text color="danger">*</ion-text></ion-label>
+          <ion-input formControlName="name" type="text" placeholder="Enter model name"></ion-input>
+          <ion-note slot="error" *ngIf="uploadForm.get('name')?.touched && uploadForm.get('name')?.errors?.['required']">
+            Model name is required
+          </ion-note>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Description <ion-text color="danger">*</ion-text></ion-label>
+          <ion-textarea formControlName="description" rows="3" placeholder="Describe your model"></ion-textarea>
+          <ion-note slot="error" *ngIf="uploadForm.get('description')?.touched && uploadForm.get('description')?.errors?.['required']">
+            Description is required
+          </ion-note>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Framework <ion-text color="danger">*</ion-text></ion-label>
+          <ion-select formControlName="framework" placeholder="Select framework">
+            <ion-select-option *ngFor="let framework of frameworks" [value]="framework">
+              {{ framework }}
+            </ion-select-option>
+          </ion-select>
+          <ion-note slot="error" *ngIf="uploadForm.get('framework')?.touched && uploadForm.get('framework')?.errors?.['required']">
+            Framework is required
+          </ion-note>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Version</ion-label>
+          <ion-input formControlName="version" type="text" placeholder="e.g., 1.0.0"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Tags</ion-label>
+          <ion-input formControlName="tags" placeholder="Comma-separated tags (e.g., image-classification, resnet)"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Dataset (Optional)</ion-label>
+          <ion-select formControlName="datasetId" placeholder="Select dataset" [disabled]="isDatasetsLoading">
+            <ion-select-option value="">None</ion-select-option>
+            <ion-select-option *ngFor="let dataset of datasets" [value]="dataset.datasetId">
+              {{ dataset.datasetName }}
+            </ion-select-option>
+          </ion-select>
+          <ion-spinner *ngIf="isDatasetsLoading" slot="end" name="crescent"></ion-spinner>
+          <ion-note slot="helper">
+            {{ datasets.length }} dataset{{ datasets.length !== 1 ? 's' : '' }} available
+          </ion-note>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Model File</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div 
+          class="drop-zone" 
+          [class.dragging]="isDragging"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="fileInput.click()"
+        >
+          <input 
+            #fileInput
+            type="file" 
+            style="display: none" 
+            (change)="onFileSelected($event)"
+            accept="*/*"
+          >
+          
+          <ion-icon name="cloud-upload" size="large"></ion-icon>
+          
+          <div class="upload-text">
+            <h3>{{ selectedFile ? 'File selected: ' + selectedFile.name : 'Drag & drop any file here' }}</h3>
+            <p>or click to browse files</p>
+            <p class="file-types">Maximum file size: 500MB</p>
+          </div>
+          
+          <ion-button *ngIf="selectedFile" fill="clear" color="danger" (click)="removeFile(); $event.stopPropagation()">
+            <ion-icon name="trash" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <div class="ion-padding">
+      <ion-button 
+        expand="block" 
+        type="submit" 
+        [disabled]="uploadForm.invalid || !selectedFile || isLoading"
+        class="ion-margin-top"
+      >
+        <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+        <span *ngIf="!isLoading">Upload Model</span>
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

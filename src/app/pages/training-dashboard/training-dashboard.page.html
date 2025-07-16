@@ -1,0 +1,50 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>Training Dashboard</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<div class="app-bg"></div>
+<ion-content [fullscreen]="true" class="ai-glass">
+  <ion-card class="ai-glass ai-glow ion-margin">
+    <ion-card-header>
+      <ion-card-title>Model Status: {{ status }}</ion-card-title>
+    </ion-card-header>
+  </ion-card>
+
+  <ion-grid>
+    <ion-row>
+      <ion-col>
+        <ion-button expand="block" color="primary" (click)="resumeTraining()">
+          <ion-icon name="play-outline" slot="start"></ion-icon>
+          Resume
+        </ion-button>
+      </ion-col>
+      <ion-col>
+        <ion-button expand="block" color="danger" (click)="stopTraining()">
+          <ion-icon name="stop-outline" slot="start"></ion-icon>
+          Stop
+        </ion-button>
+      </ion-col>
+      <ion-col>
+        <ion-button expand="block" color="success" (click)="deployModel()">
+          <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+          Deploy
+        </ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-card class="ai-glass ion-margin">
+    <ion-card-header>
+      <ion-card-title>Training Logs</ion-card-title>
+    </ion-card-header>
+    <ion-card-content style="max-height: 300px; overflow-y: auto;">
+      <ion-list>
+        <ion-item *ngFor="let log of logs">
+          <ion-label>{{ log.timestamp | date:'short' }} - {{ log.message }}</ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
