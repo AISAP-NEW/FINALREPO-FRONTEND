@@ -66,15 +66,15 @@
             <ion-card-header>
               <ion-card-title>Column Stats</ion-card-title>
             </ion-card-header>
-            <ion-card-content *ngIf="previewData.schema?.length > 0; else noStats">
+            <ion-card-content *ngIf="previewData.schema.length > 0; else noStats">
   <ion-item lines="none" *ngFor="let stat of previewData.schema">
     <ion-label>
-      <h3>{{ stat.columnName }}</h3>
-      <p>Type: {{ stat.dataType }}</p>
-      <p>Unique: {{ stat.uniqueValues }}</p>
-      <p>Nulls: {{ stat.nullCount }}</p>
-      <p>Null %: {{ stat.nullPercentage }}%</p>
-      <p *ngIf="stat.sampleValues?.length">Sample: {{ stat.sampleValues.join(', ') }}</p>
+      <h3>{{ stat?.name || '-' }}</h3>
+      <p>Type: {{ stat?.type || '-' }}</p>
+      <p>Sample: {{ stat?.sampleValues?.join(', ') || '-' }}</p>
+      <p></p>
+      <p></p>
+      <p *ngIf="stat?.sampleValues?.length">Sample: {{ stat.sampleValues.join(', ') }}</p>
     </ion-label>
   </ion-item>
 </ion-card-content>
@@ -91,7 +91,7 @@
             </ion-card-header>
             <ion-card-content>
               <div class="table-container">
-                <table *ngIf="previewData.headers?.length > 0 && previewData.data?.length > 0; else noData">
+                <table *ngIf="previewData.headers.length > 0 && previewData.data.length > 0; else noData">
   <thead>
     <tr>
       <th *ngFor="let header of previewData.headers">{{ header }}</th>
@@ -114,7 +114,7 @@
     </ion-grid>
   </div>
 
-  <!-- Schema Tab Content -->
+  <!-- Schema Tab Content --> 
   <div *ngIf="activeTab === 'schema' && !isLoading">
     <!-- TODO: Add your schema rendering logic here -->
     <ion-card class="ion-margin-top">
@@ -123,14 +123,14 @@
       </ion-card-header>
       <ion-card-content>
         <ion-list>
-          <ion-item *ngFor="let schema of previewData?.schema">
+          <ion-item *ngFor="let schema of previewData.schema">
   <ion-label>
-    <h3>{{ schema.columnName }}</h3>
-    <p>Type: {{ schema.dataType }}</p>
-    <p>Unique: {{ schema.uniqueValues }}</p>
-    <p>Nulls: {{ schema.nullCount }}</p>
-    <p>Null %: {{ schema.nullPercentage }}%</p>
-    <p *ngIf="schema.sampleValues?.length">Sample: {{ schema.sampleValues.join(', ') }}</p>
+    <h3>{{ schema?.name || '-' }}</h3>
+    <p>Type: {{ schema?.type || '-' }}</p>
+    <p>Sample: {{ schema?.sampleValues?.join(', ') || '-' }}</p>
+    <p></p>
+    <p></p>
+    <p *ngIf="schema?.sampleValues?.length">Sample: {{ schema.sampleValues.join(', ') }}</p>
   </ion-label>
 </ion-item>
         </ion-list>

@@ -110,7 +110,7 @@ export class DatasetDetailsPage implements OnInit {
     totalRows: 0
   };
   previewRowsToShow = 10;
-  previewRowCount = 10;
+  previewRowCount = 10; 
   previewPage = 1;
   totalPreviewPages = 1;
 
@@ -185,9 +185,21 @@ export class DatasetDetailsPage implements OnInit {
     this.headers = [];
     this.data = [];
     this.datasetSchema = [];
-    // Map ColumnAnalysis to schema for stats display
-    if (this.previewData && (this.previewData as any).ColumnAnalysis) {
-      this.previewData.schema = (this.previewData as any).ColumnAnalysis;
+    // Map ColumnStatistics (or ColumnAnalysis) to schema for stats display, converting PascalCase to camelCase
+    const toCamel = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+    const mapKeysToCamel = (obj: any) => {
+      const out: any = {};
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          out[toCamel(key)] = obj[key];
+        }
+      }
+      return out;
+    };
+    if (this.previewData && (this.previewData as any).ColumnStatistics) {
+      this.previewData.schema = ((this.previewData as any).ColumnStatistics as any[]).map(mapKeysToCamel);
+    } else if (this.previewData && (this.previewData as any).ColumnAnalysis) {
+      this.previewData.schema = ((this.previewData as any).ColumnAnalysis as any[]).map(mapKeysToCamel);
     }
 
     // Get dataset ID from route parameters
