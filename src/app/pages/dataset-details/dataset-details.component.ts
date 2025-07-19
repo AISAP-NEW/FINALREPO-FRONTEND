@@ -1,3 +1,6 @@
+// DEPRECATED: This file is deprecated. Use dataset-details.page.ts instead.
+// The contents are commented out to prevent accidental compilation by Angular.
+/*
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
@@ -64,6 +67,10 @@ interface PreviewData {
   ]
 })
 export class DatasetDetailsPage implements OnInit {
+  getThumbnailUrl(datasetId: string): string {
+    return `http://localhost:5183/api/Dataset/${datasetId}/thumbnail`;
+  }
+
   // --- Required for template bindings ---
   datasetInfo: any = null; // Holds dataset metadata (name, description, createdAt, fileType, etc.)
   columnStats: any[] = []; // Holds column statistics for sidebar
@@ -720,18 +727,6 @@ export class DatasetDetailsPage implements OnInit {
         this.toastService.presentToast('error', errorMessage, 4000);
       }
     });
-  }
-
-  // Available split ratios
-  splitRatios = [
-    { label: '70-30', train: 70, test: 30 },
-    { label: '80-20', train: 80, test: 20 },
-    { label: '90-10', train: 90, test: 10 }
-  ];
-  
-  // Current selected ratio (default to 80-20)
-  selectedRatio = this.splitRatios[1];
-  
   // Current split result
   splitResult: any = null;
 
@@ -810,3 +805,5 @@ export class DatasetDetailsPage implements OnInit {
   }
 
 }
+
+*/ 

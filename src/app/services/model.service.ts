@@ -37,11 +37,9 @@ export interface ModelDetails {
 export interface ModelUploadRequest {
   modelName: string;
   description: string;
-  framework: string;
   version?: string;
   datasetId?: number;
   file: File;
-  tags?: string;
 }
 
 @Injectable({
@@ -95,22 +93,18 @@ export class ModelService implements OnDestroy {
     const formData = new FormData();
     formData.append('modelName', modelData.modelName);
     formData.append('description', modelData.description);
-    formData.append('framework', modelData.framework);
     formData.append('file', modelData.file, modelData.file.name);
     
     if (modelData.version) formData.append('version', modelData.version);
     if (modelData.datasetId) formData.append('datasetId', modelData.datasetId.toString());
-    if (modelData.tags) formData.append('tags', modelData.tags);
 
     console.log('Uploading model with data:', {
       modelName: modelData.modelName,
       description: modelData.description,
-      framework: modelData.framework,
       version: modelData.version,
       datasetId: modelData.datasetId,
       fileName: modelData.file.name,
-      fileSize: modelData.file.size,
-      tags: modelData.tags
+      fileSize: modelData.file.size
     });
 
     return this.http.post<any>(this.apiUrl, formData).pipe(

@@ -63,7 +63,7 @@ export const routes: Routes = [
       },
       {
         path: 'datasets/:id',
-        loadComponent: () => import('./pages/dataset-details/dataset-details.component').then(m => m.DatasetDetailsPage),
+        loadComponent: () => import('./pages/dataset-details/dataset-details.page').then(m => m.DatasetDetailsPage),
         canActivate: [AuthGuard]
       },
       // Alias for backward compatibility

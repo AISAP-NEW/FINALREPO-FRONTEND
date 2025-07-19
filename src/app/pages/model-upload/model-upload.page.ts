@@ -179,11 +179,11 @@ export class ModelUploadPage implements OnInit {
     const modelData: ModelUploadRequest = {
       modelName: formValue.name,
       description: formValue.description,
-      framework: formValue.framework,
+     
       version: formValue.version || undefined,
       datasetId: formValue.datasetId ? formValue.datasetId : undefined,
       file: this.selectedFile!,
-      tags: formValue.tags || undefined
+
     };
 
     console.log('Submitting form with data:', modelData);

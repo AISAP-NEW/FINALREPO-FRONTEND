@@ -7,10 +7,10 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
 import { finalize } from 'rxjs/operators';
-import { 
-  IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, 
-  IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonBadge, IonText, IonNote, IonGrid, 
+import {
+  IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle,
+  IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader,
+  IonCardTitle, IonCardContent, IonBadge, IonText, IonNote, IonGrid,
   IonRow, IonCol, IonAccordionGroup, IonAccordion, IonSelect, IonSelectOption,
   IonToggle, IonRange, IonInput, IonSegment, IonSegmentButton, IonBackButton
 } from '@ionic/angular/standalone';
@@ -49,15 +49,14 @@ interface PreviewData {
 export class DatasetDetailsPage implements OnInit {
   datasetId: string | null = null;
   isLoading = true;
+  error: string | null = null;
+  datasetPreview: any[] = [];
+  columnNames: string[] = [];
+  datasetName = '';
   showDebugInfo = false;
   activeTab: 'preview' | 'schema' = 'preview';
   previewRowsToShow = 5;
-  previewData: PreviewData = {
-    headers: [],
-    data: [],
-    schema: [],
-    totalRows: 0
-  };
+  previewData: PreviewData = { headers: [], data: [], schema: [], totalRows: 0 };
 
   constructor(
     private route: ActivatedRoute,
@@ -65,12 +64,11 @@ export class DatasetDetailsPage implements OnInit {
     private datasetService: DatasetService
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.datasetId = this.route.snapshot.paramMap.get('id');
     if (this.datasetId) {
       this.loadDatasetInfo();
     } else {
-      console.warn('No dataset ID found in route');
       this.isLoading = false;
     }
   }
@@ -89,78 +87,52 @@ export class DatasetDetailsPage implements OnInit {
 
   loadDatasetInfo(): void {
     if (!this.datasetId) {
-      console.warn('No dataset ID provided');
       this.isLoading = false;
       return;
     }
-    
-    console.log(`Loading dataset content for ID: ${this.datasetId}`);
+
     this.isLoading = true;
-    
-    // Reset preview data
-    this.previewData = {
-      headers: [],
-      data: [],
-      schema: [],
-      totalRows: 0
-    };
-    
-    // Load dataset content using the read endpoint
+    this.previewData = { headers: [], data: [], schema: [], totalRows: 0 };
+
     this.datasetService.getDatasetContent(this.datasetId)
-      .pipe(
-        finalize(() => this.isLoading = false)
-      )
+      .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response: any) => {
           try {
-            console.log('Raw dataset content response:', response);
-            
             if (!response || !response.content) {
               throw new Error('No content received in the response');
             }
-            
-            // Parse CSV content
+
             const lines = response.content.split('\n').filter((line: string) => line.trim() !== '');
             if (lines.length === 0) {
               throw new Error('Empty dataset content');
             }
-            
-            // Parse headers (first line)
+
             const headers = this.parseCsvLine(lines[0]);
-            
-            // Parse data rows
             const data: Record<string, any>[] = [];
             for (let i = 1; i < Math.min(lines.length, this.previewRowsToShow + 1); i++) {
               if (lines[i].trim() === '') continue;
-              
               const rowData = this.parseCsvLine(lines[i]);
               const row: Record<string, any> = { rowNumber: i };
-              
               headers.forEach((header, index) => {
                 row[header] = index < rowData.length ? rowData[index] : '';
               });
-              
               data.push(row);
             }
-            
-            // Update preview data
+
             this.previewData = {
               headers,
               data,
               schema: [],
-              totalRows: lines.length - 1 // Subtract 1 for header
+              totalRows: lines.length - 1
             };
-            
-            // Load schema
+
             this.loadSchema();
-            
           } catch (error) {
-            console.error('Error parsing dataset content:', error);
             this.handlePreviewError(error);
           }
         },
         error: (error) => {
-          console.error('Error loading dataset content:', error);
           this.handlePreviewError(error);
         }
       });
@@ -168,7 +140,6 @@ export class DatasetDetailsPage implements OnInit {
 
   private loadSchema(): void {
     if (!this.datasetId) {
-      console.warn('No dataset ID available for schema loading');
       this.inferSchemaFromPreviewData();
       return;
     }
@@ -179,60 +150,51 @@ export class DatasetDetailsPage implements OnInit {
           if (!schemaResponse || !Array.isArray(schemaResponse)) {
             throw new Error('Invalid schema response format');
           }
-          
+
           this.previewData.schema = schemaResponse.map((field: any) => ({
             name: field.name || 'unknown',
             type: field.type || 'string',
             nullable: field.nullable !== false,
             sampleValues: field.sampleValues || []
           }));
-          
-          // Update sample values from preview data if available
+
           if (this.previewData.data.length > 0) {
             this.updateSampleValuesFromPreviewData();
           }
-          
         } catch (error) {
-          console.warn('Error processing schema, falling back to inference', error);
           this.inferSchemaFromPreviewData();
         }
       },
-      error: (error) => {
-        console.warn('Error loading schema, falling back to inference', error);
+      error: () => {
         this.inferSchemaFromPreviewData();
       }
     });
   }
 
   private inferSchemaFromPreviewData(): void {
-    if (!this.previewData.data.length) {
-      console.warn('No preview data available for schema inference');
-      return;
-    }
-    
+    if (!this.previewData.data.length) return;
+
     const sampleRow = this.previewData.data[0];
     const headers = Object.keys(sampleRow).filter(key => key !== 'rowNumber');
-    
+
     this.previewData.schema = headers.map(header => {
-      // Sample values for type inference
       const sampleValues = this.previewData.data
         .slice(0, 10)
         .map(row => row[header])
         .filter(val => val !== undefined && val !== null && val !== '');
-      
-      // Simple type inference
+
       let type = 'string';
       if (sampleValues.length > 0) {
         const firstValue = sampleValues[0];
         if (!isNaN(Number(firstValue))) {
           type = 'number';
-        } else if (firstValue.toLowerCase() === 'true' || firstValue.toLowerCase() === 'false') {
+        } else if (['true', 'false'].includes(String(firstValue).toLowerCase())) {
           type = 'boolean';
         } else if (!isNaN(Date.parse(firstValue))) {
           type = 'date';
         }
       }
-      
+
       return {
         name: header,
         type,
@@ -243,10 +205,8 @@ export class DatasetDetailsPage implements OnInit {
   }
 
   private updateSampleValuesFromPreviewData(): void {
-    if (!this.previewData.schema.length || !this.previewData.data.length) {
-      return;
-    }
-    
+    if (!this.previewData.schema.length || !this.previewData.data.length) return;
+
     this.previewData.schema = this.previewData.schema.map(field => {
       const sampleValues = this.getDistinctValues(field.name, 5);
       return {
@@ -256,29 +216,19 @@ export class DatasetDetailsPage implements OnInit {
     });
   }
 
-  private getDistinctValues(column: string, maxSamples: number = 5): any[] {
+  private getDistinctValues(column: string, maxSamples = 5): any[] {
     const uniqueValues = new Set<any>();
-    
     for (const row of this.previewData.data) {
       if (row[column] !== undefined && row[column] !== null && row[column] !== '') {
         uniqueValues.add(row[column]);
-        if (uniqueValues.size >= maxSamples) {
-          break;
-        }
+        if (uniqueValues.size >= maxSamples) break;
       }
     }
-    
     return Array.from(uniqueValues);
   }
 
   private handlePreviewError(error: any): void {
-    console.error('Error loading dataset preview:', error);
-    this.previewData = {
-      headers: [],
-      data: [],
-      schema: [],
-      totalRows: 0
-    };
+    this.previewData = { headers: [], data: [], schema: [], totalRows: 0 };
     this.isLoading = false;
   }
 
@@ -287,20 +237,15 @@ export class DatasetDetailsPage implements OnInit {
   }
 
   formatCellValue(value: any): string {
-    if (value === undefined || value === null || value === '') {
-      return '—';
-    }
-    return String(value);
+    return value === undefined || value === null || value === '' ? '—' : String(value);
   }
 
   private parseCsvLine(line: string): string[] {
     const result: string[] = [];
     let inQuotes = false;
     let currentField = '';
-    
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -310,23 +255,16 @@ export class DatasetDetailsPage implements OnInit {
         currentField += char;
       }
     }
-    
-    // Add the last field
     result.push(currentField.trim());
-    
     return result;
   }
 
-  onSegmentChange(event: any) {
+  onSegmentChange(event: any): void {
     const tab = event.detail.value;
-    if (tab === 'preview' || tab === 'schema') {
-      this.activeTab = tab;
-    } else {
-      this.activeTab = 'preview'; // Default to preview if invalid tab
-    }
+    this.activeTab = tab === 'preview' || tab === 'schema' ? tab : 'preview';
   }
 
-  toggleDebugInfo() {
+  toggleDebugInfo(): void {
     this.showDebugInfo = !this.showDebugInfo;
   }
 }
