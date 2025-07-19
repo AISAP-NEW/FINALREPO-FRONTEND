@@ -1,0 +1,23 @@
+<div class="editor-test-container">
+  <h1>Monaco Editor Test</h1>
+  
+  <div class="test-section">
+    <h2>Code Cell</h2>
+    <app-notebook-cell
+      type="code"
+      [content]="codeContent"
+      [isExecuting]="isExecuting"
+      (contentChange)="onCodeChange($event)"
+      (execute)="onExecute($event)">
+    </app-notebook-cell>
+  </div>
+
+  <div class="test-section">
+    <h2>Markdown Cell</h2>
+    <app-notebook-cell
+      type="markdown"
+      [content]="markdownContent"
+      (contentChange)="onMarkdownChange($event)">
+    </app-notebook-cell>
+  </div>
+</div>

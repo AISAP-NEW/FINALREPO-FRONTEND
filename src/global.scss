@@ -1,13 +1,218 @@
 /*
- * App Global CSS
+ * App Global CSS - Light Blue Theme
  * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
+ * Clean, modern theme with light blues and improved text visibility
  */
+
+// === COLOR PALETTE ===
+$ai-primary:      #4a90e2;  // Lighter blue
+$ai-primary-light:#e8f1fc;  // Very light blue
+$ai-primary-dark: #2c5282;  // Darker blue for contrast
+$ai-accent:       #63b3ed;  // Sky blue
+$ai-bg-dark:      #f8fafc;  // Almost white background
+$ai-bg-glass:     rgba(255,255,255,0.9);  // More opaque glass effect
+$ai-white:        #ffffff;
+$ai-text:         #2d3748;  // Dark gray for text
+$ai-card-glass:   rgba(255,255,255,0.95);
+$ai-glow:         0 0 20px rgba(74,144,226,0.2);
+$ai-grid:         linear-gradient(rgba(74,144,226,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(74,144,226,0.05) 1px, transparent 1px);
+
+:root {
+  --ai-primary: #{$ai-primary};
+  --ai-primary-light: #{$ai-primary-light};
+  --ai-primary-dark: #{$ai-primary-dark};
+  --ai-accent: #{$ai-accent};
+  --ai-bg-dark: #{$ai-bg-dark};
+  --ai-bg-glass: #{$ai-bg-glass};
+  --ai-white: #{$ai-white};
+  --ai-text: #{$ai-text};
+  --ai-card-glass: #{$ai-card-glass};
+  --ai-glow: #{$ai-glow};
+  --ai-grid: #{$ai-grid};
+}
+
+// === IONIC COLOR OVERRIDES ===
+:root {
+  --ion-background-color: var(--ai-bg-dark);
+  --ion-text-color: var(--ai-text);
+  --ion-color-primary: var(--ai-primary);
+  --ion-color-primary-rgb: 74,144,226;
+  --ion-color-primary-contrast: var(--ai-white);
+  --ion-color-primary-shade: var(--ai-primary-dark);
+  --ion-color-primary-tint: var(--ai-primary-light);
+  --ion-color-secondary: var(--ai-accent);
+  --ion-color-secondary-rgb: 99,179,237;
+  --ion-color-secondary-contrast: var(--ai-text);
+  --ion-color-secondary-shade: #4a90e2;
+  --ion-color-secondary-tint: #7cc3f0;
+  --ion-color-light: #f7fafc;
+  --ion-color-medium: #718096;
+  --ion-color-dark: #2d3748;
+}
+
+body, ion-app, .ion-page {
+  background: var(--ai-bg-dark) !important;
+  color: var(--ai-text) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+// === BACKGROUND EFFECTS ===
+.app-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: -1;
+  background: linear-gradient(135deg, #f8fafc 0%, #e8f1fc 100%);
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    width: 100%; height: 100%;
+    background-image: var(--ai-grid);
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
+// === GLASSMORPHISM ===
+@mixin glassy {
+  background: var(--ai-card-glass);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(74,144,226,0.1);
+}
+
+// === CARDS ===
+ion-card, .ai-card {
+  @include glassy;
+  color: var(--ai-text);
+  transition: all 0.2s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--ai-primary);
+  }
+}
+
+// === TOOLBAR & HEADER ===
+ion-toolbar, .ai-toolbar {
+  @include glassy;
+  --background: var(--ai-bg-glass);
+  --color: var(--ai-text);
+  border-bottom: 1px solid rgba(74,144,226,0.1);
+}
+
+ion-title {
+  color: var(--ai-primary);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+// === BUTTONS ===
+ion-button, .ai-btn {
+  --background: var(--ai-primary);
+  --background-hover: var(--ai-primary-dark);
+  --background-activated: var(--ai-primary-dark);
+  --color: var(--ai-white);
+  --border-radius: 8px;
+  --box-shadow: 0 2px 4px rgba(74,144,226,0.2);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  transition: all 0.2s ease;
+  &:hover {
+    --background: var(--ai-primary-dark);
+    transform: translateY(-1px);
+    --box-shadow: 0 4px 8px rgba(74,144,226,0.3);
+  }
+}
+
+// === FORMS ===
+ion-item, .ai-form-item {
+  --background: var(--ai-white);
+  --border-color: rgba(74,144,226,0.2);
+  --highlight-background: var(--ai-primary);
+  --color: var(--ai-text);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+ion-input, ion-select, ion-textarea {
+  --background: var(--ai-white);
+  --color: var(--ai-text);
+  --placeholder-color: var(--ion-color-medium);
+  font-weight: 400;
+}
+
+// === LISTS ===
+ion-list, .ai-list {
+  background: var(--ai-white);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+ion-item {
+  --background: var(--ai-white);
+  --color: var(--ai-text);
+  --border-color: rgba(74,144,226,0.1);
+  
+  &:hover {
+    --background: var(--ai-primary-light);
+  }
+}
+
+// === CHIPS ===
+ion-chip {
+  --background: var(--ai-primary-light);
+  --color: var(--ai-primary-dark);
+  font-weight: 500;
+}
+
+// === MODALS ===
+ion-modal {
+  --background: var(--ai-bg-glass);
+  --border-radius: 12px;
+  --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  
+  ion-content {
+    --background: var(--ai-white);
+  }
+}
+
+// === TABS & SEGMENTS ===
+ion-segment {
+  background: var(--ai-white);
+  border-radius: 8px;
+  border: 1px solid rgba(74,144,226,0.1);
+  padding: 4px;
+}
+
+ion-segment-button {
+  --color: var(--ion-color-medium);
+  --color-checked: var(--ai-primary);
+  --indicator-color: var(--ai-primary-light);
+  font-weight: 500;
+  text-transform: none;
+}
+
+// === SCROLLBAR ===
+::-webkit-scrollbar {
+  width: 8px;
+  background: var(--ai-primary-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ai-primary);
+  border-radius: 4px;
+}
+
+// === UTILITY CLASSES ===
+.text-primary { color: var(--ai-primary) !important; }
+.text-medium { color: var(--ion-color-medium) !important; }
+.text-dark { color: var(--ai-text) !important; }
+.bg-light { background: var(--ai-primary-light) !important; }
+.bg-white { background: var(--ai-white) !important; }
 
 /* Core CSS required for Ionic components to work properly */
 @import "@ionic/angular/css/core.css";
@@ -18,115 +223,9 @@
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
-/* Modal Styles */
-.auto-height {
-  --height: auto;
-  --border-radius: 16px;
-  --max-height: 90vh;
-  --width: 90%;
-  --max-width: 600px;
-  
-  &::part(content) {
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  }
-  
-  &::part(handle) {
-    background: var(--ion-color-medium);
-    width: 40px;
-    height: 4px;
-    border-radius: 2px;
-    margin: 12px auto;
-  }
-}
-
-/* Form Elements */
-ion-item {
-  --border-radius: 8px;
-  --padding-start: 0;
-  --inner-padding-end: 0;
-  margin-bottom: 12px;
-  
-  &.item-has-focus {
-    --highlight-background: var(--ion-color-primary);
-  }
-}
-
-/* Buttons */
-ion-button {
-  --border-radius: 8px;
-  font-weight: 600;
-  text-transform: none;
-  height: 48px;
-  
-  &[size="small"] {
-    height: 36px;
-    font-size: 14px;
-  }
-}
-
-/* Tabs */
-ion-segment {
-  --background: var(--ion-color-light);
-  border-radius: 8px;
-  padding: 4px;
-  margin: 16px 0;
-  
-  ion-segment-button {
-    --color: var(--ion-color-medium);
-    --color-checked: var(--ion-color-primary);
-    --indicator-color: var(--ion-color-primary-shade);
-    --indicator-height: 3px;
-    --border-radius: 8px;
-    --padding-top: 12px;
-    --padding-bottom: 12px;
-    font-weight: 500;
-    text-transform: none;
-    letter-spacing: 0.5px;
-    
-    &::part(indicator) {
-      bottom: 4px;
-      height: 3px;
-      width: 50%;
-      left: 25%;
-    }
-  }
-}
-
-/* Cards */
-ion-card {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin: 16px 0;
-  
-  ion-card-header {
-    padding: 16px 16px 8px;
-    
-    ion-card-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-  }
-  
-  ion-card-content {
-    padding: 16px;
-  }
-}
-
 /* Optional CSS utils that can be commented out */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
-
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';

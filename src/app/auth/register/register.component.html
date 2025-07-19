@@ -7,38 +7,47 @@
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
         <ion-item>
           <ion-label position="floating">Username</ion-label>
-          <ion-input type="text" formControlName="username"></ion-input>
+          <ion-input type="text" formControlName="Username"></ion-input>
         </ion-item>
-        <div class="validation-error" *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched">
-          <div *ngIf="registerForm.get('username')?.errors?.['required']">Username is required</div>
+        <div class="validation-error" *ngIf="registerForm.get('Username')?.invalid && registerForm.get('Username')?.touched">
+          <div *ngIf="registerForm.get('Username')?.errors?.['required']">Username is required</div>
         </div>
 
         <ion-item>
           <ion-label position="floating">Email</ion-label>
-          <ion-input type="email" formControlName="email"></ion-input>
+          <ion-input type="email" formControlName="Email"></ion-input>
         </ion-item>
-        <div class="validation-error" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
-          <div *ngIf="registerForm.get('email')?.errors?.['required']">Email is required</div>
-          <div *ngIf="registerForm.get('email')?.errors?.['email']">Please enter a valid email</div>
+        <div class="validation-error" *ngIf="registerForm.get('Email')?.invalid && registerForm.get('Email')?.touched">
+          <div *ngIf="registerForm.get('Email')?.errors?.['required']">Email is required</div>
+          <div *ngIf="registerForm.get('Email')?.errors?.['email']">Please enter a valid email</div>
         </div>
 
         <ion-item>
           <ion-label position="floating">Password</ion-label>
-          <ion-input type="password" formControlName="password"></ion-input>
+          <ion-input type="password" formControlName="Password"></ion-input>
         </ion-item>
-        <div class="validation-error" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
-          <div *ngIf="registerForm.get('password')?.errors?.['required']">Password is required</div>
-          <div *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</div>
+        <div class="validation-error" *ngIf="registerForm.get('Password')?.invalid && registerForm.get('Password')?.touched">
+          <div *ngIf="registerForm.get('Password')?.errors?.['required']">Password is required</div>
+          <div *ngIf="registerForm.get('Password')?.errors?.['pattern']">
+            Password must contain:
+            <ul>
+              <li>At least 8 characters</li>
+              <li>One uppercase letter</li>
+              <li>One lowercase letter</li>
+              <li>One number</li>
+              <li>One special character (&#64;$!%*?&)</li>
+            </ul>
+          </div>
         </div>
 
         <ion-item>
           <ion-label position="floating">Confirm Password</ion-label>
-          <ion-input type="password" formControlName="confirmPassword"></ion-input>
+          <ion-input type="password" formControlName="ConfirmPassword"></ion-input>
         </ion-item>
-        <div class="validation-error" *ngIf="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched">
-          <div *ngIf="registerForm.get('confirmPassword')?.errors?.['required']">Please confirm your password</div>
+        <div class="validation-error" *ngIf="registerForm.get('ConfirmPassword')?.invalid && registerForm.get('ConfirmPassword')?.touched">
+          <div *ngIf="registerForm.get('ConfirmPassword')?.errors?.['required']">Please confirm your password</div>
         </div>
-        <div class="validation-error" *ngIf="registerForm.errors?.['mismatch'] && registerForm.get('confirmPassword')?.touched">
+        <div class="validation-error" *ngIf="registerForm.errors?.['mismatch'] && registerForm.get('ConfirmPassword')?.touched">
           Passwords do not match
         </div>
 

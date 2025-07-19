@@ -1,2 +1,80 @@
 // For information on how to create your own theme, please see:
 // http://ionicframework.com/docs/theming/
+
+// Futuristic Blue Theme
+:root {
+  // Primary colors
+  --ion-color-primary: #1a73e8;
+  --ion-color-primary-rgb: 26, 115, 232;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #1565c0;
+  --ion-color-primary-tint: #4285f4;
+
+  // Secondary colors
+  --ion-color-secondary: #00bcd4;
+  --ion-color-secondary-rgb: 0, 188, 212;
+  --ion-color-secondary-contrast: #000000;
+  --ion-color-secondary-contrast-rgb: 0, 0, 0;
+  --ion-color-secondary-shade: #00acc1;
+  --ion-color-secondary-tint: #26c6da;
+
+  // Tertiary colors
+  --ion-color-tertiary: #3f51b5;
+  --ion-color-tertiary-rgb: 63, 81, 181;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #3647a0;
+  --ion-color-tertiary-tint: #5c6bc0;
+
+  // Background and surface colors
+  --ion-background-color: #f8f9ff;
+  --ion-background-color-rgb: 248, 249, 255;
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+  --ion-toolbar-background: var(--ion-color-primary);
+  --ion-tab-bar-background: #ffffff;
+  
+  // Text colors
+  --ion-text-color: #1a1a1a;
+  --ion-text-color-rgb: 26, 26, 26;
+  --ion-text-color-step-400: #333333;
+  --ion-text-color-step-600: #666666;
+  
+  // Border and divider colors
+  --ion-border-color: rgba(0, 0, 0, 0.08);
+  --ion-item-border-color: rgba(0, 0, 0, 0.05);
+  
+  // Shadow and elevation
+  --ion-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  
+  // Fonts
+  --ion-font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  
+  // Spacing
+  --ion-padding: 16px;
+  --ion-margin: 16px;
+  
+  // Border radius
+  --ion-border-radius: 12px;
+  --ion-border-radius-sm: 8px;
+  --ion-border-radius-md: 12px;
+  --ion-border-radius-lg: 16px;
+  
+  // Transitions
+  --ion-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Dark mode overrides
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-background-color: #121212;
+    --ion-background-color-rgb: 18, 18, 18;
+    --ion-item-background: #1e1e1e;
+    --ion-card-background: #1e1e1e;
+    --ion-text-color: #f5f5f5;
+    --ion-text-color-rgb: 245, 245, 245;
+    --ion-border-color: rgba(255, 255, 255, 0.08);
+    --ion-item-border-color: rgba(255, 255, 255, 0.05);
+  }
+}

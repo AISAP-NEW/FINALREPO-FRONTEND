@@ -43,6 +43,7 @@ import {
 import { ProjectService } from '../services/project.service';
 import { DatasetService } from '../services/dataset.service';
 import { NotificationService } from '../services/notification.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -90,7 +91,8 @@ export class HomePage implements OnInit {
   constructor(
     private projectService: ProjectService,
     private datasetService: DatasetService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private authService: AuthService
   ) {
     addIcons({ 
       'folder-outline': folderOutline, 
@@ -138,22 +140,34 @@ export class HomePage implements OnInit {
     });
 
     // Load notifications
-    this.notificationService.getUnreadNotifications().subscribe(notifications => {
+    this.refreshNotifications();
+
+    // Set pending tasks (placeholder)
+    this.pendingTasks = Math.floor(Math.random() * 10); // Replace with actual pending tasks count
+
+    this.loading = false;
+  }
+
+  private refreshNotifications() {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return;
+
+    const userId = currentUser.userId || currentUser.UserId || 0;
+    
+    // Get unread notifications
+    this.notificationService.getUnreadNotifications(userId).subscribe(notifications => {
+      console.log('Unread notifications:', notifications);
       this.unreadNotifications = notifications.length;
     });
 
-    // Load recent activities
-    this.notificationService.getNotifications().subscribe(notifications => {
+    // Get all notifications
+    this.notificationService.getNotifications(userId).subscribe(notifications => {
+      console.log('All notifications:', notifications);
       this.recentActivities = notifications.slice(0, 5).map(n => ({
         action: n.message,
         timestamp: n.createdDate,
         userAvatar: 'assets/default-avatar.png' // Replace with actual user avatars
       }));
     });
-
-    // Set pending tasks (placeholder)
-    this.pendingTasks = Math.floor(Math.random() * 10); // Replace with actual pending tasks count
-
-    this.loading = false;
   }
 }

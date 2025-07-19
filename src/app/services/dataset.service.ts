@@ -3,6 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, catchError, switchMap, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export interface TrainTestSplit {
+  trainSize: number;
+  testSize: number;
+  splitAt: string;
+  trainDatasetId?: string;
+  testDatasetId?: string;
+}
+
 export interface Dataset {
   datasetId: string;
   datasetName: string;
@@ -27,6 +35,7 @@ export interface Dataset {
   validationStatus: string;
   preprocessingStatus: string;
   splitStatus?: string;  // Can be 'pending', 'in_progress', 'complete', or 'failed'
+  trainTestSplit?: TrainTestSplit | null;
 }
 
 export interface DatasetsResponse {
@@ -101,12 +110,23 @@ export interface DatasetSchema {
   missingValues?: string[];
 }
 
+export interface ValidationError {
+  rowNumber: number;
+  message: string;
+  field?: string;
+  value?: any;
+}
+
 export interface ValidationResponse {
-  status: string;
+  status: 'success' | 'error' | 'warning' | 'failed';
+  message?: string;
   errorCount: number;
   errorLines: number[];
+  errors: ValidationError[];
   totalRows: number;
   validationId: string;
+  versionId?: string;
+  timestamp?: string;
 }
 
 export interface SplitResponse {
@@ -161,17 +181,43 @@ export interface CreateDatasetDTO {
   providedIn: 'root'
 })
 export class DatasetService {
-  private readonly baseUrl = 'http://localhost:5183/api';
-  private readonly datasetUrl = `${this.baseUrl}/Dataset`;
-  private readonly preprocessUrl = `${this.baseUrl}/Preprocess`;
+  private readonly baseUrl = environment.apiUrl;
+  private readonly datasetUrl = `${this.baseUrl}/api/Dataset`;
+  private readonly preprocessUrl = `${this.baseUrl}/api/Preprocess`;
 
   constructor(private http: HttpClient) { }
 
   getAllDatasets(): Observable<Dataset[]> {
-    return this.http.get<DatasetsResponse>(this.datasetUrl).pipe(
+    return this.http.get<any>(this.datasetUrl).pipe(
       map(response => {
-        console.log('Received datasets:', response);
-        return response.datasets || [];
+        // Accept both Datasets and datasets for robustness
+        const datasets = response.Datasets || response.datasets || [];
+        console.log('Received datasets:', datasets);
+        // Map PascalCase to camelCase for each dataset
+        return datasets.map((d: any) => ({
+          datasetId: d.DatasetId,
+          datasetName: d.DatasetName,
+          description: d.Description,
+          fileType: d.FileType,
+          fileCount: d.FileCount,
+          createdAt: d.CreatedAt,
+          lastModified: d.LastModified,
+          thumbnailBase64: d.ThumbnailBase64,
+          hasErrors: d.HasErrors ?? false,
+          hasThumbnail: d.HasThumbnail ?? false,
+          isValidated: d.IsValidated ?? false,
+          lastAction: d.LastAction ?? null,
+          lastActionTime: d.LastActionTime ?? null,
+          lastValidation: d.LastValidation ?? null,
+          recentActivity: d.RecentActivity ?? [],
+          totalActions: d.TotalActions ?? 0,
+          totalFileSize: d.TotalFileSize ?? 0,
+          totalFileSizeKB: d.TotalFileSizeKB ?? 0,
+          validationErrors: d.ValidationErrors ?? 0,
+          validationStatus: d.ValidationStatus ?? 'pending',
+          preprocessingStatus: d.PreprocessingStatus ?? 'pending',
+          splitStatus: d.SplitStatus ?? 'pending'
+        }));
       }),
       catchError(error => {
         console.error('Error fetching datasets:', error);
@@ -342,6 +388,36 @@ export class DatasetService {
     );
   }
 
+  /**
+   * Get dataset preview with headers and data using the /api/Dataset/read/{datasetId} endpoint
+   * @param datasetId The ID of the dataset to fetch
+   * @returns Observable with dataset preview data
+   */
+  getDatasetPreview(datasetId: string): Observable<{ headers: string[], data: any[] }> {
+    if (!datasetId) {
+      throw new Error('Dataset ID is required');
+    }
+    
+    const url = `${this.datasetUrl}/read/${datasetId}`;
+    console.log('Fetching dataset preview from URL:', url);
+    
+    return this.http.get<{ headers: string[], data: any[] }>(url).pipe(
+      catchError(error => {
+        console.error(`Error fetching dataset preview ${datasetId}:`, error);
+        console.error('Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          url: error.url || url,
+          message: error.message,
+          error: error.error
+        });
+        
+        // Return empty data structure on error
+        return of({ headers: [], data: [] });
+      })
+    );
+  }
+
   getDatasetSchema(datasetId: string): Observable<DatasetSchema> {
     if (!datasetId) {
       throw new Error('Dataset ID is required');
@@ -466,6 +542,60 @@ export class DatasetService {
         );
       })
     );
+  }
+
+  getValidatedDatasets(): Observable<Dataset[]> {
+    return this.getAllDatasets().pipe(
+      map(datasets => datasets.filter(dataset => 
+        dataset.isValidated && 
+        dataset.validationStatus === 'success' && 
+        !dataset.hasErrors
+      ))
+    );
+  }
+
+  /**
+   * Downloads a dataset file
+   * @param datasetId The ID of the dataset to download
+   * @param type The type of download (e.g., 'csv', 'split')
+   * @returns Observable with the file data
+   */
+  downloadDataset(datasetId: string, type: string = 'csv'): Observable<Blob> {
+    if (!datasetId) {
+      throw new Error('Dataset ID is required');
+    }
+    
+    const url = `${this.datasetUrl}/${datasetId}/download/${type}`;
+    console.log('Downloading dataset from URL:', url);
+    
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      catchError(error => {
+        console.error('Error downloading dataset:', {
+          status: error.status,
+          statusText: error.statusText,
+          url: error.url || url,
+          message: error.message,
+          error: error.error
+        });
+        throw new Error(`Failed to download dataset: ${error.statusText || 'Unknown error'}`);
+      })
+    );
+  }
+
+  /**
+   * Helper method to trigger file download in the browser
+   * @param data The file data as Blob
+   * @param filename The name of the file to download
+   */
+  downloadFile(data: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 
   downloadPreprocessedData(data: any[], filename: string = 'preprocessed-data.csv'): void {

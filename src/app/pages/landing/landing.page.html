@@ -1,0 +1,58 @@
+<!-- Animated Background Elements -->
+<div class="background">
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+  <div class="shape shape-3"></div>
+  <div class="grid-overlay"></div>
+</div>
+
+<ion-content [fullscreen]="true" class="landing-content">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="glitch" data-text="AI Data Platform">AISAP Platform</h1>
+      <p class="subtitle">Manage Your Models with Ease</p>
+      
+      <div class="cta-buttons">
+        <ion-button (click)="navigateToLogin()" shape="round" class="login-btn">
+          <ion-icon slot="start" name="log-in"></ion-icon>
+          Login
+        </ion-button>
+        <ion-button (click)="navigateToRegister()" fill="outline" shape="round" class="signup-btn">
+          <ion-icon slot="start" name="person-add"></ion-icon>
+          Sign Up
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="features-section">
+    <h2>Why Choose Our Platform?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <ion-icon name="analytics"></ion-icon>
+        </div>
+        <h3>Advanced Analytics</h3>
+        <p>Leverage cutting-edge AI to analyze your data with precision.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <ion-icon name="cloud-upload"></ion-icon>
+        </div>
+        <h3>Seamless Integration</h3>
+        <p>Connect with your existing data sources effortlessly.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <ion-icon name="shield-checkmark"></ion-icon>
+        </div>
+        <h3>Secure & Private</h3>
+        <p>Your data's security is our top priority.</p>
+      </div>
+    </div>
+  </div>
+</ion-content>

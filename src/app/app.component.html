@@ -24,6 +24,11 @@
               <ion-label>Datasets</ion-label>
             </ion-item>
 
+            <ion-item routerLink="/models" routerDirection="root" routerLinkActive="selected">
+              <ion-icon slot="start" name="cube-outline"></ion-icon>
+              <ion-label>Models</ion-label>
+            </ion-item>
+
             <ion-item routerLink="/developers" routerDirection="root" routerLinkActive="selected">
               <ion-icon slot="start" name="people-outline"></ion-icon>
               <ion-label>Developers</ion-label>
@@ -40,16 +45,17 @@
             </ion-item>
           </ion-menu-toggle>
         </ion-list>
-
-        <ion-list class="logout-section">
-          <ion-menu-toggle auto-hide="false">
-            <ion-item (click)="confirmLogout()" button>
-              <ion-icon slot="start" name="log-out-outline" color="danger"></ion-icon>
-              <ion-label color="danger">Logout</ion-label>
-            </ion-item>
-          </ion-menu-toggle>
-        </ion-list>
       </ion-content>
+
+      <!-- Logout section fixed at bottom -->
+      <ion-list class="logout-section">
+        <ion-menu-toggle auto-hide="false">
+          <ion-item (click)="confirmLogout()" button>
+            <ion-icon slot="start" name="log-out-outline" color="danger"></ion-icon>
+            <ion-label color="danger">Logout</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
     </ion-menu>
 
     <div class="ion-page" id="main-content">

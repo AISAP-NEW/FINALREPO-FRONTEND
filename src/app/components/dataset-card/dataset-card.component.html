@@ -49,6 +49,9 @@
     </div>
   </div>
   <div class="card-actions">
+    <button class="options-btn" (click)="$event.stopPropagation(); openOperationsModal()">
+      <ion-icon name="ellipsis-vertical"></ion-icon>
+    </button>
     <a [routerLink]="['/datasets', dataset.datasetId, 'details']" class="action-button">
       <ion-icon name="eye"></ion-icon>
     </a>

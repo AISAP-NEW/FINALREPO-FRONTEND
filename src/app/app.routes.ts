@@ -5,13 +5,16 @@ import { MainLayoutComponent } from './layouts/main-layout/main-layout.component
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'landing',
     pathMatch: 'full'
   },
   {
+    path: 'landing',
+    loadComponent: () => import('./pages/landing/landing.page').then(m => m.LandingPage)
+  },
+  {
     path: 'login',
-    loadComponent: () => import('./auth/login/login.component')
-      .then(m => m.LoginComponent)
+    loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
   },
   {
     path: 'register',
@@ -60,13 +63,14 @@ export const routes: Routes = [
       },
       {
         path: 'datasets/:id',
-        loadComponent: () => import('./pages/dataset-details/dataset-details.page')
-          .then(m => m.DatasetDetailsPage)
+        loadComponent: () => import('./pages/dataset-details/dataset-details.component').then(m => m.DatasetDetailsPage),
+        canActivate: [AuthGuard]
       },
+      // Alias for backward compatibility
       {
         path: 'datasets/:id/details',
-        loadComponent: () => import('./pages/dataset-details/dataset-details.page')
-          .then(m => m.DatasetDetailsPage)
+        redirectTo: 'datasets/:id',
+        pathMatch: 'full'
       },
       {
         path: 'datasets/:id/preprocess',
@@ -105,13 +109,37 @@ export const routes: Routes = [
       },
       {
         path: 'access-requests',
-        loadComponent: () => import('./pages/projects/access-requests/access-requests.component').then(m => m.AccessRequestsComponent),
+        loadComponent: () => import('./pages/projects/access-requests/access-requests.component')
+          .then(m => m.AccessRequestsComponent),
         canActivate: [AuthGuard]
+      },
+      {
+        path: 'models',
+        loadComponent: () => import('./pages/models/models.page')
+          .then(m => m.ModelsPage)
+      },
+      {
+        path: 'models/upload',
+        loadComponent: () => import('./pages/model-upload/model-upload.page')
+          .then(m => m.ModelUploadPage)
+      },
+      {
+        path: 'models/:id',
+        loadComponent: () => import('./pages/model-details/model-details.page')
+          .then(m => m.ModelDetailsPage)
       }
     ]
   },
   {
     path: '**',
     redirectTo: 'login'
+  },
+  {
+    path: 'landing',
+    loadComponent: () => import('./pages/landing/landing.page').then( m => m.LandingPage)
+  },
+  {
+    path: 'training-dashboard',
+    loadComponent: () => import('./pages/training-dashboard/training-dashboard.page').then( m => m.TrainingDashboardPage)
   }
 ];

@@ -10,8 +10,6 @@ import {
   IonButton, 
   IonIcon, 
   IonTitle, 
-  IonSegment, 
-  IonSegmentButton, 
   IonLabel, 
   IonContent,
   IonList,
@@ -22,21 +20,12 @@ import {
   IonRange,
   IonSpinner,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
-  IonBadge,
-  IonText,
   IonNote,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonInput,
   ModalController,
-  IonCardSubtitle,
   IonAccordionGroup,
   IonAccordion
-  
 } from '@ionic/angular/standalone';
 import { DatasetOperationsService } from '../../services/dataset-operations.service';
 import { PreprocessOptions, ValidationResult, SplitResult } from '../../models/dataset.models';
@@ -61,8 +50,6 @@ import { DatasetPreviewComponent } from '../dataset-preview/dataset-preview.comp
     IonButton,
     IonIcon,
     IonTitle,
-    IonSegment,
-    IonSegmentButton,
     IonLabel,
     IonContent,
     IonList,
@@ -73,23 +60,41 @@ import { DatasetPreviewComponent } from '../dataset-preview/dataset-preview.comp
     IonRange,
     IonSpinner,
     IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardSubtitle,
     IonCardContent,
-    IonBadge,
-    IonText,
     IonNote,
-    IonGrid,
-    IonRow,
-    IonCol,
     IonInput,
     IonAccordionGroup,
-    IonAccordion,
-    DatasetPreviewComponent
+    IonAccordion
   ]
 })
 export class DatasetOperationsModal implements OnInit {
+
+  // ...existing properties...
+
+  // Run train/test split on the dataset
+  runSplit(): void {
+    if (!this.datasetId || !this.splitOptions) return;
+    this.isLoading = true;
+    this.splitResult = null;
+    const trainRatio = this.splitOptions.trainRatio;
+    const testRatio = 100 - trainRatio;
+    this.datasetOps.splitDataset(
+      this.datasetId,
+      trainRatio,
+      testRatio,
+      { shuffle: this.splitOptions.shuffle, stratifyBy: this.splitOptions.stratifyBy }
+    ).subscribe({
+      next: (result: any) => {
+        this.splitResult = result;
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        console.error('Error during split:', error);
+        this.splitResult = { message: 'Split failed. Please try again.' };
+        this.isLoading = false;
+      }
+    });
+  }
   // Component state
   @Input() datasetId: string = '';
   isLoading = false;
@@ -603,94 +608,22 @@ export class DatasetOperationsModal implements OnInit {
   // Run validation on the dataset
   runValidation(): void {
     if (!this.previewData) return;
-    
     this.isLoading = true;
     this.datasetOps.validateDataset(this.datasetId).subscribe({
-      next: (result: ValidationResult) => {
-        this.validationResult = result;
+      next: (result: any) => {
+        // Map backend PascalCase to camelCase for compatibility
+        this.validationResult = {
+          status: result.status || result.Status,
+          errorCount: result.errorCount ?? result.ErrorCount ?? 0,
+          errorLines: result.errorLines ?? result.ErrorLines ?? [],
+          totalRows: result.totalRows ?? result.TotalRows ?? 0,
+          details: result.details || result.Details || {},
+          validationId: result.validationId ?? result.ValidationId ?? null,
+          versionId: result.versionId ?? result.VersionId ?? null
+        };
         // Switch to validation tab to show results
         this.activeTab = 'validate';
         this.isLoading = false;
-      },
-      error: (error: any) => {
-        console.error('Error during validation:', error);
-        this.isLoading = false;
-      }
-    });
-  }
-  
-  // Run train/test split on the dataset
-  runSplit(): void {
-    if (!this.previewData) return;
-    
-    this.isLoading = true;
-    this.datasetOps.splitDataset(
-      this.datasetId,
-      this.splitOptions.trainRatio,
-      100 - this.splitOptions.trainRatio,
-      {
-        shuffle: this.splitOptions.shuffle,
-        stratifyBy: this.splitOptions.stratifyBy
-      }
-    ).subscribe({
-      next: (result: any) => {
-        this.splitResult = result;
-        // Switch to split tab to show results
-        this.activeTab = 'split';
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        console.error('Error during split:', error);
-        this.isLoading = false;
-      }
-    });
-  }
-
-  /**
-   * Loads comprehensive dataset information including schema and preview data
-   */
-  loadDatasetInfo(): void {
-    if (!this.datasetId) {
-      console.warn('No dataset ID provided for loading dataset info');
-      return;
-    }
-    
-    this.isLoading = true;
-    
-    // Load dataset schema first
-    this.datasetOps.getDatasetSchema(this.datasetId).subscribe({
-      next: (schema: any) => {
-        try {
-          console.log('DatasetOperationsModal: Loaded dataset schema:', schema);
-          
-          // Process schema fields
-          if (schema?.fields && Array.isArray(schema.fields)) {
-            this.columns = schema.fields.map((f: any) => f.name);
-            
-            // Initialize selected columns for operations
-            this.selectedColumns = this.columns.reduce((acc, col) => {
-              acc[col] = true; // Select all columns by default
-              return acc;
-            }, {} as {[key: string]: boolean});
-            
-            // Update validation options with available columns
-            this.validationOptions.uniqueColumns = [...this.columns];
-            
-            // Set default stratify column if available
-            if (this.columns.length > 0) {
-              this.splitOptions.stratifyBy = this.columns[0];
-            }
-            
-            // Load preview data after schema is loaded
-            this.loadPreviewData();
-          } else {
-            console.warn('No valid schema fields found, loading preview data directly');
-            this.loadPreviewData();
-          }
-        } catch (error) {
-          console.error('Error processing dataset schema:', error);
-          this.loadPreviewData(); // Try loading preview data even if schema processing fails
-        }
       },
       error: (error: any) => {
         console.error('Error loading dataset schema, falling back to preview data only:', error);

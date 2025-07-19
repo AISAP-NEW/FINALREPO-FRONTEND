@@ -15,7 +15,8 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonText,
-  ToastController
+  ToastController,
+  AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -24,7 +25,8 @@ import {
   timeOutline,
   checkmarkOutline,
   closeOutline,
-  briefcaseOutline
+  briefcaseOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 import { ProjectService, Project } from '../../services/project.service';
 import { AuthService } from '../../services/auth.service';
@@ -54,19 +56,29 @@ interface PendingRequest {
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
-      <div *ngIf="loading" class="ion-text-center">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="ion-text-center ion-padding">
         <ion-spinner></ion-spinner>
         <p>Loading requests...</p>
       </div>
 
-      <ion-list *ngIf="!loading">
+      <!-- Error State -->
+      <div *ngIf="error" class="ion-padding">
+        <ion-item color="danger">
+          <ion-icon name="alert-circle-outline" slot="start"></ion-icon>
+          <ion-label class="ion-text-wrap">{{ error }}</ion-label>
+        </ion-item>
+      </div>
+
+      <!-- Data State -->
+      <ion-list *ngIf="!loading && !error">
         <div *ngFor="let project of projects">
           <ion-item lines="none" class="project-header">
             <ion-icon name="briefcase-outline" slot="start"></ion-icon>
             <ion-label>
               <h2>{{ project.name }}</h2>
               <p>
-                <ion-chip color="primary" size="small">
+                <ion-chip [color]="getPendingRequestsForProject(project).length > 0 ? 'warning' : 'medium'" size="small">
                   {{ getPendingRequestsForProject(project).length }} Pending Requests
                 </ion-chip>
               </p>
@@ -74,6 +86,7 @@ interface PendingRequest {
           </ion-item>
 
           <ion-item *ngFor="let request of getPendingRequestsForProject(project)" class="request-item">
+            <ion-icon name="person-outline" slot="start" color="medium"></ion-icon>
             <ion-label>
               <h3>{{ request.username }}</h3>
               <p>
@@ -85,22 +98,23 @@ interface PendingRequest {
                 Requested: {{ request.requestDate | date:'medium' }}
               </p>
             </ion-label>
-            <ion-button
-              slot="end"
-              fill="solid"
-              color="success"
-              (click)="approveRequest(request)">
-              <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-              Approve
-            </ion-button>
-            <ion-button
-              slot="end"
-              fill="solid"
-              color="danger"
-              (click)="denyRequest(request)">
-              <ion-icon slot="start" name="close-outline"></ion-icon>
-              Reject
-            </ion-button>
+            <div class="action-buttons" slot="end">
+              <ion-button
+                fill="clear"
+                color="success"
+                [disabled]="processingRequest === request.projectMemberId"
+                (click)="approveRequest(request)">
+                <ion-spinner *ngIf="processingRequest === request.projectMemberId"></ion-spinner>
+                <ion-icon *ngIf="processingRequest !== request.projectMemberId" name="checkmark-outline"></ion-icon>
+              </ion-button>
+              <ion-button
+                fill="clear"
+                color="danger"
+                [disabled]="processingRequest === request.projectMemberId"
+                (click)="denyRequest(request)">
+                <ion-icon name="close-outline"></ion-icon>
+              </ion-button>
+            </div>
           </ion-item>
 
           <div *ngIf="getPendingRequestsForProject(project).length === 0" class="ion-text-center ion-padding-vertical request-empty">
@@ -110,9 +124,11 @@ interface PendingRequest {
           </div>
         </div>
 
+        <!-- Empty State -->
         <div *ngIf="projects.length === 0" class="ion-text-center ion-padding">
           <ion-text color="medium">
-            <p>No projects found</p>
+            <h2>No Projects Found</h2>
+            <p>You don't have any projects that you can manage access for.</p>
           </ion-text>
         </div>
       </ion-list>
@@ -126,36 +142,60 @@ interface PendingRequest {
     }
     .request-item {
       margin-left: 16px;
+      --padding-start: 16px;
+      --padding-end: 16px;
       --padding-top: 12px;
       --padding-bottom: 12px;
+      --background: var(--ion-color-light-shade);
+      margin-bottom: 1px;
     }
     .request-empty {
       margin-left: 16px;
       border-bottom: 1px solid var(--ion-color-light);
+      background: var(--ion-color-light-shade);
+      padding: 16px;
+      margin-bottom: 16px;
     }
     ion-item ion-label h2 {
       font-weight: 600;
       margin-bottom: 8px;
+      color: var(--ion-color-dark);
     }
     ion-item ion-label h3 {
       font-weight: 500;
       margin-bottom: 4px;
+      color: var(--ion-color-dark);
     }
     ion-item ion-label p {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
       margin: 4px 0;
+      color: var(--ion-color-medium);
+    }
+    ion-item ion-label p ion-icon {
+      font-size: 16px;
+      min-width: 16px;
+      color: var(--ion-color-medium);
     }
     ion-item ion-icon[slot="start"] {
       color: var(--ion-color-medium);
       font-size: 24px;
+      margin-right: 16px;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 4px;
     }
     ion-button {
-      margin: 0 4px;
+      margin: 0;
     }
     ion-chip {
       margin: 4px 0 0 0;
+    }
+    ion-spinner {
+      width: 20px;
+      height: 20px;
     }
   `],
   standalone: true,
@@ -179,13 +219,16 @@ interface PendingRequest {
 })
 export class AccessLevelsComponent implements OnInit {
   loading = true;
+  error: string | null = null;
   projects: Project[] = [];
   pendingRequests: PendingRequest[] = [];
+  processingRequest: number | null = null;
 
   constructor(
     private projectService: ProjectService,
     private authService: AuthService,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private alertController: AlertController
   ) {
     addIcons({
       personOutline,
@@ -193,7 +236,8 @@ export class AccessLevelsComponent implements OnInit {
       timeOutline,
       checkmarkOutline,
       closeOutline,
-      briefcaseOutline
+      briefcaseOutline,
+      alertCircleOutline
     });
   }
 
@@ -202,42 +246,48 @@ export class AccessLevelsComponent implements OnInit {
   }
 
   async loadData() {
+    this.loading = true;
+    this.error = null;
+    this.pendingRequests = [];
+    
     try {
-      this.loading = true;
-      this.pendingRequests = [];
-      
-      // Only lead developers can see pending requests
       const currentUser = this.authService.getCurrentUser();
-      if (!currentUser || currentUser.role !== 'LeadDeveloper') {
+      if (!currentUser) {
+        this.error = 'No user logged in';
         this.loading = false;
         return;
       }
 
-      // Get all projects for the lead developer
+      // Get all projects for the user
       this.projects = await firstValueFrom(this.projectService.getAllProjects());
+      console.log('Loaded projects:', this.projects);
       
       // Get pending requests for each project
       for (const project of this.projects) {
-        const requests = await firstValueFrom(
-          this.projectService.getPendingRequests(project.projectId, currentUser.userId)
-        );
-        if (requests && requests.length > 0) {
-          this.pendingRequests.push(...requests.map(r => ({
-            ...r,
-            projectName: project.name
-          })));
+        try {
+          const requests = await firstValueFrom(
+            this.projectService.getPendingRequests(project.projectId, currentUser.userId || currentUser.UserId || 0)
+          );
+          console.log(`Loaded requests for project ${project.name}:`, requests);
+          
+          if (requests && requests.length > 0) {
+            this.pendingRequests.push(...requests.map(r => ({
+              ...r,
+              projectName: project.name
+            })));
+          }
+        } catch (error) {
+          console.error(`Error loading requests for project ${project.name}:`, error);
+          // Continue loading other projects
         }
       }
 
-      // Filter out projects with no pending requests
-      this.projects = this.projects.filter(project => 
-        this.getPendingRequestsForProject(project).length > 0
-      );
+      console.log('All pending requests:', this.pendingRequests);
       
       this.loading = false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading data:', error);
-      this.showToast('Failed to load requests', 'danger');
+      this.error = error.message || 'Failed to load requests';
       this.loading = false;
     }
   }
@@ -247,63 +297,100 @@ export class AccessLevelsComponent implements OnInit {
   }
 
   async approveRequest(request: PendingRequest) {
-    try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) return;
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.showToast('No user logged in', 'danger');
+      return;
+    }
 
+    const alert = await this.alertController.create({
+      header: 'Confirm Approval',
+      message: `Are you sure you want to approve access for ${request.username}?`,
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Approve',
+          role: 'confirm',
+          handler: () => this.processApproval(request, currentUser.userId || currentUser.UserId || 0)
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  private async processApproval(request: PendingRequest, leadDeveloperId: number) {
+    this.processingRequest = request.projectMemberId;
+
+    try {
       await firstValueFrom(this.projectService.approveAccess({
         userId: request.userId,
         projectId: request.projectId,
-        leadDeveloperId: currentUser.userId
+        leadDeveloperId
       }));
-      
-      // Remove the request from the list
-      this.pendingRequests = this.pendingRequests.filter(r => 
-        r.projectMemberId !== request.projectMemberId
-      );
-
-      // Update projects list if no more requests for this project
-      if (this.getPendingRequestsForProject({ projectId: request.projectId } as Project).length === 0) {
-        this.projects = this.projects.filter(p => p.projectId !== request.projectId);
-      }
 
       this.showToast('Access request approved', 'success');
-    } catch (error) {
+      await this.loadData(); // Refresh the list
+    } catch (error: any) {
       console.error('Error approving request:', error);
-      this.showToast('Failed to approve request', 'danger');
+      this.showToast(error.message || 'Failed to approve request', 'danger');
+    } finally {
+      this.processingRequest = null;
     }
   }
 
   async denyRequest(request: PendingRequest) {
-    try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) return;
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.showToast('No user logged in', 'danger');
+      return;
+    }
 
+    const alert = await this.alertController.create({
+      header: 'Confirm Rejection',
+      message: `Are you sure you want to deny access for ${request.username}?`,
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Deny',
+          role: 'confirm',
+          cssClass: 'danger',
+          handler: () => this.processDenial(request, currentUser.userId || currentUser.UserId || 0)
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  private async processDenial(request: PendingRequest, leadDeveloperId: number) {
+    this.processingRequest = request.projectMemberId;
+
+    try {
       await firstValueFrom(this.projectService.denyAccess({
         userId: request.userId,
         projectId: request.projectId,
-        leadDeveloperId: currentUser.userId
+        leadDeveloperId
       }));
-      
-      // Remove the request from the list
-      this.pendingRequests = this.pendingRequests.filter(r => 
-        r.projectMemberId !== request.projectMemberId
-      );
-
-      // Update projects list if no more requests for this project
-      if (this.getPendingRequestsForProject({ projectId: request.projectId } as Project).length === 0) {
-        this.projects = this.projects.filter(p => p.projectId !== request.projectId);
-      }
 
       this.showToast('Access request denied', 'success');
-    } catch (error) {
+      await this.loadData(); // Refresh the list
+    } catch (error: any) {
       console.error('Error denying request:', error);
-      this.showToast('Failed to deny request', 'danger');
+      this.showToast(error.message || 'Failed to deny request', 'danger');
+    } finally {
+      this.processingRequest = null;
     }
   }
 
-  handleRefresh(event: any) {
-    this.loadData();
+  async handleRefresh(event: any) {
+    await this.loadData();
     event.target.complete();
   }
 
@@ -311,7 +398,14 @@ export class AccessLevelsComponent implements OnInit {
     const toast = await this.toastController.create({
       message,
       duration: 3000,
-      color
+      color,
+      position: 'bottom',
+      buttons: [
+        {
+          text: 'Dismiss',
+          role: 'cancel'
+        }
+      ]
     });
     await toast.present();
   }

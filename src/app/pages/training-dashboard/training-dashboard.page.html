@@ -1,0 +1,195 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Training Dashboard</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Training Status Card -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Training Status</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="status-container">
+        <div class="status-badge" [ngClass]="status.toLowerCase()">
+          {{ status }}
+        </div>
+        <div class="control-buttons">
+          <ion-button color="warning" (click)="stopTraining()" *ngIf="status === 'Running'">
+            <ion-icon slot="start" name="pause"></ion-icon>
+            Pause Training
+          </ion-button>
+          <ion-button color="success" (click)="resumeTraining()" *ngIf="status === 'Paused'">
+            <ion-icon slot="start" name="play"></ion-icon>
+            Resume Training
+          </ion-button>
+          <ion-button color="primary" (click)="deployModel()" *ngIf="status === 'Completed'">
+            <ion-icon slot="start" name="cloud-upload"></ion-icon>
+            Deploy Model
+          </ion-button>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Training Progress -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Training Progress</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <div class="metric-label">Epoch</div>
+          <div class="metric-value">{{ currentEpoch || 0 }}/{{ totalEpochs || 0 }}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Loss</div>
+          <div class="metric-value">{{ currentLoss | number:'1.4-4' }}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Accuracy</div>
+          <div class="metric-value">{{ currentAccuracy | percent:'1.1-1' }}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Val Loss</div>
+          <div class="metric-value">{{ currentValLoss | number:'1.4-4' }}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Val Accuracy</div>
+          <div class="metric-value">{{ currentValAccuracy | percent:'1.1-1' }}</div>
+        </div>
+      </div>
+      <ion-progress-bar [value]="(currentEpoch || 0) / (totalEpochs || 1)" [buffer]="0.5"></ion-progress-bar>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Training Logs -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Training Logs</ion-card-title>
+      <ion-button fill="clear" size="small" (click)="clearLogs()">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="logs-container">
+        <div *ngFor="let log of logs" class="log-entry" [ngClass]="log.type">
+          <span class="log-timestamp">{{ log.timestamp | date:'HH:mm:ss' }}</span>
+          <span class="log-message">{{ log.message }}</span>
+        </div>
+        <div *ngIf="!logs.length" class="no-logs">
+          No logs available
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
+<style>
+  .status-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .status-badge.running {
+    background-color: var(--ion-color-success-tint);
+    color: var(--ion-color-success-shade);
+  }
+
+  .status-badge.paused {
+    background-color: var(--ion-color-warning-tint);
+    color: var(--ion-color-warning-shade);
+  }
+
+  .status-badge.completed {
+    background-color: var(--ion-color-primary-tint);
+    color: var(--ion-color-primary-shade);
+  }
+
+  .status-badge.error {
+    background-color: var(--ion-color-danger-tint);
+    color: var(--ion-color-danger-shade);
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .metric-item {
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background-color: var(--ion-color-light);
+  }
+
+  .metric-label {
+    font-size: 0.9rem;
+    color: var(--ion-color-medium);
+    margin-bottom: 0.25rem;
+  }
+
+  .metric-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--ion-color-dark);
+  }
+
+  .logs-container {
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: monospace;
+    background-color: var(--ion-color-light);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .log-entry {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .log-timestamp {
+    color: var(--ion-color-medium);
+    margin-right: 0.5rem;
+  }
+
+  .log-entry.error {
+    color: var(--ion-color-danger);
+  }
+
+  .log-entry.warning {
+    color: var(--ion-color-warning);
+  }
+
+  .log-entry.success {
+    color: var(--ion-color-success);
+  }
+
+  .no-logs {
+    text-align: center;
+    color: var(--ion-color-medium);
+    padding: 2rem;
+  }
+
+  ion-progress-bar {
+    margin-top: 1rem;
+  }
+</style>

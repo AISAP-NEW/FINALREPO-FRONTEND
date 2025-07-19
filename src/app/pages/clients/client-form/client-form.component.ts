@@ -13,7 +13,9 @@ import {
   IonItem,
   IonLabel,
   IonInput,
-  ModalController
+  ModalController,
+  ToastController,
+  IonSpinner
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { closeOutline } from 'ionicons/icons';
@@ -93,8 +95,9 @@ import { Client, CreateClientDTO, UpdateClientDTO } from '../../../services/clie
         </ion-list>
 
         <div class="ion-padding">
-          <ion-button expand="block" type="submit" [disabled]="!clientForm.valid">
-            {{ client ? 'Update Client' : 'Create Client' }}
+          <ion-button expand="block" type="submit" [disabled]="!clientForm.valid || submitting">
+            <ion-spinner *ngIf="submitting"></ion-spinner>
+            <span *ngIf="!submitting">{{ client ? 'Update Client' : 'Create Client' }}</span>
           </ion-button>
         </div>
       </form>
@@ -111,6 +114,7 @@ import { Client, CreateClientDTO, UpdateClientDTO } from '../../../services/clie
       --padding-start: 0;
       --padding-end: 0;
       --inner-padding-end: 0;
+      margin-bottom: 16px;
     }
 
     ion-label {
@@ -120,6 +124,15 @@ import { Client, CreateClientDTO, UpdateClientDTO } from '../../../services/clie
     ion-input {
       --padding-start: 16px;
       --padding-end: 16px;
+      margin-top: 8px;
+    }
+
+    ion-button {
+      margin-top: 24px;
+    }
+
+    ion-spinner {
+      margin-right: 8px;
     }
   `],
   standalone: true,
@@ -136,24 +149,28 @@ import { Client, CreateClientDTO, UpdateClientDTO } from '../../../services/clie
     IonList,
     IonItem,
     IonLabel,
-    IonInput
+    IonInput,
+    IonSpinner
   ]
 })
 export class ClientFormComponent implements OnInit {
   @Input() client?: Client;
+  @Input() mode: 'create' | 'edit' = 'create';
   clientForm: FormGroup;
+  submitting = false;
 
   constructor(
     private formBuilder: FormBuilder,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private toastController: ToastController
   ) {
     addIcons({ closeOutline });
     
     this.clientForm = this.formBuilder.group({
-      name: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      telephoneNumber: ['', [Validators.required]],
-      address: ['', [Validators.required]]
+      name: ['', [Validators.required, Validators.maxLength(100)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
+      telephoneNumber: ['', [Validators.required, Validators.maxLength(20)]],
+      address: ['', [Validators.required, Validators.maxLength(200)]]
     });
   }
 
@@ -168,20 +185,46 @@ export class ClientFormComponent implements OnInit {
     }
   }
 
-  onSubmit() {
-    if (this.clientForm.valid) {
-      const formData = this.clientForm.value;
-      const clientData: CreateClientDTO | UpdateClientDTO = {
-        name: formData.name,
-        email: formData.email,
-        telephoneNumber: formData.telephoneNumber,
-        address: formData.address
-      };
-      this.modalController.dismiss(clientData, 'confirm');
+  async onSubmit() {
+    if (this.clientForm.valid && !this.submitting) {
+      this.submitting = true;
+      
+      try {
+        const formData = this.clientForm.value;
+        const clientData: CreateClientDTO | UpdateClientDTO = {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          telephoneNumber: formData.telephoneNumber.trim(),
+          address: formData.address.trim()
+        };
+
+        await this.modalController.dismiss(clientData, 'confirm');
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        this.showToast('Failed to submit form. Please try again.');
+      } finally {
+        this.submitting = false;
+      }
+    } else {
+      // Mark all fields as touched to trigger validation messages
+      Object.keys(this.clientForm.controls).forEach(key => {
+        const control = this.clientForm.get(key);
+        control?.markAsTouched();
+      });
     }
   }
 
   dismiss() {
     this.modalController.dismiss(null, 'cancel');
+  }
+
+  private async showToast(message: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color: 'danger',
+      position: 'bottom'
+    });
+    await toast.present();
   }
 } 

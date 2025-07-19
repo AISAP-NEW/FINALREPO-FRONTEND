@@ -6,15 +6,16 @@ import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface LoginDTO {
-  username: string;
-  password: string;
+  Username: string;
+  Password: string;
 }
 
 export interface RegisterDTO {
-  username: string;
-  email: string;
-  password: string;
-  role: string;
+  Username: string;
+  Email: string;
+  Password: string;
+  ConfirmPassword: string;
+  Role: string;
 }
 
 export interface ForgotPasswordDTO {
@@ -39,13 +40,23 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  // Add these for API response compatibility
+  UserId?: number;
+  Username?: string;
+  Email?: string;
+  Role?: string;
 }
 
 export interface LoginResponse {
-  userId: number;
-  username: string;
-  email: string;
-  role: string;
+  UserId: number;
+  Username: string;
+  Email: string;
+  Role: string;
+  // Add these for backward compatibility
+  userId?: number;
+  username?: string;
+  email?: string;
+  role?: string;
 }
 
 export interface RegisterResponse {
@@ -59,7 +70,7 @@ export interface RegisterResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/api/user`;
+  private apiUrl = `${environment.apiUrl}/api/User`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
 
@@ -77,9 +88,25 @@ export class AuthService {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       const user = JSON.parse(storedUser);
+      // Ensure both camelCase and PascalCase properties exist
+      this.normalizeUser(user);
       this.currentUserSubject.next(user);
       this.isAuthenticatedSubject.next(true);
     }
+  }
+
+  private normalizeUser(user: any): User {
+    return {
+      userId: user.userId || user.UserId || 0,
+      username: user.username || user.Username || '',
+      email: user.email || user.Email || '',
+      role: user.role || user.Role || 'user',
+      // Keep original properties for API compatibility
+      UserId: user.userId || user.UserId || 0,
+      Username: user.username || user.Username || '',
+      Email: user.email || user.Email || '',
+      Role: user.role || user.Role || 'user'
+    };
   }
 
   private handleError(error: HttpErrorResponse) {
@@ -88,11 +115,18 @@ export class AuthService {
       statusText: error.statusText,
       error: error.error,
       message: error.message,
-      url: error.url
+      url: error.url,
+      headers: error.headers,
+      name: error.name
     });
 
     if (error.status === 0) {
       return throwError(() => new Error('Unable to connect to the server. Please check your internet connection.'));
+    }
+    
+    if (error.status === 401) {
+      const serverMessage = error.error?.message || 'Invalid credentials';
+      return throwError(() => new Error(`Authentication failed: ${serverMessage}`));
     }
     
     if (error.status === 404) {
@@ -101,23 +135,32 @@ export class AuthService {
     
     if (error.error instanceof ErrorEvent) {
       // Client-side error
-      return throwError(() => new Error(error.error.message));
+      return throwError(() => new Error(`Client error: ${error.error.message}`));
     }
     
     // Server-side error
-    const message = error.error?.message || error.message || 'An unexpected error occurred';
+    let message = 'An unexpected error occurred';
+    if (error.error?.message) {
+      message = error.error.message;
+    } else if (error.message) {
+      message = error.message;
+    }
+    
     return throwError(() => new Error(message));
   }
 
   login(credentials: LoginDTO): Observable<LoginResponse> {
-    console.log('Attempting login for user:', credentials.username);
+    console.log('Attempting login for user:', credentials.Username);
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, this.httpOptions)
       .pipe(
-        tap(response => {
+        tap((response: LoginResponse) => {
           console.log('Login successful:', response);
-          this.currentUserSubject.next(response);
+          const user = this.normalizeUser(response);
+          this.currentUserSubject.next(user);
           this.isAuthenticatedSubject.next(true);
-          localStorage.setItem('currentUser', JSON.stringify(response));
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          
+          // Navigate to home page
           this.router.navigate(['/home']);
         }),
         catchError(this.handleError)
@@ -125,7 +168,7 @@ export class AuthService {
   }
 
   register(userData: RegisterDTO): Observable<any> {
-    console.log('Attempting registration for user:', userData.username);
+    console.log('Attempting registration for user:', userData.Username);
     return this.http.post(`${this.apiUrl}/register`, userData, this.httpOptions)
       .pipe(
         tap(response => {
@@ -193,7 +236,8 @@ export class AuthService {
   }
 
   getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+    const user = this.currentUserSubject.value;
+    return user ? this.normalizeUser(user) : null;
   }
 
   isAuthenticated(): boolean {
@@ -209,6 +253,6 @@ export class AuthService {
     if (!user) {
       throw new Error('No user logged in');
     }
-    return user.userId;
+    return user.userId || user.UserId || 0;
   }
 } 

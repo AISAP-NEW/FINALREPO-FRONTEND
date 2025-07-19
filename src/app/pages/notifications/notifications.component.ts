@@ -10,7 +10,6 @@ import {
   IonLabel,
   IonButton,
   IonIcon,
-  IonChip,
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
@@ -19,21 +18,20 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
-  notificationsOutline,
   timeOutline,
-  checkmarkCircleOutline,
-  closeCircleOutline,
-  warningOutline,
-  peopleOutline,
   checkmarkOutline,
-  codeOutline,
-  personOutline
+  checkmarkDoneOutline,
+  alertCircleOutline,
+  briefcaseOutline,
+  personOutline,
+  mailOutline,
+  notificationsOutline
 } from 'ionicons/icons';
 import { NotificationService, Notification } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
-import { Subscription } from 'rxjs';
-import { interval } from 'rxjs';
-import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
+import { interval, Subscription } from 'rxjs';
+import { MainLayoutComponent } from '../../layouts/main-layout/main-layout.component';
 
 @Component({
   selector: 'app-notifications',
@@ -42,98 +40,122 @@ import { firstValueFrom } from 'rxjs';
       <ion-toolbar>
         <ion-title>Notifications</ion-title>
         <ion-buttons slot="end">
-          <ion-button (click)="markAllAsRead()" [disabled]="loading || !hasUnreadNotifications">
+          <ion-button (click)="markAllAsRead()" [disabled]="loading || !hasUnreadNotifications()">
+            <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
             Mark All as Read
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
+    <ion-content class="ion-padding">
       <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
-      <div class="ion-padding">
-        <div *ngIf="loading" class="ion-text-center">
-          <ion-spinner></ion-spinner>
-        </div>
-
-        <ion-list *ngIf="!loading">
-          <ion-item *ngFor="let notification of notifications" [class.unread]="!notification.isRead">
-            <ion-icon 
-              [name]="getNotificationIcon(notification.type)" 
-              slot="start"
-              [color]="getNotificationColor(notification.type)">
-            </ion-icon>
-            <ion-label class="ion-text-wrap">
-              <h2>{{ notification.message }}</h2>
-              <p class="notification-meta">
-                <ion-chip [color]="getNotificationColor(notification.type)" outline>
-                  {{ notification.type }}
-                </ion-chip>
-                <ion-chip [color]="notification.isRead ? 'medium' : 'primary'" outline>
-                  {{ notification.isRead ? 'Read' : 'Unread' }}
-                </ion-chip>
-                <span class="time">
-                  <ion-icon name="time-outline"></ion-icon>
-                  {{ notification.createdDate | date:'medium' }}
-                </span>
-                <span *ngIf="notification.projectName" class="project">
-                  <ion-icon name="folder-outline"></ion-icon>
-                  {{ notification.projectName }}
-                </span>
-                <span *ngIf="notification.senderName" class="sender">
-                  <ion-icon name="person-outline"></ion-icon>
-                  {{ notification.senderName }}
-                </span>
-              </p>
-            </ion-label>
-            <ion-button 
-              slot="end" 
-              fill="clear"
-              (click)="markAsRead(notification)"
-              *ngIf="!notification.isRead">
-              <ion-icon name="checkmark-outline" slot="icon-only"></ion-icon>
-            </ion-button>
-          </ion-item>
-
-          <ion-item *ngIf="notifications.length === 0" lines="none">
-            <ion-label class="ion-text-center">
-              No notifications to display
-            </ion-label>
-          </ion-item>
-        </ion-list>
+      <!-- Loading State -->
+      <div *ngIf="loading" class="ion-text-center ion-padding">
+        <ion-spinner></ion-spinner>
+        <p>Loading notifications...</p>
       </div>
+
+      <!-- Error State -->
+      <div *ngIf="error" class="ion-padding">
+        <ion-item color="danger">
+          <ion-icon name="alert-circle-outline" slot="start"></ion-icon>
+          <ion-label class="ion-text-wrap">{{ error }}</ion-label>
+        </ion-item>
+      </div>
+
+      <!-- Data State -->
+      <ion-list *ngIf="!loading && !error">
+        <ion-item *ngFor="let notification of notifications" class="notification-item" [class.unread]="!notification.isRead">
+          <ion-icon 
+            [name]="getNotificationIcon(notification.type)" 
+            slot="start" 
+            [color]="getNotificationColor(notification.type)">
+          </ion-icon>
+          <ion-label class="ion-text-wrap">
+            <h2>{{ notification.message }}</h2>
+            <p *ngIf="notification.projectName">
+              <ion-icon name="briefcase-outline"></ion-icon>
+              {{ notification.projectName }}
+            </p>
+            <p *ngIf="notification.senderName">
+              <ion-icon name="person-outline"></ion-icon>
+              {{ notification.senderName }}
+            </p>
+            <p>
+              <ion-icon name="time-outline"></ion-icon>
+              {{ notification.createdDate | date:'medium' }}
+            </p>
+          </ion-label>
+          <ion-button 
+            fill="clear" 
+            color="primary" 
+            slot="end"
+            [disabled]="notification.isRead"
+            (click)="markAsRead(notification)">
+            <ion-spinner *ngIf="processingNotificationId === notification.notificationId"></ion-spinner>
+            <ion-icon 
+              *ngIf="processingNotificationId !== notification.notificationId"
+              [name]="notification.isRead ? 'checkmark-done-outline' : 'checkmark-outline'">
+            </ion-icon>
+          </ion-button>
+        </ion-item>
+
+        <!-- Empty State -->
+        <div *ngIf="notifications.length === 0" class="ion-text-center ion-padding">
+          <ion-icon name="notifications-outline" class="empty-icon"></ion-icon>
+          <h2>No Notifications</h2>
+          <p>You don't have any notifications yet.</p>
+        </div>
+      </ion-list>
     </ion-content>
   `,
   styles: [`
-    .unread {
+    .notification-item {
+      --padding-start: 16px;
+      --padding-end: 16px;
+      --padding-top: 12px;
+      --padding-bottom: 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
       --background: var(--ion-color-light);
-      font-weight: 500;
     }
-    .notification-meta {
+    .notification-item.unread {
+      --background: var(--ion-color-light-tint);
+      border-left: 4px solid var(--ion-color-primary);
+    }
+    ion-item ion-label h2 {
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--ion-color-dark);
+    }
+    ion-item ion-label p {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-    .time, .project, .sender {
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      margin: 4px 0;
       color: var(--ion-color-medium);
-      font-size: 0.9em;
     }
-    ion-chip {
-      margin: 0;
-      font-size: 0.85em;
+    ion-item ion-label p ion-icon {
+      font-size: 16px;
+      min-width: 16px;
+      color: var(--ion-color-medium);
     }
-    h2 {
-      margin: 0 0 8px 0;
-      font-size: 1em;
-      line-height: 1.4;
+    ion-item ion-icon[slot="start"] {
+      font-size: 24px;
+      margin-right: 16px;
+    }
+    .empty-icon {
+      font-size: 48px;
+      color: var(--ion-color-medium);
+      margin-bottom: 16px;
+    }
+    ion-spinner {
+      width: 20px;
+      height: 20px;
     }
   `],
   standalone: true,
@@ -148,7 +170,6 @@ import { firstValueFrom } from 'rxjs';
     IonLabel,
     IonButton,
     IonIcon,
-    IonChip,
     IonSpinner,
     IonRefresher,
     IonRefresherContent,
@@ -156,169 +177,182 @@ import { firstValueFrom } from 'rxjs';
   ]
 })
 export class NotificationsComponent implements OnInit, OnDestroy {
-  notifications: Notification[] = [];
   loading = true;
-  hasUnreadNotifications = false;
-  private refreshSubscription: Subscription | null = null;
+  error: string | null = null;
+  notifications: Notification[] = [];
+  processingNotificationId: number | null = null;
+  private pollingSubscription: Subscription | null = null;
+  private readonly POLLING_INTERVAL = 30000; // Poll every 30 seconds
 
   constructor(
     private notificationService: NotificationService,
     private authService: AuthService,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private router: Router,
+    private mainLayout: MainLayoutComponent
   ) {
     addIcons({
-      notificationsOutline,
       timeOutline,
-      checkmarkCircleOutline,
-      closeCircleOutline,
-      warningOutline,
-      peopleOutline,
       checkmarkOutline,
-      codeOutline,
-      personOutline
+      checkmarkDoneOutline,
+      alertCircleOutline,
+      briefcaseOutline,
+      personOutline,
+      mailOutline,
+      notificationsOutline
     });
   }
 
   ngOnInit() {
     this.loadNotifications();
-    // Refresh notifications every minute
-    this.refreshSubscription = interval(60000).subscribe(() => {
-      this.loadNotifications();
-    });
+    this.startPolling();
   }
 
   ngOnDestroy() {
-    if (this.refreshSubscription) {
-      this.refreshSubscription.unsubscribe();
+    this.stopPolling();
+  }
+
+  private startPolling() {
+    // Stop any existing polling
+    this.stopPolling();
+
+    // Start new polling
+    this.pollingSubscription = interval(this.POLLING_INTERVAL)
+      .subscribe(() => this.loadNotifications());
+  }
+
+  private stopPolling() {
+    if (this.pollingSubscription) {
+      this.pollingSubscription.unsubscribe();
+      this.pollingSubscription = null;
     }
   }
 
-  loadNotifications() {
-    this.loading = true;
+  async loadNotifications() {
     const currentUser = this.authService.getCurrentUser();
-    console.log('Current user:', currentUser);
-
-    this.notificationService.getNotifications().subscribe(
-      (notifications) => {
-        console.log('Received notifications:', notifications);
-        this.notifications = notifications;
-        this.hasUnreadNotifications = notifications.some(n => !n.isRead);
-        this.loading = false;
-      },
-      async (error) => {
-        console.error('Error loading notifications:', error);
-        this.loading = false;
-        await this.showToast('Error loading notifications. Please try again.', 'danger');
-      }
-    );
-  }
-
-  handleRefresh(event: any) {
-    this.loadNotifications();
-    event.target.complete();
-  }
-
-  async markAsRead(notification: Notification) {
-    if (!notification.isRead) {
-      try {
-        const loading = await this.toastController.create({
-          message: 'Marking as read...',
-          duration: 0,
-          position: 'bottom',
-          color: 'medium'
-        });
-        await loading.present();
-
-        await firstValueFrom(this.notificationService.markAsRead(notification.notificationId));
-        
-        // Update the local notification state
-        notification.isRead = true;
-        this.hasUnreadNotifications = this.notifications.some(n => !n.isRead);
-        
-        await loading.dismiss();
-        await this.showToast('Notification marked as read', 'success');
-        
-        // Refresh the notifications list to ensure we have the latest state
-        this.loadNotifications();
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
-        await this.showToast('Error marking notification as read', 'danger');
-      }
+    if (!currentUser) {
+      // Instead of showing error, redirect to login
+      this.router.navigate(['/login']);
+      return;
     }
-  }
 
-  async markAllAsRead() {
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser) {
-      try {
-        const loading = await this.toastController.create({
-          message: 'Marking all as read...',
-          duration: 0,
-          position: 'bottom',
-          color: 'medium'
-        });
-        await loading.present();
-
-        await firstValueFrom(this.notificationService.markAllAsRead(currentUser.userId));
-        
-        // Update all local notification states
-        this.notifications.forEach(n => n.isRead = true);
-        this.hasUnreadNotifications = false;
-        
-        await loading.dismiss();
-        await this.showToast('All notifications marked as read', 'success');
-        
-        // Refresh the notifications list to ensure we have the latest state
-        this.loadNotifications();
-      } catch (error) {
-        console.error('Error marking all notifications as read:', error);
-        await this.showToast('Error marking all notifications as read', 'danger');
+    try {
+      this.loading = true;
+      this.error = null;
+      const userId = currentUser.userId || currentUser.UserId || 0;
+      this.notifications = await this.notificationService.getNotifications(userId).toPromise() || [];
+      this.mainLayout.updateNotifications(); // Update the notification count in the layout
+      this.loading = false;
+    } catch (error: any) {
+      console.error('Error loading notifications:', error);
+      if (error.message?.includes('Unauthorized')) {
+        // If unauthorized, redirect to login
+        this.router.navigate(['/login']);
+      } else {
+        this.error = error.message || 'Failed to load notifications';
+        this.loading = false;
       }
     }
   }
 
   getNotificationIcon(type: string): string {
-    switch (type) {
-      case 'ProjectAssigned':
-        return 'people-outline';
-      case 'ProjectRemoved':
-        return 'close-circle-outline';
-      case 'AccessRequested':
-        return 'notifications-outline';
-      case 'AccessGranted':
-        return 'checkmark-circle-outline';
-      case 'AccessDenied':
-        return 'close-circle-outline';
-      case 'RoleChanged':
-        return 'warning-outline';
+    switch (type?.toLowerCase()) {
+      case 'projectcreated':
+      case 'projectupdated':
+      case 'projectdeleted':
+        return 'briefcase-outline';
+      case 'accessrequested':
+      case 'accessgranted':
+      case 'accessdenied':
+        return 'person-outline';
+      case 'datasetadded':
+        return 'mail-outline';
       default:
         return 'notifications-outline';
     }
   }
 
   getNotificationColor(type: string): string {
-    switch (type) {
-      case 'ProjectAssigned':
-      case 'AccessGranted':
+    switch (type?.toLowerCase()) {
+      case 'projectcreated':
         return 'success';
-      case 'ProjectRemoved':
-      case 'AccessDenied':
-        return 'danger';
-      case 'AccessRequested':
-        return 'primary';
-      case 'RoleChanged':
+      case 'projectupdated':
         return 'warning';
+      case 'projectdeleted':
+        return 'danger';
+      case 'accessrequested':
+        return 'warning';
+      case 'accessgranted':
+        return 'success';
+      case 'accessdenied':
+        return 'danger';
+      case 'datasetadded':
+        return 'primary';
       default:
         return 'medium';
     }
   }
 
-  private async showToast(message: string, color: 'success' | 'danger' | 'warning') {
+  hasUnreadNotifications(): boolean {
+    return this.notifications.some(notification => !notification.isRead);
+  }
+
+  async markAsRead(notification: Notification) {
+    if (notification.isRead) return;
+
+    this.processingNotificationId = notification.notificationId;
+
+    try {
+      await this.notificationService.markAsRead(notification.notificationId).toPromise();
+      notification.isRead = true;
+      this.mainLayout.updateNotifications(); // Update the notification count in the layout
+      this.showToast('Notification marked as read', 'success');
+    } catch (error: any) {
+      console.error('Error marking notification as read:', error);
+      this.showToast(error.message || 'Failed to mark notification as read', 'danger');
+    } finally {
+      this.processingNotificationId = null;
+    }
+  }
+
+  async markAllAsRead() {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.showToast('No user logged in', 'danger');
+      return;
+    }
+
+    try {
+      this.loading = true;
+      await this.notificationService.markAllAsRead(currentUser.userId || currentUser.UserId || 0).toPromise();
+      this.notifications.forEach(notification => notification.isRead = true);
+      this.mainLayout.updateNotifications(); // Update the notification count in the layout
+      this.showToast('All notifications marked as read', 'success');
+    } catch (error: any) {
+      console.error('Error marking all notifications as read:', error);
+      this.showToast(error.message || 'Failed to mark all notifications as read', 'danger');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async handleRefresh(event: any) {
+    await this.loadNotifications();
+    event.target.complete();
+  }
+
+  private async showToast(message: string, color: 'success' | 'danger') {
     const toast = await this.toastController.create({
       message,
       duration: 3000,
       color,
-      position: 'bottom'
+      position: 'bottom',
+      buttons: [
+        {
+          text: 'Dismiss',
+          role: 'cancel'
+        }
+      ]
     });
     await toast.present();
   }

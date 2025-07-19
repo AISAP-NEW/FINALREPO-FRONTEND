@@ -1,0 +1,72 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Dataset Train/Test Split Results</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding split-page-content">
+  <ng-container *ngIf="splitResult; else noResults">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Split Summary</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-label>Train File</ion-label>
+            <ion-badge color="primary">{{ splitResult.trainFileName }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-label>Train Rows</ion-label>
+            <ion-badge color="primary">{{ splitResult.trainCount }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-label>Test File</ion-label>
+            <ion-badge color="secondary">{{ splitResult.testFileName }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-label>Test Rows</ion-label>
+            <ion-badge color="secondary">{{ splitResult.testCount }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-label>Split ID</ion-label>
+            <ion-badge color="tertiary">{{ splitResult.splitId }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-label>Version ID</ion-label>
+            <ion-badge color="tertiary">{{ splitResult.versionId }}</ion-badge>
+          </ion-item>
+          <ion-item>
+            <ion-label>Validation ID</ion-label>
+            <ion-badge color="tertiary">{{ splitResult.validationId }}</ion-badge>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </ng-container>
+  <ng-template #noResults>
+    <ion-text color="medium">
+      <h2>No split results to display. Please run a split operation.</h2>
+    </ion-text>
+  </ng-template>
+</ion-content>
+
+<style>
+.split-page-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.split-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.split-table th, .split-table td {
+  border: 1px solid #e0e0e0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.split-table th {
+  background: #f5f5f5;
+}
+</style>

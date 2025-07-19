@@ -1,18 +1,8 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { 
-  IonContent, 
-  IonItem, 
-  IonLabel, 
-  IonInput,
-  IonButton,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
-  ToastController
-} from '@ionic/angular/standalone';
+import { ToastController } from '@ionic/angular/standalone';
+import { IonContent, IonItem, IonLabel, IonInput, IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardContent } from '@ionic/angular/standalone';
 import { AuthService, RegisterDTO } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 
@@ -38,6 +28,7 @@ import { CommonModule } from '@angular/common';
 })
 export class RegisterComponent {
   registerForm: FormGroup;
+  passwordPattern = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$';
 
   constructor(
     private formBuilder: FormBuilder,
@@ -46,17 +37,18 @@ export class RegisterComponent {
     private toastController: ToastController
   ) {
     this.registerForm = this.formBuilder.group({
-      username: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
+      Username: ['', [Validators.required]],
+      Email: ['', [Validators.required, Validators.email]],
+      Password: ['', [Validators.required, Validators.pattern(this.passwordPattern)]],
+      ConfirmPassword: ['', [Validators.required]],
+      Role: ['Developer', [Validators.required]] // Default role
     }, {
       validators: this.passwordMatchValidator
     });
   }
 
   private passwordMatchValidator(g: FormGroup) {
-    return g.get('password')?.value === g.get('confirmPassword')?.value
+    return g.get('Password')?.value === g.get('ConfirmPassword')?.value
       ? null
       : { mismatch: true };
   }
@@ -66,22 +58,21 @@ export class RegisterComponent {
       try {
         const formValue = this.registerForm.value;
         const userData: RegisterDTO = {
-          username: formValue.username,
-          email: formValue.email,
-          password: formValue.password,
-          role: 'Developer' // Default role
+          Username: formValue.Username,
+          Email: formValue.Email,
+          Password: formValue.Password,
+          ConfirmPassword: formValue.ConfirmPassword,
+          Role: formValue.Role
         };
 
         this.authService.register(userData).subscribe({
           next: async () => {
-            // Show success message
             await this.showToast('Registration successful! Please login with your credentials.', 'success');
-            // Redirect to login page
             this.router.navigate(['/login']);
           },
           error: (error) => {
             console.error('Registration error:', error);
-            this.showError(error.error?.message || 'Registration failed');
+            this.showError(error.error?.message || error.message || 'Registration failed');
           }
         });
       } catch (error: any) {
@@ -91,6 +82,8 @@ export class RegisterComponent {
     } else {
       if (this.registerForm.errors?.['mismatch']) {
         await this.showError('Passwords do not match');
+      } else if (this.registerForm.get('Password')?.errors?.['pattern']) {
+        await this.showError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character');
       } else {
         await this.showError('Please fill in all required fields correctly');
       }

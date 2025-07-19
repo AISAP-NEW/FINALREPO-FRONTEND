@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   IonHeader,
   IonToolbar,
@@ -33,9 +32,10 @@ import {
   linkOutline,
   eyeOutline,
   locationOutline,
-  searchOutline
+  searchOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
-import { ClientService, Client, CreateClientDTO, UpdateClientDTO } from '../../services/client.service';
+import { ClientService, Client } from '../../services/client.service';
 import { ClientFormComponent } from './client-form/client-form.component';
 import { ClientDetailsComponent } from './client-details/client-details.component';
 import { ClientProjectFormComponent } from './client-project-form/client-project-form.component';
@@ -78,7 +78,7 @@ import { ClientProjectFormComponent } from './client-project-form/client-project
       <!-- Error State -->
       <div *ngIf="error" class="ion-padding">
         <ion-item color="danger">
-          <ion-icon name="alert-circle" slot="start"></ion-icon>
+          <ion-icon name="alert-circle-outline" slot="start"></ion-icon>
           <ion-label>{{ error }}</ion-label>
         </ion-item>
       </div>
@@ -104,7 +104,7 @@ import { ClientProjectFormComponent } from './client-project-form/client-project
               </p>
               <div class="project-count">
                 <ion-icon name="people-outline"></ion-icon>
-                <ion-badge color="primary">{{ client.projects.length }} Projects</ion-badge>
+                <ion-badge color="primary">{{ client.projects.length || 0 }} Projects</ion-badge>
               </div>
             </ion-label>
             <div class="action-buttons" slot="end">
@@ -137,12 +137,16 @@ import { ClientProjectFormComponent } from './client-project-form/client-project
       --padding-end: 16px;
       --padding-top: 12px;
       --padding-bottom: 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      --background: var(--ion-color-light);
     }
 
     ion-label h2 {
       font-weight: bold;
       margin-bottom: 8px;
       font-size: 18px;
+      color: var(--ion-color-dark);
     }
 
     ion-label p {
@@ -156,6 +160,7 @@ import { ClientProjectFormComponent } from './client-project-form/client-project
     ion-label p ion-icon {
       font-size: 16px;
       min-width: 16px;
+      color: var(--ion-color-medium);
     }
 
     .project-count {
@@ -185,12 +190,19 @@ import { ClientProjectFormComponent } from './client-project-form/client-project
       --padding-start: 8px;
       --padding-end: 8px;
     }
+
+    :host ::ng-deep .modal-full-height {
+      --height: 90%;
+      --width: 90%;
+      --max-width: 600px;
+      --border-radius: 16px;
+    }
   `],
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
     FormsModule,
+    ReactiveFormsModule,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -204,12 +216,7 @@ import { ClientProjectFormComponent } from './client-project-form/client-project
     IonButtons,
     IonMenuButton,
     IonSearchbar,
-    IonBadge,
-    // These components are used in modal dialogs and need to be imported
-    // even though they're not used directly in the template
-    ClientFormComponent,
-    ClientDetailsComponent,
-    ClientProjectFormComponent
+    IonBadge
   ]
 })
 export class ClientsComponent implements OnInit {
@@ -236,7 +243,8 @@ export class ClientsComponent implements OnInit {
       linkOutline,
       eyeOutline,
       locationOutline,
-      searchOutline
+      searchOutline,
+      alertCircleOutline
     });
   }
 
@@ -250,13 +258,14 @@ export class ClientsComponent implements OnInit {
 
     this.clientService.getClients().subscribe({
       next: (clients) => {
+        console.log('Loaded clients:', clients);
         this.clients = clients;
         this.filterClients();
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading clients:', error);
-        this.error = 'Failed to load clients. Please try again later.';
+        this.error = error.message || 'Failed to load clients. Please try again later.';
         this.loading = false;
       }
     });
@@ -268,50 +277,51 @@ export class ClientsComponent implements OnInit {
       return;
     }
 
-    const searchTerms = this.searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
-    
+    const searchTermLower = this.searchTerm.toLowerCase();
     this.filteredClients = this.clients.filter(client =>
-      searchTerms.every(term =>
-        client.name.toLowerCase().includes(term) ||
-        client.email.toLowerCase().includes(term) ||
-        client.telephoneNumber.toLowerCase().includes(term) ||
-        client.address.toLowerCase().includes(term)
-      )
+      client.name.toLowerCase().includes(searchTermLower) ||
+      client.email.toLowerCase().includes(searchTermLower) ||
+      client.telephoneNumber.toLowerCase().includes(searchTermLower) ||
+      client.address.toLowerCase().includes(searchTermLower)
     );
   }
 
   async openNewClientModal() {
     const modal = await this.modalController.create({
-      component: ClientFormComponent
+      component: ClientFormComponent,
+      componentProps: {
+        mode: 'create'
+      },
+      cssClass: 'modal-full-height'
+    });
+
+    modal.onDidDismiss().then((result) => {
+      if (result.role === 'confirm' && result.data) {
+        this.clientService.createClient(result.data).subscribe({
+          next: (createdClient) => {
+            console.log('Created client:', createdClient);
+            this.showToast('Client created successfully', 'success');
+            this.loadClients();
+          },
+          error: (error) => {
+            console.error('Error creating client:', error);
+            this.showToast(error.message || 'Failed to create client', 'danger');
+          }
+        });
+      }
     });
 
     await modal.present();
-
-    const { data, role } = await modal.onWillDismiss<CreateClientDTO>();
-
-    if (role === 'confirm' && data) {
-      try {
-        const result = await this.clientService.createClient(data).toPromise();
-        if (result) {
-          this.clients.push(result);
-          this.filterClients();
-          this.showToast('Client created successfully', 'success');
-        }
-      } catch (error) {
-        console.error('Error creating client:', error);
-        this.showToast('Failed to create client', 'danger');
-      }
-    }
   }
 
   async viewClient(client: Client) {
     const modal = await this.modalController.create({
       component: ClientDetailsComponent,
       componentProps: {
-        client
-      }
+        client: client
+      },
+      cssClass: 'modal-full-height'
     });
-
     await modal.present();
   }
 
@@ -319,61 +329,61 @@ export class ClientsComponent implements OnInit {
     const modal = await this.modalController.create({
       component: ClientFormComponent,
       componentProps: {
-        client
+        client: client,
+        mode: 'edit'
+      },
+      cssClass: 'modal-full-height'
+    });
+
+    modal.onDidDismiss().then((result) => {
+      if (result.data) {
+        this.clientService.updateClient(client.clientId, result.data).subscribe({
+          next: () => {
+            this.showToast('Client updated successfully', 'success');
+            this.loadClients();
+          },
+          error: (error) => {
+            console.error('Error updating client:', error);
+            this.showToast(error.message || 'Failed to update client', 'danger');
+          }
+        });
       }
     });
 
     await modal.present();
-
-    const { data, role } = await modal.onWillDismiss<UpdateClientDTO>();
-
-    if (role === 'confirm' && data) {
-      try {
-        await this.clientService.updateClient(client.clientId, data).toPromise();
-        const index = this.clients.findIndex(c => c.clientId === client.clientId);
-        if (index !== -1) {
-          this.clients[index] = {
-            ...this.clients[index],
-            ...data
-          };
-          this.filterClients();
-        }
-        this.showToast('Client updated successfully', 'success');
-      } catch (error) {
-        console.error('Error updating client:', error);
-        this.showToast('Failed to update client', 'danger');
-      }
-    }
   }
 
   async addToProject(client: Client) {
     const modal = await this.modalController.create({
       component: ClientProjectFormComponent,
       componentProps: {
-        client
+        client: client
+      },
+      cssClass: 'modal-full-height'
+    });
+
+    modal.onDidDismiss().then((result) => {
+      if (result.data) {
+        this.clientService.assignProjectToClient(client.clientId, result.data.projectId).subscribe({
+          next: () => {
+            this.showToast('Project assigned successfully', 'success');
+            this.loadClients();
+          },
+          error: (error) => {
+            console.error('Error assigning project:', error);
+            this.showToast(error.message || 'Failed to assign project', 'danger');
+          }
+        });
       }
     });
 
     await modal.present();
-
-    const { data, role } = await modal.onWillDismiss();
-
-    if (role === 'confirm' && data) {
-      try {
-        await this.clientService.assignProjectToClient(client.clientId, data.projectId).toPromise();
-        this.loadClients();
-        this.showToast('Client assigned to project successfully', 'success');
-      } catch (error) {
-        console.error('Error assigning client to project:', error);
-        this.showToast('Failed to assign client to project', 'danger');
-      }
-    }
   }
 
   async confirmDelete(client: Client) {
     const alert = await this.alertController.create({
       header: 'Confirm Delete',
-      message: `Are you sure you want to delete ${client.name}?`,
+      message: `Are you sure you want to delete ${client.name}? This action cannot be undone.`,
       buttons: [
         {
           text: 'Cancel',
@@ -382,7 +392,9 @@ export class ClientsComponent implements OnInit {
         {
           text: 'Delete',
           role: 'destructive',
-          handler: () => this.deleteClient(client)
+          handler: () => {
+            this.deleteClient(client);
+          }
         }
       ]
     });
@@ -393,12 +405,11 @@ export class ClientsComponent implements OnInit {
   private async deleteClient(client: Client) {
     try {
       await this.clientService.deleteClient(client.clientId).toPromise();
-      this.clients = this.clients.filter(c => c.clientId !== client.clientId);
-      this.filterClients();
       this.showToast('Client deleted successfully', 'success');
-    } catch (error) {
+      this.loadClients();
+    } catch (error: any) {
       console.error('Error deleting client:', error);
-      this.showToast('Failed to delete client', 'danger');
+      this.showToast(error.message || 'Failed to delete client', 'danger');
     }
   }
 
@@ -407,7 +418,13 @@ export class ClientsComponent implements OnInit {
       message,
       duration: 3000,
       color,
-      position: 'bottom'
+      position: 'bottom',
+      buttons: [
+        {
+          text: 'Dismiss',
+          role: 'cancel'
+        }
+      ]
     });
     await toast.present();
   }

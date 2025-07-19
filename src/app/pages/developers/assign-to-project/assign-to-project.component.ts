@@ -168,10 +168,12 @@ export class AssignToProjectComponent implements OnInit {
       const projects = await this.projectService.getProjects().toPromise() || [];
       // Filter out projects where user is already a member
       this.availableProjects = projects
-        .filter(project => !project.members.some(member => member.userId === this.user.userId))
+        .filter(project => !project.members?.some(member => 
+          member.userId === this.user.userId
+        ))
         .map(project => ({
           ...project,
-          selectedRole: ''
+          selectedRole: 'Developer' // Default role
         }));
       this.loading = false;
     } catch (error) {

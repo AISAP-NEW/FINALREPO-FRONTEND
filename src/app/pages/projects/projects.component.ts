@@ -315,6 +315,7 @@ export class ProjectsComponent implements OnInit {
   editingProject: Project | null = null;
   searchTerm: string = '';
   filteredProjects: Project[] = [];
+  error: string | null = null;
 
   constructor(
     private projectService: ProjectService,
@@ -391,19 +392,51 @@ export class ProjectsComponent implements OnInit {
 
   loadProjects() {
     this.loading = true;
-    this.projectService.getProjects()
-      .pipe(
-        catchError(error => {
-          console.error('Error loading projects:', error);
-          this.showToast('Failed to load projects', 'danger');
-          return of([]);
-        })
-      )
-      .subscribe(projects => {
+    this.error = null;
+    
+    this.projectService.getProjects().subscribe({
+      next: (projects) => {
         this.projects = projects;
-        this.filteredProjects = projects; // Initialize filtered projects
+        this.applySearch(); // Use current search term
         this.loading = false;
-      });
+      },
+      error: (error) => {
+        console.error('Error loading projects:', error);
+        this.error = error.message || 'Failed to load projects';
+        this.loading = false;
+        this.showToast(this.error || 'Failed to load projects', 'danger');
+      }
+    });
+  }
+
+  handleSearch(event: any) {
+    this.searchTerm = event?.target?.value?.toLowerCase() || '';
+    this.applySearch();
+  }
+
+  private applySearch() {
+    if (!this.searchTerm.trim()) {
+      this.filteredProjects = [...this.projects];
+      return;
+    }
+
+    const searchTerms = this.searchTerm.trim().toLowerCase().split(/\s+/);
+    
+    this.filteredProjects = this.projects.filter(project => {
+      const searchableFields = [
+        project.name,
+        project.objectives,
+        project.scope,
+        project.technologies,
+        project.createdByUsername,
+        ...(project.members?.map(m => m.username) || []),
+        ...(project.members?.map(m => m.email) || [])
+      ].map(field => (field || '').toLowerCase());
+
+      return searchTerms.every(term =>
+        searchableFields.some(field => field.includes(term))
+      );
+    });
   }
 
   handleRefresh(event: any) {
@@ -418,27 +451,48 @@ export class ProjectsComponent implements OnInit {
       try {
         if (this.editingProject) {
           // Update existing project
-          const updatedProject = await firstValueFrom(
-            this.projectService.updateProject(this.editingProject.projectId, this.projectForm.value)
-          );
-          const index = this.projects.findIndex(p => p.projectId === this.editingProject?.projectId);
-          if (index !== -1) {
-            this.projects[index] = updatedProject;
-          }
-          this.showToast('Project updated successfully', 'success');
+          const formData = {
+            ...this.projectForm.value,
+            teamMemberIds: this.editingProject.members.map(m => m.userId)
+          };
+
+          await firstValueFrom(
+            this.projectService.updateProject(this.editingProject.projectId, formData)
+          ).then(() => {
+            this.showToast('Project updated successfully', 'success');
+            this.closeModal();
+            // Refresh the project list
+            this.loadProjects();
+          }).catch(error => {
+            // If we get a 204, it's actually a success
+            if (error?.status === 204) {
+              this.showToast('Project updated successfully', 'success');
+              this.closeModal();
+              // Refresh the project list
+              this.loadProjects();
+            } else {
+              throw error; // Re-throw other errors
+            }
+          });
         } else {
           // Create new project
           const newProject = await firstValueFrom(this.projectService.createProject(this.projectForm.value));
           this.projects.unshift(newProject);
+          this.applySearch(); // Reapply current search
           this.showToast('Project created successfully', 'success');
+          this.closeModal();
         }
-        this.closeModal();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error saving project:', error);
-        this.showToast(`Failed to ${this.editingProject ? 'update' : 'create'} project`, 'danger');
+        // Only show error message if it's not a 204 response
+        if (error?.status !== 204) {
+          this.showToast(error.message || `Failed to ${this.editingProject ? 'update' : 'create'} project`, 'danger');
+        }
       } finally {
         this.submitting = false;
       }
+    } else {
+      this.showToast('Please fill in all required fields', 'warning');
     }
   }
 
@@ -474,23 +528,35 @@ export class ProjectsComponent implements OnInit {
     }
   }
 
-  private async showToast(message: string, color: 'success' | 'danger') {
+  private async showToast(message: string, color: 'success' | 'danger' | 'warning') {
     const toast = await this.toastController.create({
       message,
       duration: 3000,
-      color
+      color,
+      position: 'bottom',
+      buttons: [
+        {
+          text: 'Dismiss',
+          role: 'cancel'
+        }
+      ]
     });
     await toast.present();
   }
 
   async openProjectDetails(project: Project) {
-    const modal = await this.modalController.create({
-      component: ProjectDetailsComponent,
-      componentProps: {
-        project
-      }
-    });
-    await modal.present();
+    try {
+      const modal = await this.modalController.create({
+        component: ProjectDetailsComponent,
+        componentProps: {
+          project: { ...project } // Pass a copy to avoid mutations
+        }
+      });
+      await modal.present();
+    } catch (error) {
+      console.error('Error opening project details:', error);
+      this.showToast('Failed to open project details', 'danger');
+    }
   }
 
   async openAddMembersModal(project: Project) {
@@ -574,33 +640,5 @@ export class ProjectsComponent implements OnInit {
       console.error('Error requesting access:', error);
       this.showToast('Failed to request access', 'danger');
     }
-  }
-
-  handleSearch(event: any) {
-    const searchTerm = event.target.value.toLowerCase();
-    this.searchTerm = searchTerm;
-    
-    if (!searchTerm) {
-      this.filteredProjects = this.projects;
-      return;
-    }
-
-    this.filteredProjects = this.projects.filter(project => {
-      const searchableFields = [
-        project.name,
-        project.objectives,
-        project.scope,
-        project.technologies,
-        project.createdByUsername
-      ].map(field => field?.toLowerCase() || '');
-
-      // Split search term into words for multi-term search
-      const searchTerms = searchTerm.split(' ').filter((term: string) => term.length > 0);
-
-      // Check if all search terms are found in any of the searchable fields
-      return searchTerms.every((term: string) =>
-        searchableFields.some(field => field.includes(term))
-      );
-    });
   }
 } 
