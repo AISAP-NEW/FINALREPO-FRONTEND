@@ -562,34 +562,22 @@ export class DatasetDetailsPage implements OnInit {
 
   // Handle dataset error
   private handleDatasetError(error: any): void {
-    console.error('Error loading dataset content:', error);
-    this.toastService.presentToast('error', 'Failed to load dataset content', 3000);
-  }
-
-  // Normalize validation status to match expected format
-  private normalizeValidationStatus(status: string): 'success' | 'error' | 'warning' | 'failed' {
-    const normalized = status.toLowerCase();
-    if (normalized === 'passed') return 'success';
-    if (['error', 'warning', 'failed'].includes(normalized)) {
-      return normalized as 'error' | 'warning' | 'failed';
-    }
-    console.warn(`Unexpected validation status: ${status}, defaulting to 'error'`);
-    return 'error';
+    // Add error handling logic here if needed
   }
 
   // Get the appropriate badge color based on validation status
   getValidationBadgeClass(): string {
-    if (!this.validationResult) return 'medium';
-    
-    const status = this.normalizeValidationStatus(this.validationResult.status);
+    if (!this.validationResult || !this.validationResult.status) return 'medium';
+    const status = (this.validationResult.status || '').toLowerCase();
     switch (status) {
+      case 'passed':
       case 'success':
         return 'success';
-      case 'warning':
-        return 'warning';
       case 'error':
       case 'failed':
         return 'danger';
+      case 'warning':
+        return 'warning';
       default:
         return 'medium';
     }
@@ -597,45 +585,19 @@ export class DatasetDetailsPage implements OnInit {
 
   // Get status color for a given status string
   getStatusColor(status: string): string {
-    const normalizedStatus = this.normalizeValidationStatus(status);
+    if (!status) return 'medium';
+    const normalizedStatus = status.toLowerCase();
     switch (normalizedStatus) {
+      case 'passed':
       case 'success':
         return 'success';
-      case 'warning':
-        return 'warning';
       case 'error':
       case 'failed':
         return 'danger';
+      case 'warning':
+        return 'warning';
       default:
         return 'medium';
-    }
-  }
-
-  // Show validation results in a modal
-  async showValidationResults(validationResult: ValidationResponse | null): Promise<void> {
-    if (!validationResult) {
-      this.toastService.presentToast('warning', 'No validation results available', 3000);
-      return;
-    }
-
-    try {
-      const modal = await this.modalCtrl.create({
-        component: ValidationResultsModalComponent,
-        componentProps: { 
-          validationResult: {
-            ...validationResult,
-            errors: validationResult.errors || []
-          } 
-        },
-        cssClass: 'validation-results-modal',
-        backdropDismiss: true,
-        showBackdrop: true
-      });
-
-      await modal.present();
-    } catch (error) {
-      console.error('Error showing validation results:', error);
-      this.toastService.presentToast('error', 'Failed to show validation results', 3000);
     }
   }
 
@@ -650,18 +612,19 @@ export class DatasetDetailsPage implements OnInit {
     this.validationError = null;
     
     this.datasetService.validateDataset(this.datasetId).subscribe({
+
       next: (result: any) => {
         try {
           // Ensure all required fields are present
           const normalizedResult: ValidationResponse = {
-            status: this.normalizeValidationStatus(result.status),
+            status: (result.status || '').toLowerCase(),
             errorCount: result.errorCount || 0,
             errorLines: result.errorLines || [],
             errors: result.errors || [],
             totalRows: result.totalRows || 0,
-            validationId: result.validationId || `val_${Date.now()}`,
-            message: result.message,
+            validationId: result.validationId,
             versionId: result.versionId,
+            message: result.message,
             timestamp: result.timestamp || new Date().toISOString()
           };
           
@@ -690,6 +653,12 @@ export class DatasetDetailsPage implements OnInit {
         this.toastService.presentToast('error', errorMessage, 4000);
       }
     });
+  }
+
+  // Show validation results (simple toast version)
+  showValidationResults(result: ValidationResponse): void {
+    const msg = `Validation: ${result.status?.toUpperCase()} | Errors: ${result.errorCount}`;
+    this.toastService.presentToast('info', msg, 4000);
   }
 
   // Download dataset in the specified format

@@ -50,6 +50,7 @@ import { ToastService } from '../../services/toast.service';
 
 
 import {
+  ModalController,
   IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle,
   IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard,
   IonCardHeader, IonCardTitle, IonCardContent, IonBadge, IonText,
@@ -72,6 +73,7 @@ interface PreviewData {
   isMetadataFallback?: boolean;
 }
 
+
 @Component({
   selector: 'app-dataset-details',
   templateUrl: './dataset-details.page.html',
@@ -82,7 +84,7 @@ interface PreviewData {
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
-    IonicModule,
+
     SafeHtmlPipe,
     IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle,
     IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard,
@@ -92,46 +94,7 @@ interface PreviewData {
   ],
   providers: [DatasetService, DatasetOperationsService, ToastService]
 })
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-
-@Component({
-  selector: 'app-dataset-details',
-  templateUrl: './dataset-details.page.html',
-  styleUrls: ['./dataset-details.page.scss'],
-})
 export class DatasetDetailsPage implements OnInit {
-  datasetId!: string;
-  datasetInfo: any;
-  headers: string[] = [];
-  data: any[] = [];
-  columnStats: any[] = [];
-
-  pageSize = 50;
-
-  constructor(
-    private route: ActivatedRoute,
-    private http: HttpClient
-  ) {}
-
-  ngOnInit() {
-    this.datasetId = this.route.snapshot.paramMap.get('id')!;
-    this.fetchDatasetPreview();
-  }
-
-  fetchDatasetPreview() {
-    this.http
-      .get<any>(`http://localhost:5183/api/Dataset/read/${this.datasetId}?page=1&pageSize=${this.pageSize}`)
-      .subscribe((res) => {
-        this.datasetInfo = res.datasetInfo;
-        this.headers = res.headers;
-        this.data = res.data;
-        this.columnStats = res.columnStatistics;
-      });
-  }
-}
-
   datasetId: string | null = null;
   dataset: Dataset | null = null;
   isLoading = true;
@@ -150,6 +113,13 @@ export class DatasetDetailsPage implements OnInit {
   previewRowCount = 10;
   previewPage = 1;
   totalPreviewPages = 1;
+
+  // --- Ensure all arrays for template are always defined ---
+  columnStats: any[] = [];
+  headers: string[] = [];
+  data: any[] = [];
+  datasetSchema: any[] = [];
+
 
   get pagedPreviewRows(): any[] {
     const start = (this.previewPage - 1) * this.previewRowsToShow;
@@ -198,7 +168,7 @@ export class DatasetDetailsPage implements OnInit {
     private datasetOps: DatasetOperationsService,
     private datasetService: DatasetService,
     private toastService: ToastService,
-    private modalCtrl: ModalController,
+
     private fb: FormBuilder
   ) {
     this.preprocessForm = this.fb.group({
@@ -210,6 +180,16 @@ export class DatasetDetailsPage implements OnInit {
   }
 
   ngOnInit() {
+    // Ensure all arrays are initialized for template safety
+    this.columnStats = [];
+    this.headers = [];
+    this.data = [];
+    this.datasetSchema = [];
+    // Map ColumnAnalysis to schema for stats display
+    if (this.previewData && (this.previewData as any).ColumnAnalysis) {
+      this.previewData.schema = (this.previewData as any).ColumnAnalysis;
+    }
+
     // Get dataset ID from route parameters
     this.route.paramMap.subscribe(params => {
       const datasetId = params.get('id');
@@ -736,7 +716,7 @@ export class DatasetDetailsPage implements OnInit {
       this.previewData = {
         headers: this.previewHeaders,
         data,
-        schema: [],
+        schema: response.ColumnAnalysis || [],
         totalRows: data.length,
         isMetadataFallback: false
       };
@@ -873,6 +853,8 @@ export class DatasetDetailsPage implements OnInit {
         sampleValues: sampleValues.length > 0 ? sampleValues : field.sampleValues
       };
     });
+    // Keep datasetSchema in sync with previewData.schema for template
+    this.datasetSchema = this.previewData.schema || [];
   }
 
   private getDistinctValues(column: string, maxSamples: number = 5): any[] {
@@ -916,4 +898,15 @@ export class DatasetDetailsPage implements OnInit {
   exportDataset(format: string): void {
     this.downloadDataset(format);
   }
+
+  // --- Fix: Add showValidationResults method for validation workflow ---
+  showValidationResults(result: any): void {
+    // Display validation results as a toast or in the UI
+    this.toastService.presentToast(
+      result.status && result.status.toLowerCase() === 'passed' ? 'success' : 'error',
+      `Validation Status: ${result.status} | Errors: ${result.errorCount}`,
+      4000
+    );
+  }
 }
+

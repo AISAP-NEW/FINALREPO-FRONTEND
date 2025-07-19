@@ -4,23 +4,28 @@
 // Futuristic Blue Theme
 :root {
   // Primary colors
-  --ion-color-primary: #1a73e8;
-  --ion-color-primary-rgb: 26, 115, 232;
-  --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #1565c0;
-  --ion-color-primary-tint: #4285f4;
+  --ion-color-primary: #00ffff;
+  --ion-color-primary-rgb: 0, 255, 255;
+  --ion-color-primary-contrast: #0f0f1a;
+  --ion-color-primary-contrast-rgb: 15, 15, 26;
+  --ion-color-primary-shade: #00b3b3;
+  --ion-color-primary-tint: #00ffff;
 
   // Secondary colors
-  --ion-color-secondary: #00bcd4;
-  --ion-color-secondary-rgb: 0, 188, 212;
-  --ion-color-secondary-contrast: #000000;
-  --ion-color-secondary-contrast-rgb: 0, 0, 0;
-  --ion-color-secondary-shade: #00acc1;
-  --ion-color-secondary-tint: #26c6da;
+  --ion-color-secondary: #7f5af0;
+  --ion-color-secondary-rgb: 127, 90, 240;
+  --ion-color-secondary-contrast: #0f0f1a;
+  --ion-color-secondary-contrast-rgb: 15, 15, 26;
+  --ion-color-secondary-shade: #6c4ab7;
+  --ion-color-secondary-tint: #8f6ce9;
 
   // Tertiary colors
-  --ion-color-tertiary: #3f51b5;
+  --ion-color-tertiary: #2fffc3;
+  --ion-color-tertiary-rgb: 47, 255, 195;
+  --ion-color-tertiary-contrast: #0f0f1a;
+  --ion-color-tertiary-contrast-rgb: 15, 15, 26;
+  --ion-color-tertiary-shade: #1fffc3;
+  --ion-color-tertiary-tint: #3fffc3;
   --ion-color-tertiary-rgb: 63, 81, 181;
   --ion-color-tertiary-contrast: #ffffff;
   --ion-color-tertiary-contrast-rgb: 255, 255, 255;

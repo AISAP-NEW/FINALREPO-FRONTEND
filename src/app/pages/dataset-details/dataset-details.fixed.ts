@@ -129,7 +129,7 @@ export class DatasetDetailsPage implements OnInit {
             const headers = this.parseCsvLine(lines[0]);
             
             // Parse data rows
-            const data = [];
+            const data: Record<string, any>[] = [];
             for (let i = 1; i < Math.min(lines.length, this.previewRowsToShow + 1); i++) {
               if (lines[i].trim() === '') continue;
               

@@ -1,27 +1,29 @@
 .dataset-details-bg {
   min-height: 100vh;
-  background: #10142a;
+  background: #9ab1a6;
   background-image: linear-gradient(120deg, rgba(0,247,255,0.07) 0%, rgba(112,0,255,0.07) 100%),
     repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 40px),
     repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 40px);
 }
 
-.metadata-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: transparent;
+.tab-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 0 2rem 0;
 }
 
 .metadata-card {
   background: rgba(10, 24, 60, 0.90);
-  color: #fff;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  color: hsl(0, 44%, 51%);
+  box-shadow: 0 8px 32px 0 rgba(45, 50, 120, 0.37);
   border-radius: 18px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .details-main-grid {
+  width: 100%;
+  margin: 0;
   margin-top: 0;
 }
 
@@ -44,7 +46,7 @@ table {
   border-collapse: collapse;
   font-size: 14px;
   background: rgba(18, 32, 60, 0.96);
-  color: #fff;
+  color: #5d5858;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.16);
 }
@@ -57,11 +59,11 @@ th, td {
 
 thead {
   background: linear-gradient(90deg, #00f7ff 0%, #7000ff 100%);
-  color: #fff;
+  color: #ffffff;
 }
 
 ion-card-title, ion-card-subtitle, ion-label, h3, p {
-  color: #fff !important;
+  color: #ac4b4b !important;
 }
 
 @media (max-width: 768px) {
