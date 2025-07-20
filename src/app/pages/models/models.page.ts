@@ -24,6 +24,7 @@ import {
   ModalController
 } from '@ionic/angular/standalone';
 import { ModelService } from '../../services/model.service';
+import { DatasetService } from '../../services/dataset.service';
 import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
 import {
@@ -39,6 +40,8 @@ import {
   eyeOutline
 } from 'ionicons/icons';
 import { TrainingConfigModalComponent } from '../../components/training-config-modal/training-config-modal.component';
+import { TrainingService } from '../../services/training.service';
+import { NotebookPanelComponent } from '../../notebook-panel/notebook-panel.component';
 
 @Component({
   selector: 'app-models',
@@ -48,6 +51,7 @@ import { TrainingConfigModalComponent } from '../../components/training-config-m
     CommonModule,
     RouterModule,
     IonHeader,
+    NotebookPanelComponent,
     IonToolbar,
     IonTitle,
     IonContent,
@@ -78,7 +82,9 @@ export class ModelsPage implements OnInit {
 
   constructor(
     private modelService: ModelService,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private trainingService: TrainingService,
+    private datasetService: DatasetService
   ) {
     addIcons({
       cubeOutline,
@@ -161,31 +167,65 @@ export class ModelsPage implements OnInit {
   }
 
   async startTraining(model: any, version: any) {
+    // Only allow validated datasets for training (DatasetValidationId must be valid)
     const modal = await this.modalController.create({
       component: TrainingConfigModalComponent,
       componentProps: {
         modelId: model.modelId,
-        modelVersionId: version.versionId,
-        datasetOptions: await this.getDatasetOptions()
+        modelVersionId: version.versionId
       }
     });
 
     await modal.present();
-
     const { data } = await modal.onWillDismiss();
+
     if (data) {
-      // Navigate to training dashboard
-      window.location.href = `/training-dashboard/${model.modelId}/${data.instanceId}`;
+      // Map modal data to backend API field names
+      const config: any = {
+        ModelId: model.modelId,
+        ModelVersionId: version.versionId,
+        LearningRate: parseFloat(data.learningRate),
+        Epochs: parseInt(data.epochs, 10),
+        BatchSize: parseInt(data.batchSize, 10),
+        DatasetValidationId: data.datasetValidationId,
+        TrainingParameters: data.trainingParameters || '',
+        Notes: data.notes || ''
+      };
+      this.isLoading = true;
+      this.trainingService.startTraining(config).pipe(finalize(() => this.isLoading = false)).subscribe({
+        next: (res: any) => {
+          if (res && res.trainSessionId) {
+            // Redirect to dashboard with trainSessionId
+            window.location.href = `/dashboard/${res.trainSessionId}`;
+          } else {
+            alert('Training started, but no session ID returned.');
+          }
+        },
+        error: (err) => {
+          alert('Failed to start training session.');
+          console.error('[startTraining] Error:', err);
+        }
+      });
     }
   }
 
-  private async getDatasetOptions(): Promise<{ id: number; name: string }[]> {
-    // TODO: Replace with actual dataset service call
-    return [
-      { id: 1, name: 'Dataset 1' },
-      { id: 2, name: 'Dataset 2' },
-      { id: 3, name: 'Dataset 3' }
-    ];
+  private async getDatasetOptions(): Promise<{ id: string; name: string }[]> {
+    // Fetch validated datasets from DatasetService
+    return new Promise((resolve, reject) => {
+      this.datasetService.getValidatedDatasets().subscribe({
+        next: (datasets) => {
+          const options = (datasets || []).map(ds => ({
+            id: ds.datasetId,
+            name: ds.datasetName || ''
+          }));
+          resolve(options);
+        },
+        error: (err) => {
+          console.error('Failed to load datasets for training config:', err);
+          resolve([]); // Return empty array to avoid modal hanging
+        }
+      });
+    });
   }
 
   viewFile(fileId: number) {

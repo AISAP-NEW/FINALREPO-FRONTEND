@@ -22,6 +22,12 @@ import { ModalController } from '@ionic/angular';
   ]
 })
 export class DatasetCardComponent implements OnChanges {
+  getFullThumbnailUrl(_: string): string {
+    if (this.dataset?.datasetId) {
+      return `http://localhost:5183/api/Dataset/${this.dataset.datasetId}/thumbnail`;
+    }
+    return 'assets/images/default-dataset.png';
+  }
 
   // Opens the DatasetOperationsModal for this dataset
   async openOperationsModal() {
@@ -44,7 +50,7 @@ export class DatasetCardComponent implements OnChanges {
   constructor(
     private sanitizer: DomSanitizer,
     private modalCtrl: ModalController,
-    private router: Router
+    public router: Router
   ) {}
 
   ngOnChanges(changes: SimpleChanges) {
@@ -56,10 +62,10 @@ export class DatasetCardComponent implements OnChanges {
   private updateThumbnail() {
     this.isLoading = true;
     this.hasImageError = false;
-    
-    // Always use the server URL for thumbnails to avoid large base64 data in headers
+
     if (this.dataset?.datasetId) {
-      this.thumbnailUrl = `${environment.apiUrl}/datasets/${this.dataset.datasetId}/thumbnail?t=${Date.now()}`;
+      // Always use the backend thumbnail endpoint
+      this.thumbnailUrl = `http://localhost:5183/api/Dataset/${this.dataset.datasetId}/thumbnail?t=${Date.now()}`;
     } else {
       this.thumbnailUrl = this.defaultThumbnail;
     }

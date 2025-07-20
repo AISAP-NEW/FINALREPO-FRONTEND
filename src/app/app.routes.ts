@@ -127,6 +127,16 @@ export const routes: Routes = [
         path: 'models/:id',
         loadComponent: () => import('./pages/model-details/model-details.page')
           .then(m => m.ModelDetailsPage)
+      },
+      {
+        path: 'dashboard/:trainSessionId',
+        loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
+          .then(m => m.TrainingDashboardComponent)
+      },
+      {
+        path: 'notebook/:modelId',
+        loadComponent: () => import('./notebook-panel/notebook-panel.component')
+          .then(m => m.NotebookPanelComponent)
       }
     ]
   },
@@ -138,8 +148,5 @@ export const routes: Routes = [
     path: 'landing',
     loadComponent: () => import('./pages/landing/landing.page').then( m => m.LandingPage)
   },
-  {
-    path: 'training-dashboard',
-    loadComponent: () => import('./pages/training-dashboard/training-dashboard.page').then( m => m.TrainingDashboardPage)
-  }
+
 ];

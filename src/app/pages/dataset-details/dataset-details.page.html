@@ -57,22 +57,7 @@
       </ion-card-content>
     </ion-card>
 
-    <ion-card *ngIf="datasetInfo">
-      <img [src]="getThumbnailUrl(datasetInfo.DatasetId)" alt="Dataset Thumbnail" />
-    </ion-card>
-
-    <ion-card *ngIf="datasetInfo">
-      <ion-card-header>
-        <ion-card-title>{{ datasetInfo.DatasetName }}</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p><strong>Description:</strong> {{ datasetInfo.Description }}</p>
-        <p><strong>File Type:</strong> {{ datasetInfo.FileType }}</p>
-        <p><strong>Created:</strong> {{ datasetInfo.CreatedAt | date:'medium' }}</p>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Dataset Preview Table -->
+    <!-- Dataset Preview Table (paged) -->
     <ion-card *ngIf="previewData.headers && previewData.headers.length > 0 && previewData.data && previewData.data.length > 0">
       <ion-card-header>
         <ion-card-title>Dataset Preview ({{ previewData.data.length }} rows)</ion-card-title>
@@ -85,19 +70,20 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of previewData.data">
-              <td *ngFor="let header of previewData.headers">{{ row[header] }}</td>
+            <tr *ngFor="let row of pagedPreviewRows">
+              <td *ngFor="let header of previewData.headers">{{ getCellValue(row, header) }}</td>
             </tr>
           </tbody>
         </table>
+        <P> BROOOOOOO</P>
+        <!-- Pagination Controls -->
+        <div class="pagination-controls" *ngIf="totalPreviewPages > 1">
+          <ion-button size="small" [disabled]="previewPage === 1" (click)="changePreviewPage(previewPage - 1)">Previous</ion-button>
+          <span>Page {{ previewPage }} of {{ totalPreviewPages }}</span>
+          <ion-button size="small" [disabled]="previewPage === totalPreviewPages" (click)="changePreviewPage(previewPage + 1)">Next</ion-button>
+        </div>
       </ion-card-content>
     </ion-card>
-
-    <!-- Column Statistics -->
-    <ion-card *ngIf="previewData.schema && previewData.schema.length > 0">
-  <ion-card-header>
-    <ion-card-title>Column Statistics</ion-card-title>
-  </ion-card-header>
   <ion-card-content>
     <ion-grid>
       <ion-row>
@@ -126,8 +112,7 @@
       </ion-row>
     </ion-grid>
   </ion-card-content>
-</ion-card>
-  </div>
+</div>
 
   <!-- Schema Tab Content -->
   <div *ngIf="activeTab === 'schema' && !isLoading">
@@ -184,49 +169,85 @@
               </ion-label>
             </ion-item>
             <div class="ion-padding" slot="content">
-  <ion-button expand="block" color="primary" (click)="validateDataset()">
-    Run Validation
-  </ion-button>
-  <div *ngIf="latestValidationResult" class="response-message validation-result">
-    <ion-text [color]="latestValidationResult.Status === 'Failed' ? 'danger' : 'success'">
-      <div *ngIf="latestValidationResult.Status === 'Failed'">
-        <strong>Validation Failed:</strong> {{ latestValidationResult.ErrorCount }} errors at lines: {{ latestValidationResult.ErrorLines?.join(', ') || 'N/A' }}<br>
-        <span>Total Rows: {{ latestValidationResult.TotalRows }}</span>
-      </div>
-      <div *ngIf="latestValidationResult.Status !== 'Failed'">
-        <strong>Validation Succeeded!</strong>
-      </div>
-    </ion-text>
-  </div>
-  <div *ngIf="error && error.includes('Validation')" class="response-message error-message">
-    <ion-text color="danger">{{ error }}</ion-text>
-  </div>
-</div>
+              <ion-button expand="block" color="primary" (click)="validateDataset()" [disabled]="isLoading">
+                Run Validation
+              </ion-button>
+              <div *ngIf="latestValidationResult" class="response-message validation-result">
+                <ion-card color="light">
+                  <ion-card-header>
+                    <ion-card-title>Validation Result</ion-card-title>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <ion-grid>
+                      <ion-row><ion-col>Status:</ion-col><ion-col>{{ latestValidationResult.Status }}</ion-col></ion-row>
+                      <ion-row><ion-col>Error Count:</ion-col><ion-col>{{ latestValidationResult.ErrorCount || 0 }}</ion-col></ion-row>
+                      <ion-row><ion-col>Error Lines:</ion-col><ion-col>{{ latestValidationResult.ErrorLines?.length ? latestValidationResult.ErrorLines.join(', ') : 'N/A' }}</ion-col></ion-row>
+                      <ion-row><ion-col>Total Rows:</ion-col><ion-col>{{ latestValidationResult.TotalRows || 'N/A' }}</ion-col></ion-row>
+                      <ion-row><ion-col>Validation ID:</ion-col><ion-col>{{ latestValidationResult.ValidationId || 'N/A' }}</ion-col></ion-row>
+                      <ion-row><ion-col>Version ID:</ion-col><ion-col>{{ latestValidationResult.VersionId || 'N/A' }}</ion-col></ion-row>
+                    </ion-grid>
+                    <ion-text [color]="latestValidationResult.Status === 'Failed' ? 'danger' : 'success'">
+                      <div *ngIf="latestValidationResult.Status !== 'Failed'">
+                        <strong>Validation Succeeded!</strong>
+                      </div>
+                      <div *ngIf="latestValidationResult.Status === 'Failed'">
+                        <strong>Validation Failed.</strong>
+                      </div>
+                    </ion-text>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+
+              <!-- Split Result Table -->
+              <!-- Split (only show after validation succeeds) -->
+              <div *ngIf="latestSplitResult" class="response-message split-result">
+                <ion-card color="light">
+                  <ion-card-header>
+                    <ion-card-title>Train/Test Split Result</ion-card-title>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <ion-grid>
+                      <ion-row><ion-col>Message:</ion-col><ion-col>{{ latestSplitResult.Message || 'Train/test split completed' }}</ion-col></ion-row>
+                      <ion-row><ion-col>Version ID:</ion-col><ion-col>{{ latestSplitResult.VersionId || 'N/A' }}</ion-col></ion-row>
+                      <ion-row><ion-col>Train Count:</ion-col><ion-col>{{ latestSplitResult.TrainCount || 0 }}</ion-col></ion-row>
+                      <ion-row><ion-col>Test Count:</ion-col><ion-col>{{ latestSplitResult.TestCount || 0 }}</ion-col></ion-row>
+                      <ion-row><ion-col>Train Percentage:</ion-col><ion-col>{{ latestSplitResult.TrainPercentage || 0 }}%</ion-col></ion-row>
+                      <ion-row><ion-col>Test Percentage:</ion-col><ion-col>{{ latestSplitResult.TestPercentage || 0 }}%</ion-col></ion-row>
+                    </ion-grid>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+              <div *ngIf="error && error.includes('Split')" class="response-message error-message">
+                <ion-text color="danger">{{ error }}</ion-text>
+              </div>
+            </div>
           </ion-accordion>
 
+          <!-- Split Operation Accordion -->
           <ion-accordion value="split">
             <ion-item slot="header" color="light">
               <ion-icon name="git-branch-outline" slot="start" color="primary"></ion-icon>
               <ion-label>
                 <h3>Train/Test Split</h3>
-                <p>Split your dataset into training and testing sets</p>
+                <p>Split your dataset into train and test sets</p>
               </ion-label>
             </ion-item>
             <div class="ion-padding" slot="content">
-  <ion-button expand="block" color="primary" (click)="splitDataset(selectedRatio.train, selectedRatio.test)">
-    Split Dataset
-  </ion-button>
-  <div *ngIf="latestSplitResult" class="response-message split-result">
-    <ion-text color="primary">
-      <strong>Train/Test Split Complete!</strong><br>
-      Train: {{ latestSplitResult.TrainCount }} ({{ latestSplitResult.TrainPercentage }}%)<br>
-      Test: {{ latestSplitResult.TestCount }} ({{ latestSplitResult.TestPercentage }}%)
-    </ion-text>
-  </div>
-  <div *ngIf="error && error.includes('Split')" class="response-message error-message">
-    <ion-text color="danger">{{ error }}</ion-text>
-  </div>
-</div>
+              <ion-item lines="none">
+                <ion-label position="stacked">Train (%)</ion-label>
+                <ion-input type="number" min="1" max="99" [(ngModel)]="splitTrain" placeholder="70"></ion-input>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-label position="stacked">Test (%)</ion-label>
+                <ion-input type="number" min="1" max="99" [(ngModel)]="splitTest" placeholder="30"></ion-input>
+              </ion-item>
+              <ion-button expand="block" color="primary" (click)="splitDataset(splitTrain, splitTest)" [disabled]="isLoading || !splitTrain || !splitTest || (splitTrain + splitTest !== 100)">
+                Run Train/Test Split
+              </ion-button>
+              <ion-text color="medium" *ngIf="splitTrain + splitTest !== 100">
+                Train and Test percentages must add up to 100.
+              </ion-text>
+            </div>
           </ion-accordion>
 
           <ion-accordion value="export">
@@ -238,11 +259,14 @@
               </ion-label>
             </ion-item>
             <div class="ion-padding" slot="content">
-              <ion-button expand="block" color="primary" (click)="downloadDataset('csv')">
-                Download as CSV
+              <ion-button expand="block" color="primary" (click)="downloadDataset('full')">
+                Download Full CSV
               </ion-button>
-              <ion-button expand="block" color="secondary" (click)="downloadDataset('json')">
-                Download as JSON
+              <ion-button expand="block" color="secondary" (click)="downloadDataset('train')">
+                Download Train Split
+              </ion-button>
+              <ion-button expand="block" color="tertiary" (click)="downloadDataset('test')">
+                Download Test Split
               </ion-button>
             </div>
           </ion-accordion>

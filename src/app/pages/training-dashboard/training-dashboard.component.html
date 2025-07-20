@@ -1,0 +1,27 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2>Training Dashboard</h2>
+    <button class="nav-btn" routerLink="/models">&#8592; Back to Notebook</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-indicator">
+    <span>Loading training status...</span>
+  </div>
+  <div *ngIf="!isLoading && !error">
+    <div class="dashboard-status">
+      <strong>Status:</strong> {{ status }}
+      <ion-button size="small" color="warning" (click)="pauseTraining()" *ngIf="status === 'Running'">Pause</ion-button>
+      <ion-button size="small" color="success" (click)="resumeTraining()" *ngIf="status === 'Paused'">Resume</ion-button>
+    </div>
+    <div class="dashboard-logs">
+      <h3>Logs</h3>
+      <pre class="logs-box">{{ logs }}</pre>
+    </div>
+    <div class="dashboard-metrics" *ngIf="metrics && (metrics | json) !== '{}'">
+      <h3>Metrics</h3>
+      <div *ngFor="let key of metrics ? (metrics | keyvalue) : []">
+        <strong>{{ key.key }}:</strong> {{ key.value }}
+      </div>
+    </div>
+  </div>
+</div>

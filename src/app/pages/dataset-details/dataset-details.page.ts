@@ -77,6 +77,46 @@ export class DatasetDetailsPage implements OnInit {
   previewRowsToShow = 5;
   previewData: PreviewData = { headers: [], data: [], schema: [], totalRows: 0 };
 
+  // --- Pagination properties for preview table ---
+  public pagedPreviewRows: any[] = [];
+  public previewPage: number = 1;
+  public totalPreviewPages: number = 1;
+
+  /**
+   * Fetch paginated preview data for the dataset
+   */
+  public fetchPaginatedPreview(page: number = 1, pageSize: number = this.previewRowsToShow): void {
+    if (!this.datasetId) return;
+    this.isLoading = true;
+    this.datasetService.readDatasetPaginated(this.datasetId, page, pageSize).pipe(finalize(() => this.isLoading = false)).subscribe({
+      next: (response: any) => {
+        this.previewData.headers = response.Headers || [];
+        this.pagedPreviewRows = (response.Data || []).map((row: any) => row.Data);
+        this.previewData.totalRows = response.Pagination?.TotalRows || this.pagedPreviewRows.length;
+        this.previewPage = response.Pagination?.CurrentPage || 1;
+        this.totalPreviewPages = response.Pagination?.TotalPages || 1;
+      },
+      error: (err: any) => {
+        this.pagedPreviewRows = [];
+        this.previewData.headers = [];
+        this.previewData.totalRows = 0;
+        this.previewPage = 1;
+        this.totalPreviewPages = 1;
+        this.error = 'Failed to load preview: ' + (err?.message || err);
+      }
+    });
+  }
+
+  /**
+   * Change the preview page (for pagination controls)
+   */
+  public changePreviewPage(page: number): void {
+    if (!this.datasetId) return;
+    if (page >= 1 && page <= this.totalPreviewPages) {
+      this.fetchPaginatedPreview(page, this.previewRowsToShow);
+    }
+  }
+
   constructor(
     private route: ActivatedRoute,
     private datasetOps: DatasetOperationsService,
@@ -282,34 +322,41 @@ export class DatasetDetailsPage implements OnInit {
     }
     result.push(currentField.trim());
     return result;
+}
+
+onSegmentChange(event: any): void {
+  const tab = event.detail.value;
+  if (tab === 'preview' || tab === 'schema' || tab === 'operations') {
+    this.activeTab = tab;
+  } else {
+    this.activeTab = 'preview';
   }
+}
 
-  onSegmentChange(event: any): void {
-    const tab = event.detail.value;
-    this.activeTab = tab === 'preview' || tab === 'schema' ? tab : 'preview';
-  }
+splitTrain: number = 70;
+splitTest: number = 30;
+latestSplitResult: any = null;
 
-  toggleDebugInfo(): void {
-    this.showDebugInfo = !this.showDebugInfo;
-  }
-
-  getThumbnailUrl(datasetId: string): string {
-    // Use backend endpoint for thumbnail
-    return `http://localhost:5183/api/Dataset/${datasetId}/thumbnail`;
-  }
-
-  latestSplitResult: any = null;
-
-  splitDataset(train?: number, test?: number): void {
+splitDataset(train?: number, test?: number): void {
+    this.error = null;
     if (!this.datasetId) {
       this.error = 'No dataset ID found.';
       return;
     }
+    const trainVal = train ?? this.splitTrain;
+    const testVal = test ?? this.splitTest;
+    if (trainVal + testVal !== 100) {
+      this.error = 'Train and Test percentages must add up to 100.';
+      return;
+    }
     this.isLoading = true;
-    // Use train/test if provided, else default to selectedRatio
-    const trainVal = train ?? this.selectedRatio.train;
-    const testVal = test ?? this.selectedRatio.test;
-    this.http.get<any>(`http://localhost:5183/api/Dataset/train-split/${this.datasetId}?train=${trainVal}&test=${testVal}`)
+    // POST split
+    const payload = {
+      DatasetVersionId: this.datasetInfo?.versionId || this.datasetInfo?.VersionId,
+      TrainRatio: trainVal,
+      TestRatio: testVal
+    };
+    this.http.post<any>(`http://localhost:5183/api/Dataset/train-split/${this.datasetId}`, payload)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (result) => {
@@ -331,58 +378,61 @@ export class DatasetDetailsPage implements OnInit {
           this.error = 'Split failed: ' + (err?.message || err);
         }
       });
-  
+  }
+
+  downloadDataset(format: string): void {
     if (!this.datasetId) {
       this.error = 'No dataset ID found.';
       return;
     }
-    this.isLoading = true;
-    this.http.get<any>(`http://localhost:5183/api/Dataset/train-split/${this.datasetId}`)
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (result) => {
-          this.latestSplitResult = result;
-          // Add a synthetic row to previewData to show split results
-          const splitRow = Object.assign(
-  {},
-  ...this.previewData.headers.map(h => ({ [h]: '' })),
-  { SplitSummary: `Train: ${result.TrainCount} (${result.TrainPercentage}%) | Test: ${result.TestCount} (${result.TestPercentage}%)` }
-);
-          // Remove any previous split summary row
-          this.previewData.data = this.previewData.data.filter(row => !row['SplitSummary']);
-          this.previewData.data.push(splitRow);
-          if (!this.previewData.headers.includes('SplitSummary')) {
-            this.previewData.headers.push('SplitSummary');
-          }
-        },
-        error: (err) => {
-          this.error = 'Split failed: ' + (err?.message || err);
-        }
-      });
+    let url = '';
+    switch (format) {
+      case 'full':
+        url = `http://localhost:5183/api/Dataset/${this.datasetId}/download/full`;
+        break;
+      case 'train':
+        url = `http://localhost:5183/api/Dataset/${this.datasetId}/download/train`;
+        break;
+      case 'test':
+        url = `http://localhost:5183/api/Dataset/${this.datasetId}/download/test`;
+        break;
+      default:
+        this.error = 'Unknown download format.';
+        return;
+    }
+    // Trigger file download
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.click();
   }
 
   latestValidationResult: any = null;
 
   validateDataset(): void {
+    this.error = null;
+    this.latestValidationResult = null;
+    this.latestSplitResult = null;
     if (!this.datasetId) {
       this.error = 'No dataset ID found.';
       return;
     }
     this.isLoading = true;
-    this.http.get<any>(`http://localhost:5183/api/Dataset/validate/${this.datasetId}`)
+    this.http.post<any>(`http://localhost:5183/api/Dataset/validate/${this.datasetId}`, {})
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (result) => {
+        next: (result: any) => {
           this.latestValidationResult = result;
+          this.latestSplitResult = null;
           // Add a synthetic row to previewData to show validation results
           const validationRow = Object.assign(
-  {},
-  ...this.previewData.headers.map(h => ({ [h]: '' })),
-  { ValidationSummary: result.Status === 'Failed'
-      ? `Failed - ${result.ErrorCount} errors at lines: ${result.ErrorLines?.join(', ') || 'N/A'}`
-      : 'Validation Succeeded!'
-  }
-);
+            {},
+            ...this.previewData.headers.map(h => ({ [h]: '' })),
+            { ValidationSummary: result.Status === 'Failed'
+                ? `Failed - ${result.ErrorCount} errors at lines: ${result.ErrorLines?.join(', ') || 'N/A'}`
+                : 'Validation Succeeded!'
+            }
+          );
           // Remove any previous validation summary row
           this.previewData.data = this.previewData.data.filter(row => !row['ValidationSummary']);
           this.previewData.data.push(validationRow);
@@ -396,8 +446,5 @@ export class DatasetDetailsPage implements OnInit {
       });
   }
 
-  downloadDataset(format: string): void {
-    // TODO: Implement download logic
-    alert(`Download as ${format} not yet implemented.`);
-  }
+ 
 }

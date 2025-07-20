@@ -19,6 +19,11 @@ export interface Dataset {
   fileCount: number;
   createdAt: string;
   thumbnailBase64: string | null;
+  /**
+   * URL (relative or absolute) to the dataset thumbnail image, if available.
+   * Used by UI for rendering dataset card and details thumbnails.
+   */
+  ThumbnailUrl?: string;
   filePath?: string;
   hasErrors: boolean;
   hasThumbnail: boolean;
@@ -364,7 +369,7 @@ export class DatasetService {
       throw new Error('Dataset ID is required');
     }
     
-    const url = `${this.datasetUrl}/${datasetId}/preview`;
+    const url = `${this.datasetUrl}/read/${datasetId}`;
     console.log('Fetching dataset preview from URL:', url);
     
     return this.http.get<DatasetContentResponse>(url).pipe(
@@ -547,8 +552,7 @@ export class DatasetService {
   getValidatedDatasets(): Observable<Dataset[]> {
     return this.getAllDatasets().pipe(
       map(datasets => datasets.filter(dataset => 
-        dataset.isValidated && 
-        dataset.validationStatus === 'success' && 
+        dataset.validationStatus === 'Passed' && 
         !dataset.hasErrors
       ))
     );
@@ -580,6 +584,14 @@ export class DatasetService {
         throw new Error(`Failed to download dataset: ${error.statusText || 'Unknown error'}`);
       })
     );
+  }
+
+  /**
+   * Fetch paginated dataset preview using /api/Dataset/read/{datasetId}?page={page}&pageSize={pageSize}
+   */
+  readDatasetPaginated(datasetId: string, page: number = 1, pageSize: number = 10): Observable<any> {
+    const url = `${this.datasetUrl}/read/${datasetId}?page=${page}&pageSize=${pageSize}`;
+    return this.http.get<any>(url);
   }
 
   /**

@@ -36,27 +36,14 @@
           </ion-note>
         </ion-item>
 
-        <ion-item>
-          <ion-label position="stacked">Framework <ion-text color="danger">*</ion-text></ion-label>
-          <ion-select formControlName="framework" placeholder="Select framework">
-            <ion-select-option *ngFor="let framework of frameworks" [value]="framework">
-              {{ framework }}
-            </ion-select-option>
-          </ion-select>
-          <ion-note slot="error" *ngIf="uploadForm.get('framework')?.touched && uploadForm.get('framework')?.errors?.['required']">
-            Framework is required
-          </ion-note>
-        </ion-item>
+      
 
         <ion-item>
           <ion-label position="stacked">Version</ion-label>
           <ion-input formControlName="version" type="text" placeholder="e.g., 1.0.0"></ion-input>
         </ion-item>
 
-        <ion-item>
-          <ion-label position="stacked">Tags</ion-label>
-          <ion-input formControlName="tags" placeholder="Comma-separated tags (e.g., image-classification, resnet)"></ion-input>
-        </ion-item>
+        
 
         <ion-item>
           <ion-label position="stacked">Dataset (Optional)</ion-label>
@@ -92,7 +79,7 @@
             type="file" 
             style="display: none" 
             (change)="onFileSelected($event)"
-            accept=".h5,.pb,.pt,.pth,.onnx,.pkl,.joblib,.model"
+            accept=".h5,.pb,.pt,.pth,.onnx,.pkl,.joblib,.pkl,.model"
           >
           
           <ion-icon [name]="selectedFile ? 'cloud-upload-outline' : 'cloud-upload-outline'" size="large"></ion-icon>
@@ -100,7 +87,7 @@
           <div class="upload-text">
             <h3>{{ selectedFile ? 'File selected: ' + selectedFile.name : 'Drag & drop your model file here' }}</h3>
             <p>or click to browse files</p>
-            <p class="file-types">Supported formats: .h5, .pb, .pt, .pth, .onnx, .pkl, .joblib, .model</p>
+            <p class="file-types">Supported formats: .h5, .pb, .pt, .pth, .onnx, .pkl,.py, .joblib, .model</p>
             <p class="file-types">Maximum file size: 500MB</p>
           </div>
           

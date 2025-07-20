@@ -106,6 +106,12 @@
         <pre class="code-box">{{ fileContent }}</pre>
       </ion-card-content>
     </ion-card>
+
+    <!-- Notebook Editor Section -->
+    <div class="notebook-editor-section">
+      <h3>Notebook Editor</h3>
+      <app-notebook-panel *ngIf="selectedModel" [modelId]="selectedModel.modelId"></app-notebook-panel>
+    </div>
   </div>
 
   <style>

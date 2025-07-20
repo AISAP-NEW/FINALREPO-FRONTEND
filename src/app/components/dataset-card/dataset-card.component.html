@@ -1,11 +1,11 @@
-<div class="dataset-card" [class.selected]="isSelected" (click)="onClick()">
+<div class="dataset-card" [class.selected]="isSelected" (click)="router.navigate(['/datasets', dataset.datasetId, 'details'])">
   <div class="card-content">
     <div class="dataset-thumbnail">
       <div *ngIf="isLoading" class="thumbnail-loading">
         <ion-spinner></ion-spinner>
       </div>
       <img 
-        [src]="thumbnailUrl" 
+        [src]="getFullThumbnailUrl(dataset.ThumbnailUrl!)" 
         [alt]="dataset.datasetName" 
         (load)="onImageLoad()"
         (error)="onImageError()"
@@ -24,12 +24,16 @@
         </span>
       </div>
       <p class="dataset-meta">
+        <span class="file-type">
+          <ion-icon name="code-slash"></ion-icon>
+          {{ dataset.fileType || 'Unknown' }}
+        </span>
         <span class="file-count">
-          <ion-icon name="document"></ion-icon> 
+          <ion-icon name="document"></ion-icon>
           {{ dataset.fileCount || 0 }} {{ (dataset.fileCount === 1 ? 'File' : 'Files') }}
         </span>
         <span class="file-size">
-          <ion-icon name="save"></ion-icon> 
+          <ion-icon name="save"></ion-icon>
           {{ (dataset.totalFileSizeKB | number:'1.0-2') || '0.00' }} KB
         </span>
       </p>
@@ -52,7 +56,7 @@
     <button class="options-btn" (click)="$event.stopPropagation(); openOperationsModal()">
       <ion-icon name="ellipsis-vertical"></ion-icon>
     </button>
-    <a [routerLink]="['/datasets', dataset.datasetId, 'details']" class="action-button">
+    <a [routerLink]="['/datasets', dataset.datasetId, 'details']" class="action-button" (click)="$event.stopPropagation()">
       <ion-icon name="eye"></ion-icon>
     </a>
   </div>

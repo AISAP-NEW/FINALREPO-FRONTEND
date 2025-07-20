@@ -1,6 +1,4 @@
-// DEPRECATED: This file is deprecated. Use dataset-details.page.ts instead.
-// The contents are commented out to prevent accidental compilation by Angular.
-/*
+
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
@@ -112,12 +110,48 @@ export class DatasetDetailsPage implements OnInit {
   
   // Train/test split
   trainSplitRatio = 80;
+  selectedRatio = 80; // Default selected ratio for UI
+  
   
   // Preview pagination
-  previewPage = 1;
+  public previewPage = 1;
   previewRowsToShow = 10;
   previewRowCount = 10; // Default number of rows to show in preview
-  totalPreviewPages = 1;
+  public totalPreviewPages = 1;
+
+  // Paginated preview rows from server
+  public pagedPreviewRows: any[] = [];
+
+  // Fetch paginated preview data from read endpoint
+  fetchPaginatedPreview(datasetId: string, page: number = 1, pageSize: number = 10) {
+    this.isLoading = true;
+    this.datasetService.readDatasetPaginated(datasetId, page, pageSize).subscribe({
+      next: (response) => {
+        // Response shape: { DatasetInfo, Headers, Data, Pagination }
+        this.previewData.headers = response.Headers || [];
+        this.pagedPreviewRows = (response.Data || []).map((row: any) => row.Data);
+        this.previewData.totalRows = response.Pagination?.TotalRows || this.pagedPreviewRows.length;
+        this.previewPage = response.Pagination?.CurrentPage || 1;
+        this.totalPreviewPages = response.Pagination?.TotalPages || 1;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.toastService.presentToast('error', 'Failed to load dataset preview', 3000);
+        this.pagedPreviewRows = [];
+        this.previewData.headers = [];
+        this.previewData.totalRows = 0;
+        this.totalPreviewPages = 1;
+      }
+    });
+  }
+
+  public changePreviewPage(page: number): void {
+    if (!this.datasetId) return;
+    if (page >= 1 && page <= this.totalPreviewPages) {
+      this.fetchPaginatedPreview(this.datasetId, page, this.previewRowsToShow);
+    }
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -134,15 +168,19 @@ export class DatasetDetailsPage implements OnInit {
       if (id) {
         this.datasetId = id;
         this.loadDataset(id);
-        this.loadDatasetPreview(id);
-        
-        // Initialize pagination
-        this.updatePagination();
+        this.fetchPaginatedPreview(id, 1, this.previewRowsToShow);
       } else {
         this.toastService.presentToast('error', 'No dataset ID provided', 3000);
         this.router.navigate(['/datasets']);
       }
     });
+  }
+
+  onSegmentChange(event: any) {
+    this.activeTab = event.detail.value;
+    if (this.activeTab === 'preview' && this.datasetId) {
+      this.fetchPaginatedPreview(this.datasetId, this.previewPage, this.previewRowsToShow);
+    }
   }
   
   // Update pagination values when data changes
@@ -195,10 +233,7 @@ export class DatasetDetailsPage implements OnInit {
   }
 
   // Handle segment change for tabs
-  onSegmentChange(event: any) {
-    this.activeTab = event.detail.value;
-  }
-
+  
   // Check if preview data exists
   get hasPreviewData(): boolean {
     return this.previewData?.data?.length > 0;
@@ -211,19 +246,9 @@ export class DatasetDetailsPage implements OnInit {
   }
 
   // Change preview page
-  changePreviewPage(page: number): void {
-    if (page >= 1 && page <= this.totalPreviewPages) {
-      this.previewPage = page;
-    }
-  }
-
+  
   // Get paginated preview rows
-  get pagedPreviewRows(): any[] {
-    const start = (this.previewPage - 1) * this.previewRowsToShow;
-    const end = start + this.previewRowsToShow;
-    return this.previewData.data.slice(start, end);
-  }
-
+  
   // Get cell value safely
   getCellValue(row: any, header: string): string {
     return row[header] !== undefined && row[header] !== null ? String(row[header]) : '';
@@ -727,12 +752,17 @@ export class DatasetDetailsPage implements OnInit {
         this.toastService.presentToast('error', errorMessage, 4000);
       }
     });
+  }
+
   // Current split result
   splitResult: any = null;
 
-  // Handle ratio change from segment
-  onRatioChange(event: any) {
-    this.selectedRatio = event.detail.value;
+
+  // Handle ratio change from segment (Ionic emits CustomEvent<{ value: number }>)
+  onRatioChange(event: CustomEvent<{ value: number }>): void {
+    if (event && event.detail && typeof event.detail.value === 'number') {
+      this.selectedRatio = event.detail.value;
+    }
   }
 
   // Split dataset into training and testing sets
@@ -757,8 +787,8 @@ export class DatasetDetailsPage implements OnInit {
         
         // Update dataset status
         if (this.dataset) {
-          this.dataset.splitStatus = 'complete';
-          this.dataset.trainTestSplit = {
+          (this.dataset as any).splitStatus = 'complete';
+          (this.dataset as any).trainTestSplit = {
             trainSize: trainRatio / 100,
             testSize: testRatio / 100,
             splitAt: new Date().toISOString()
@@ -787,6 +817,7 @@ export class DatasetDetailsPage implements OnInit {
     });
   }
 
+  
   // Handle tab change
   onTabChange(event: any): void {
     this.activeTab = event.detail.value;
@@ -800,10 +831,48 @@ export class DatasetDetailsPage implements OnInit {
   }
 
   // --- ADDED: Template Export Handler ---
-  exportDataset(format: string): void {
-    this.downloadDataset(format);
+  /**
+   * Downloads the selected dataset type (full, train, test) as CSV using the backend endpoint
+   * @param type 'full' | 'train' | 'test'
+   */
+  downloadProcessedCsv(type: 'full' | 'train' | 'test'): void {
+    if (!this.datasetId) {
+      this.toastService.presentToast('error', 'No dataset selected', 3000);
+      return;
+    }
+    this.datasetService.downloadDataset(this.datasetId, type).subscribe({
+      next: (blob: Blob) => {
+        try {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const base = this.dataset?.datasetName || 'dataset';
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          a.download = `${base}_${type}_${timestamp}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          this.toastService.presentToast('success', `Downloaded ${type} CSV`, 3000);
+        } catch (error) {
+          this.toastService.presentToast('error', 'Failed to create download', 3000);
+        }
+      },
+      error: (error: any) => {
+        const errorMessage = error?.error?.message || `Failed to download ${type} CSV`;
+        this.toastService.presentToast('error', errorMessage, 4000);
+      }
+    });
+  }
+
+  /**
+   * Template handler for export buttons in the Operations tab
+   * @param type 'full' | 'train' | 'test'
+   */
+  exportDataset(type: 'full' | 'train' | 'test'): void {
+    this.downloadProcessedCsv(type);
   }
 
 }
 
-*/ 
+

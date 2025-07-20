@@ -53,7 +53,7 @@ export class TrainingConfigModalComponent implements OnInit {
   @Input() modelId!: number;
   @Input() modelVersionId!: number;
   
-  validatedDatasets: Dataset[] = [];
+  allDatasets: Dataset[] = [];
   trainingForm: FormGroup;
   isLoading = false;
 
@@ -79,16 +79,16 @@ export class TrainingConfigModalComponent implements OnInit {
 
   ngOnInit() {
     console.log('Training config modal initialized');
-    this.loadValidatedDatasets();
+    this.loadAllDatasets();
   }
 
-  loadValidatedDatasets() {
+  loadAllDatasets() {
     console.log('Loading validated datasets...');
     this.isLoading = true;
     this.datasetService.getValidatedDatasets().subscribe({
       next: (datasets) => {
         console.log('Received validated datasets:', datasets);
-        this.validatedDatasets = datasets;
+        this.allDatasets = datasets;
         this.isLoading = false;
       },
       error: (error) => {
