@@ -10,7 +10,7 @@
       </ion-button>
       <ion-button (click)="addDeployment()" fill="solid" color="primary">
         <ion-icon slot="start" [name]="addIcon"></ion-icon>
-        New Deployment
+        New
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -18,49 +18,152 @@
 
 <ion-content [fullscreen]="true" class="ion-padding">
   <!-- Loading State -->
-  <div *ngIf="loading" class="loading-container">
+  <div *ngIf="isLoading" class="loading-container">
     <ion-spinner></ion-spinner>
-    <p>Loading deployments...</p>
+    <p>Loading deployment data...</p>
   </div>
 
-  <!-- Empty State -->
-  <div *ngIf="!loading && (!deployments || deployments.length === 0)" class="empty-state">
-    <ion-icon [name]="cloudOfflineOutline"></ion-icon>
-    <h3>No Deployments</h3>
-    <p>You haven't created any deployments yet.</p>
-    <ion-button (click)="addDeployment()" fill="solid" color="primary">
-      <ion-icon slot="start" name="add"></ion-icon>
-      Create Deployment
-    </ion-button>
+  <!-- Segment Control -->
+  <ion-segment *ngIf="!isLoading" [(ngModel)]="selectedSegment" (ionChange)="onSegmentChange($event)">
+    <ion-segment-button value="pipelines">
+      <ion-label>Pipelines</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="deployments">
+      <ion-label>Deployments</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="virtual-machines">
+      <ion-label>VMs</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="scheduled">
+      <ion-label>Scheduled</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Search Bar -->
+  <ion-searchbar *ngIf="!isLoading" 
+    [(ngModel)]="searchTerm" 
+    (ionInput)="onSearchChange($event)"
+    placeholder="Search...">
+  </ion-searchbar>
+
+  <!-- Pipelines View -->
+  <div *ngIf="selectedSegment === 'pipelines' && !isLoading">
+    <div *ngIf="getFilteredPipelines().length === 0" class="empty-state">
+      <ion-icon name="git-branch-outline"></ion-icon>
+      <h3>No Pipelines</h3>
+      <p>No deployment pipelines found.</p>
+    </div>
+    
+    <ion-card *ngFor="let pipeline of getFilteredPipelines()" class="deployment-card">
+      <ion-card-header>
+        <ion-card-title>{{ pipeline.name }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Repository:</strong> {{ pipeline.repo_URL }}</p>
+        <p><strong>Branch:</strong> {{ pipeline.branch }}</p>
+        <p><strong>Status:</strong> 
+          <ion-badge [color]="getStatusColor(pipeline.status)">{{ pipeline.status }}</ion-badge>
+        </p>
+        <p><strong>Created:</strong> {{ pipeline.createdDate | date:'medium' }}</p>
+        <p><strong>Creator:</strong> {{ pipeline.creatorName }}</p>
+        <div class="environments">
+          <ion-chip *ngFor="let env of pipeline.targetEnvironments" color="primary">{{ env }}</ion-chip>
+        </div>
+      </ion-card-content>
+    </ion-card>
   </div>
 
-  <!-- Deployments List -->
-  <ion-list *ngIf="!loading && deployments && deployments.length > 0">
-    <ion-item-sliding *ngFor="let deployment of deployments">
-      <ion-item [routerLink]="['/deployments', deployment.id]">
-        <ion-icon slot="start" [name]="getStatusIcon(deployment.status)" [color]="getStatusColor(deployment.status)"></ion-icon>
-        <ion-label>
-          <h2>{{ deployment.name }}</h2>
-          <p>{{ deployment.modelName }} • {{ deployment.environment | titlecase }}</p>
-          <ion-note>{{ deployment.lastUpdated | date:'medium' }}</ion-note>
-        </ion-label>
-        <ion-badge slot="end" [color]="getStatusColor(deployment.status)">
-          {{ deployment.status }}
-        </ion-badge>
-      </ion-item>
-      <ion-item-options side="end">
-        <ion-item-option (click)="viewDeployment(deployment)" color="primary">
-          <ion-icon slot="icon-only" [name]="eyeIcon"></ion-icon>
-        </ion-item-option>
-        <ion-item-option (click)="editDeployment(deployment)" color="warning">
-          <ion-icon slot="icon-only" [name]="createIcon"></ion-icon>
-        </ion-item-option>
-        <ion-item-option (click)="deleteDeployment(deployment)" color="danger">
-          <ion-icon slot="icon-only" [name]="trashIcon"></ion-icon>
-        </ion-item-option>
-      </ion-item-options>
-    </ion-item-sliding>
-  </ion-list>
+  <!-- Deployments View -->
+  <div *ngIf="selectedSegment === 'deployments' && !isLoading">
+    <div *ngIf="getFilteredDeployments().length === 0" class="empty-state">
+      <ion-icon name="cloud-upload-outline"></ion-icon>
+      <h3>No Deployments</h3>
+      <p>No active deployments found.</p>
+    </div>
+    
+    <ion-card *ngFor="let deployment of getFilteredDeployments()" class="deployment-card">
+      <ion-card-header>
+        <ion-card-title>{{ deployment.appName || 'Unknown App' }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Environment:</strong> {{ deployment.environment }}</p>
+        <p><strong>Version:</strong> {{ deployment.version }}</p>
+        <p><strong>Status:</strong> 
+          <ion-badge [color]="getStatusColor(deployment.status)">{{ deployment.status }}</ion-badge>
+        </p>
+        <p><strong>Endpoint:</strong> {{ deployment.endpoint || 'Not available' }}</p>
+        <p><strong>VM:</strong> {{ deployment.virtualMachineName }}</p>
+        <p><strong>Deployed:</strong> {{ deployment.deployedAt | date:'medium' }}</p>
+        
+        <div class="card-actions">
+          <ion-button fill="clear" (click)="viewDeployment(deployment)">
+            <ion-icon slot="start" name="eye-outline"></ion-icon>
+            View
+          </ion-button>
+          <ion-button fill="clear" (click)="editDeployment(deployment)">
+            <ion-icon slot="start" name="create-outline"></ion-icon>
+            Edit
+          </ion-button>
+          <ion-button fill="clear" color="danger" (click)="deleteDeployment(deployment)">
+            <ion-icon slot="start" name="trash-outline"></ion-icon>
+            Delete
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Virtual Machines View -->
+  <div *ngIf="selectedSegment === 'virtual-machines' && !isLoading">
+    <div *ngIf="getFilteredVirtualMachines().length === 0" class="empty-state">
+      <ion-icon name="server-outline"></ion-icon>
+      <h3>No Virtual Machines</h3>
+      <p>No virtual machines configured.</p>
+    </div>
+    
+    <ion-card *ngFor="let vm of getFilteredVirtualMachines()" class="deployment-card">
+      <ion-card-header>
+        <ion-card-title>{{ vm.name }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Host:</strong> {{ vm.hostAddress }}:{{ vm.port }}</p>
+        <p><strong>Environment:</strong> {{ vm.environment }}</p>
+        <p><strong>Status:</strong> 
+          <ion-badge [color]="vm.isHealthy ? 'success' : 'danger'">{{ vm.status }}</ion-badge>
+        </p>
+        <p><strong>Active Deployments:</strong> {{ vm.activeDeployments }}/{{ vm.maxConcurrentDeployments }}</p>
+        <p><strong>OS:</strong> {{ vm.operatingSystem || 'Unknown' }}</p>
+        <p><strong>Resources:</strong> {{ vm.cpuCores }}CPU, {{ vm.ramSizeGB }}GB RAM</p>
+        <p><strong>Last Health Check:</strong> {{ vm.lastHealthCheck | date:'medium' }}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Scheduled Deployments View -->
+  <div *ngIf="selectedSegment === 'scheduled' && !isLoading">
+    <div *ngIf="getFilteredScheduledDeployments().length === 0" class="empty-state">
+      <ion-icon name="time-outline"></ion-icon>
+      <h3>No Scheduled Deployments</h3>
+      <p>No deployments are currently scheduled.</p>
+    </div>
+    
+    <ion-card *ngFor="let schedule of getFilteredScheduledDeployments()" class="deployment-card">
+      <ion-card-header>
+        <ion-card-title>{{ schedule.pipelineName }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Scheduled Time:</strong> {{ schedule.scheduledTime | date:'medium' }}</p>
+        <p><strong>Target Environment:</strong> {{ schedule.targetEnv }}</p>
+        <p><strong>Status:</strong> 
+          <ion-badge [color]="getStatusColor(schedule.status)">{{ schedule.status }}</ion-badge>
+        </p>
+        <p><strong>Creator:</strong> {{ schedule.creatorName }}</p>
+        <p><strong>Created:</strong> {{ schedule.createdDate | date:'medium' }}</p>
+        <p *ngIf="schedule.notes"><strong>Notes:</strong> {{ schedule.notes }}</p>
+        <p><strong>Requires Approval:</strong> {{ schedule.requireApproval ? 'Yes' : 'No' }}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
 
   <!-- FAB for Mobile -->
   <ion-fab slot="fixed" vertical="bottom" horizontal="end" (click)="addDeployment()">

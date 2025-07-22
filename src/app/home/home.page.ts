@@ -4,10 +4,6 @@ import {
   IonToolbar, 
   IonTitle, 
   IonContent,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonButtons,
   IonMenuButton,
   IonIcon,
@@ -15,12 +11,6 @@ import {
   IonRow,
   IonCol,
   IonButton,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonProgressBar,
-  IonAvatar,
-  IonChip,
   IonBadge
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
@@ -57,10 +47,6 @@ import { AuthService } from '../services/auth.service';
     IonToolbar,
     IonTitle,
     IonContent,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardContent,
     IonButtons,
     IonMenuButton,
     IonIcon,
@@ -68,12 +54,6 @@ import { AuthService } from '../services/auth.service';
     IonRow,
     IonCol,
     IonButton,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonProgressBar,
-    IonAvatar,
-    IonChip,
     IonBadge
   ]
 })

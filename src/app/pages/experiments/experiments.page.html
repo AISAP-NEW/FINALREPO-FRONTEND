@@ -1,0 +1,164 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Experiments</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="experiments-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>ML Experiments</h1>
+      <p class="header-subtitle">Track and manage your machine learning experiments</p>
+      <div class="header-actions">
+        <ion-button color="primary" (click)="createNewExperiment()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          New Experiment
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Experiments Overview -->
+  <div class="experiments-section">
+    <div class="section-header">
+      <h2>Active Experiments</h2>
+      <p>Monitor running and completed experiments</p>
+    </div>
+
+    <!-- Experiment Filters -->
+    <div class="filters-section">
+      <div class="filter-group">
+        <ion-segment [(ngModel)]="selectedStatus" (ionChange)="filterByStatus($event)">
+          <ion-segment-button value="all">
+            <ion-label>All</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="running">
+            <ion-label>Running</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="completed">
+            <ion-label>Completed</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="failed">
+            <ion-label>Failed</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+      <div class="search-group">
+        <ion-searchbar 
+          [(ngModel)]="searchTerm" 
+          (ionInput)="filterExperiments($event)"
+          placeholder="Search experiments..."
+          show-clear-button="focus">
+        </ion-searchbar>
+      </div>
+    </div>
+
+    <!-- Experiments List -->
+    <div class="experiments-list">
+      <div class="experiment-card" *ngFor="let experiment of filteredExperiments">
+        <div class="experiment-header">
+          <div class="experiment-info">
+            <h3 class="experiment-name">{{ experiment.name }}</h3>
+            <p class="experiment-description">{{ experiment.description }}</p>
+            <div class="experiment-meta">
+              <span class="experiment-id">ID: {{ experiment.id }}</span>
+              <span class="experiment-created">Created: {{ experiment.createdAt | date:'short' }}</span>
+            </div>
+          </div>
+          <div class="experiment-status">
+            <ion-badge 
+              [color]="getStatusColor(experiment.status)"
+              class="status-badge">
+              {{ experiment.status }}
+            </ion-badge>
+          </div>
+        </div>
+
+        <div class="experiment-metrics">
+          <div class="metric-item">
+            <span class="metric-label">Accuracy</span>
+            <span class="metric-value">{{ experiment.metrics?.accuracy || 'N/A' }}%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Loss</span>
+            <span class="metric-value">{{ experiment.metrics?.loss || 'N/A' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Duration</span>
+            <span class="metric-value">{{ experiment.duration || 'N/A' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Model</span>
+            <span class="metric-value">{{ experiment.model || 'N/A' }}</span>
+          </div>
+        </div>
+
+        <div class="experiment-progress" *ngIf="experiment.status === 'running'">
+          <div class="progress-info">
+            <span class="progress-label">Progress</span>
+            <span class="progress-percentage">{{ experiment.progress ?? 0 }}%</span>
+          </div>
+          <ion-progress-bar 
+            [value]="(experiment.progress ?? 0) / 100" 
+            color="primary">
+          </ion-progress-bar>
+        </div>
+
+        <div class="experiment-actions">
+          <ion-button fill="clear" size="small" (click)="viewExperiment(experiment)">
+            <ion-icon name="eye-outline" slot="start"></ion-icon>
+            View Details
+          </ion-button>
+          <ion-button fill="clear" size="small" (click)="compareExperiment(experiment)">
+            <ion-icon name="git-compare-outline" slot="start"></ion-icon>
+            Compare
+          </ion-button>
+          <ion-button fill="clear" size="small" (click)="downloadResults(experiment)" *ngIf="experiment.status === 'completed'">
+            <ion-icon name="download-outline" slot="start"></ion-icon>
+            Download
+          </ion-button>
+          <ion-button fill="clear" size="small" color="danger" (click)="deleteExperiment(experiment)">
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            Delete
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="filteredExperiments.length === 0">
+        <ion-icon name="flask-outline"></ion-icon>
+        <h3>No experiments found</h3>
+        <p>Start by creating your first experiment to track your ML models.</p>
+        <ion-button color="primary" (click)="createNewExperiment()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Create Experiment
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="activity-section">
+    <div class="section-header">
+      <h2>Recent Activity</h2>
+      <p>Latest experiment updates and changes</p>
+    </div>
+    
+    <div class="activity-list">
+      <div class="activity-item" *ngFor="let activity of recentActivity">
+        <div class="activity-icon">
+          <ion-icon [name]="getActivityIcon(activity.type)"></ion-icon>
+        </div>
+        <div class="activity-content">
+          <div class="activity-title">{{ activity.title }}</div>
+          <div class="activity-description">{{ activity.description }}</div>
+          <div class="activity-time">{{ activity.timestamp | date:'short' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

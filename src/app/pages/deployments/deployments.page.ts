@@ -1,31 +1,35 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { 
-  IonContent, 
   IonHeader, 
-  IonTitle, 
   IonToolbar, 
-  IonButton, 
-  IonIcon, 
-  IonList, 
-  IonItem, 
-  IonLabel, 
-  IonBadge, 
-  IonSpinner,
-  IonItemSliding,
-  IonItemOption,
-  IonItemOptions,
+  IonTitle, 
+  IonContent,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonSearchbar,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
   IonButtons,
   IonMenuButton,
   IonFab,
   IonFabButton,
-  IonNote,
+  IonButton,
+  IonIcon,
+  IonSpinner,
+  IonBadge,
+  IonChip,
   AlertController,
   ToastController,
   LoadingController
 } from '@ionic/angular/standalone';
+import { DeploymentService, PipelineResponseDTO, VirtualMachineDTO, DeploymentScheduleResponseDTO, ModelDeploymentResponseDTO } from '../../services/deployment.service';
 // Import individual icons from ionicons
 import { 
   addOutline as addIcon,
@@ -58,33 +62,33 @@ interface Deployment {
   styleUrls: ['./deployments.page.scss'],
   standalone: true,
   imports: [
-    IonContent, 
-    IonHeader, 
-    IonTitle, 
-    IonToolbar, 
-    IonButton, 
-    IonIcon, 
-    IonList, 
-    IonItem, 
-    IonLabel, 
-    IonBadge, 
-    IonSpinner,
-    IonItemSliding,
-    IonItemOption,
-    IonItemOptions,
+    CommonModule,
+    FormsModule,
+    HttpClientModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
+    IonSearchbar,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
     IonButtons,
     IonMenuButton,
     IonFab,
     IonFabButton,
-    IonNote,
-    CommonModule, 
-    FormsModule,
-    DatePipe,
-    TitleCasePipe,
-    RouterLink
+    IonButton,
+    IonIcon,
+    IonSpinner,
+    IonBadge,
+    IonChip
   ]
 })
-export class DeploymentsPage implements OnInit {
+export class DeploymentsPage implements OnInit, OnDestroy {
   // Icons for the template
   addIcon = 'add-outline';
   refreshIcon = 'refresh-outline';
@@ -98,93 +102,109 @@ export class DeploymentsPage implements OnInit {
   checkmarkCircleIcon = 'checkmark-circle-outline';
   closeCircleIcon = 'close-circle-outline';
 
-  loading = true;
-  deployments: Deployment[] = [];
-
+  private subscriptions: Subscription[] = [];
+  
+  // Real data from backend
+  pipelines: PipelineResponseDTO[] = [];
+  virtualMachines: VirtualMachineDTO[] = [];
+  scheduledDeployments: DeploymentScheduleResponseDTO[] = [];
+  deployments: ModelDeploymentResponseDTO[] = [];
+  
+  // UI state
+  selectedSegment: string = 'pipelines';
+  searchTerm: string = '';
+  isLoading: boolean = false;
+  
   constructor(
+    private deploymentService: DeploymentService,
     private alertController: AlertController,
     private toastController: ToastController,
     private loadingController: LoadingController
-  ) {}
-
-  ngOnInit() {
-    this.loadDeployments();
+  ) {
+    this.registerIcons();
   }
 
-  async loadDeployments() {
+  ngOnInit() {
+    this.loadAllData();
+  }
+  
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  async loadAllData() {
+    this.isLoading = true;
+    const loading = await this.loadingController.create({
+      message: 'Loading deployment data...'
+    });
+    await loading.present();
+    
     try {
-      this.loading = true;
-      // TODO: Replace with actual API call
-      // this.deployments = await this.deploymentService.getDeployments().toPromise();
+      // Load pipelines
+      const pipelinesSub = this.deploymentService.pipelines$.subscribe({
+        next: (pipelines) => {
+          this.pipelines = pipelines;
+        },
+        error: (error) => {
+          console.error('Error loading pipelines:', error);
+          this.showErrorToast('Failed to load pipelines');
+        }
+      });
+      this.subscriptions.push(pipelinesSub);
       
-      // Mock data for now
-      setTimeout(() => {
-        this.deployments = [
-          {
-            id: '1',
-            name: 'Sentiment Analysis Prod',
-            modelName: 'sentiment-analysis-v3',
-            environment: 'production',
-            status: 'active',
-            lastUpdated: new Date('2025-07-15T10:30:00'),
-            endpoint: 'https://api.example.com/v1/sentiment'
-          },
-          {
-            id: '2',
-            name: 'Image Classifier Staging',
-            modelName: 'image-classifier-v2',
-            environment: 'staging',
-            status: 'updating',
-            lastUpdated: new Date('2025-07-18T14:22:00')
-          },
-          {
-            id: '3',
-            name: 'Fraud Detection',
-            modelName: 'fraud-detection-v1',
-            environment: 'development',
-            status: 'error',
-            lastUpdated: new Date('2025-07-19T09:15:00')
-          }
-        ];
-        this.loading = false;
-      }, 1000);
+      // Load virtual machines
+      const vmSub = this.deploymentService.virtualMachines$.subscribe({
+        next: (vms) => {
+          this.virtualMachines = vms;
+        },
+        error: (error) => {
+          console.error('Error loading virtual machines:', error);
+          this.showErrorToast('Failed to load virtual machines');
+        }
+      });
+      this.subscriptions.push(vmSub);
+      
+      // Load scheduled deployments
+      const scheduleSub = this.deploymentService.scheduledDeployments$.subscribe({
+        next: (schedules) => {
+          this.scheduledDeployments = schedules;
+        },
+        error: (error) => {
+          console.error('Error loading scheduled deployments:', error);
+          this.showErrorToast('Failed to load scheduled deployments');
+        }
+      });
+      this.subscriptions.push(scheduleSub);
+      
+      // Load deployments
+      const deploymentsSub = this.deploymentService.deployments$.subscribe({
+        next: (deployments) => {
+          this.deployments = deployments;
+        },
+        error: (error) => {
+          console.error('Error loading deployments:', error);
+          this.showErrorToast('Failed to load deployments');
+        }
+      });
+      this.subscriptions.push(deploymentsSub);
+      
     } catch (error) {
-      console.error('Error loading deployments:', error);
-      this.presentToast('Failed to load deployments', 'danger');
-      this.loading = false;
+      console.error('Error loading deployment data:', error);
+      this.showErrorToast('Failed to load deployment data');
+    } finally {
+      this.isLoading = false;
+      await loading.dismiss();
     }
   }
 
   async refreshDeployments(event?: any) {
-    await this.loadDeployments();
+    this.loadAllData();
     if (event) {
       event.target.complete();
     }
   }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'active': return 'success';
-      case 'inactive': return 'medium';
-      case 'deploying':
-      case 'updating':
-        return 'warning';
-      case 'error': return 'danger';
-      default: return 'medium';
-    }
-  }
 
-  getStatusIcon(status: string): string {
-    switch (status) {
-      case 'active': return 'cloud-done-outline';
-      case 'inactive': return 'cloud-offline';
-      case 'deploying':
-      case 'updating':
-        return 'cloud-upload-outline';
-      case 'error': return 'warning';
-      default: return 'cloud-offline-outline';
-    }
-  }
 
   async addDeployment() {
     const alert = await this.alertController.create({
@@ -232,12 +252,12 @@ export class DeploymentsPage implements OnInit {
               // await this.deploymentService.createDeployment(data).toPromise();
               await new Promise(resolve => setTimeout(resolve, 1500));
               
-              this.presentToast('Deployment created successfully', 'success');
-              this.loadDeployments();
+              this.showSuccessToast('Deployment created successfully');
+              this.loadAllData();
               return true; // Allow dialog to close
             } catch (error) {
               console.error('Error creating deployment:', error);
-              this.presentToast('Failed to create deployment', 'danger');
+              this.showErrorToast('Failed to create deployment');
               return false; // Keep dialog open on error
             } finally {
               loading.dismiss();
@@ -250,21 +270,20 @@ export class DeploymentsPage implements OnInit {
     await alert.present();
   }
 
-  viewDeployment(deployment: Deployment): void {
+  viewDeployment(deployment: ModelDeploymentResponseDTO) {
     console.log('View deployment:', deployment);
-    // Navigate to deployment details page
-    // this.router.navigate(['/deployments', deployment.id]);
+    // Navigate to deployment details
   }
 
-  editDeployment(deployment: Deployment) {
+  editDeployment(deployment: ModelDeploymentResponseDTO) {
     console.log('Edit deployment:', deployment);
     // Open edit modal or navigate to edit page
   }
 
-  async deleteDeployment(deployment: Deployment) {
+  async deleteDeployment(deployment: ModelDeploymentResponseDTO) {
     const alert = await this.alertController.create({
       header: 'Confirm Delete',
-      message: `Are you sure you want to delete the deployment "${deployment.name}"?`,
+      message: `Are you sure you want to delete the deployment "${deployment.appName || 'Unknown'}"?`,
       buttons: [
         {
           text: 'Cancel',
@@ -274,23 +293,23 @@ export class DeploymentsPage implements OnInit {
           text: 'Delete',
           role: 'destructive',
           handler: async () => {
-            const loading = await this.loadingController.create({
-              message: 'Deleting deployment...'
-            });
-            
             try {
+              const loading = await this.loadingController.create({
+                message: 'Deleting deployment...'
+              });
               await loading.present();
-              // TODO: Replace with actual API call
-              // await this.deploymentService.deleteDeployment(deployment.id).toPromise();
-              await new Promise(resolve => setTimeout(resolve, 800));
               
-              this.presentToast('Deployment deleted', 'success');
-              this.deployments = this.deployments.filter(d => d.id !== deployment.id);
+              // TODO: Implement actual deletion via API
+              // await this.deploymentService.deleteDeployment(deployment.deploymentId);
+              
+              // For now, remove from local array
+              this.deployments = this.deployments.filter(d => d.deploymentId !== deployment.deploymentId);
+              
+              await loading.dismiss();
+              this.showSuccessToast('Deployment deleted successfully');
             } catch (error) {
               console.error('Error deleting deployment:', error);
-              this.presentToast('Failed to delete deployment', 'danger');
-            } finally {
-              loading.dismiss();
+              this.showErrorToast('Failed to delete deployment');
             }
           }
         }
@@ -300,7 +319,33 @@ export class DeploymentsPage implements OnInit {
     await alert.present();
   }
 
-  private async presentToast(message: string, color: 'success' | 'danger' | 'warning' = 'success') {
+  // Utility Methods
+  private registerIcons(): void {
+    // Icons are already imported and assigned to class properties
+    // This method exists for consistency with other pages
+  }
+
+  private async showErrorToast(message: string): Promise<void> {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color: 'danger',
+      position: 'bottom'
+    });
+    await toast.present();
+  }
+
+  private async showSuccessToast(message: string): Promise<void> {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color: 'success',
+      position: 'bottom'
+    });
+    await toast.present();
+  }
+
+  private async presentToast(message: string, color: 'success' | 'danger' | 'warning' = 'success'): Promise<void> {
     const toast = await this.toastController.create({
       message,
       duration: 3000,
@@ -308,5 +353,112 @@ export class DeploymentsPage implements OnInit {
       position: 'bottom'
     });
     await toast.present();
+  }
+
+  // Filtering and Search Methods
+  getFilteredPipelines(): PipelineResponseDTO[] {
+    if (!this.searchTerm) {
+      return this.pipelines;
+    }
+    return this.pipelines.filter(pipeline => 
+      pipeline.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      pipeline.status.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
+
+  getFilteredVirtualMachines(): VirtualMachineDTO[] {
+    if (!this.searchTerm) {
+      return this.virtualMachines;
+    }
+    return this.virtualMachines.filter(vm => 
+      vm.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      vm.environment.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      vm.status.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
+
+  getFilteredScheduledDeployments(): DeploymentScheduleResponseDTO[] {
+    if (!this.searchTerm) {
+      return this.scheduledDeployments;
+    }
+    return this.scheduledDeployments.filter(schedule => 
+      schedule.pipelineName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      schedule.targetEnv.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      schedule.status.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
+
+  getFilteredDeployments(): ModelDeploymentResponseDTO[] {
+    if (!this.searchTerm) {
+      return this.deployments;
+    }
+    return this.deployments.filter(deployment => 
+      deployment.appName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      deployment.environment.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      deployment.status.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
+
+  // Segment Change Handler
+  onSegmentChange(event: any): void {
+    this.selectedSegment = event.detail.value;
+  }
+
+  // Search Handler
+  onSearchChange(event: any): void {
+    this.searchTerm = event.detail.value;
+  }
+
+  // Status Utility Methods
+  getStatusColor(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'active':
+      case 'deployed':
+      case 'running':
+      case 'healthy':
+      case 'success':
+        return 'success';
+      case 'pending':
+      case 'scheduled':
+      case 'deploying':
+      case 'updating':
+        return 'warning';
+      case 'failed':
+      case 'error':
+      case 'unhealthy':
+      case 'offline':
+        return 'danger';
+      case 'stopped':
+      case 'inactive':
+        return 'medium';
+      default:
+        return 'primary';
+    }
+  }
+
+  getStatusIcon(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'active':
+      case 'deployed':
+      case 'running':
+      case 'healthy':
+      case 'success':
+        return 'checkmark-circle-outline';
+      case 'pending':
+      case 'scheduled':
+      case 'deploying':
+      case 'updating':
+        return 'time-outline';
+      case 'failed':
+      case 'error':
+      case 'unhealthy':
+      case 'offline':
+        return 'close-circle-outline';
+      case 'stopped':
+      case 'inactive':
+        return 'pause-circle-outline';
+      default:
+        return 'ellipse-outline';
+    }
   }
 }

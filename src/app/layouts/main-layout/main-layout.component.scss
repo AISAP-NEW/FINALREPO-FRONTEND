@@ -1,0 +1,232 @@
+/* MLFlow-inspired sidebar styling */
+ion-menu {
+  --width: 280px;
+  --background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+ion-menu ion-header {
+  --background: #ffffff;
+  border-bottom: 1px solid #e9ecef;
+}
+
+ion-menu ion-toolbar {
+  --background: #ffffff;
+  --color: #2c3e50;
+  --border-color: #e9ecef;
+  padding: 0 16px;
+}
+
+ion-menu ion-title {
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #2c3e50;
+  letter-spacing: 0.5px;
+}
+
+ion-menu ion-content {
+  --background: #f8f9fa;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+/* Navigation sections */
+.nav-section {
+  margin-bottom: 24px;
+}
+
+.nav-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 20px 8px 20px;
+  margin-top: 16px;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 8px;
+}
+
+.nav-section:first-child .nav-section-title {
+  margin-top: 8px;
+}
+
+/* Menu items styling */
+ion-menu ion-list {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+ion-menu ion-item {
+  --background: transparent;
+  --color: #495057;
+  --border-color: transparent;
+  --inner-padding-start: 20px;
+  --inner-padding-end: 20px;
+  --padding-start: 0;
+  --padding-end: 0;
+  margin: 2px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-height: 48px;
+}
+
+ion-menu ion-item:hover {
+  --background: #e3f2fd;
+  --color: #1976d2;
+  transform: translateX(2px);
+}
+
+ion-menu ion-item.selected {
+  --background: #1976d2;
+  --color: #ffffff;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+ion-menu ion-item.selected ion-icon {
+  color: #ffffff;
+}
+
+/* Icon styling */
+ion-menu ion-icon {
+  color: #6c757d;
+  margin-right: 12px;
+  font-size: 1.2rem;
+  transition: color 0.2s ease;
+}
+
+ion-menu ion-item:hover ion-icon {
+  color: #1976d2;
+}
+
+/* Label styling */
+ion-menu ion-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Help menu item special styling */
+.help-menu-item {
+  margin-top: 8px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 8px;
+}
+
+.help-menu-item ion-icon {
+  color: #17a2b8 !important;
+}
+
+.help-menu-item ion-label {
+  color: #17a2b8 !important;
+}
+
+/* Logout section */
+.logout-section {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid #e9ecef;
+  padding: 12px 0;
+}
+
+.logout-section ion-item {
+  margin: 0 12px;
+}
+
+.logout-section ion-item ion-icon {
+  color: #dc3545 !important;
+}
+
+.logout-section ion-item ion-label {
+  color: #dc3545 !important;
+}
+
+.logout-section ion-item:hover {
+  --background: #f8d7da;
+}
+
+/* Main content area */
+.ion-page {
+  background: #ffffff;
+}
+
+/* Header styling */
+ion-header ion-toolbar {
+  --background: #ffffff;
+  --color: #2c3e50;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+ion-header ion-title {
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-icon {
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.help-icon:hover {
+  color: #1976d2 !important;
+}
+
+/* Menu button styling */
+ion-menu-button {
+  --color: #495057;
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+ion-menu-button:hover {
+  --color: #1976d2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  ion-menu {
+    --width: 260px;
+  }
+  
+  ion-menu ion-item {
+    --inner-padding-start: 16px;
+    --inner-padding-end: 16px;
+    margin: 2px 8px;
+  }
+}
+
+/* Animation for menu items */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+ion-menu ion-item {
+  animation: slideIn 0.3s ease forwards;
+}
+
+ion-menu ion-item:nth-child(1) { animation-delay: 0.1s; }
+ion-menu ion-item:nth-child(2) { animation-delay: 0.15s; }
+ion-menu ion-item:nth-child(3) { animation-delay: 0.2s; }
+ion-menu ion-item:nth-child(4) { animation-delay: 0.25s; }
+ion-menu ion-item:nth-child(5) { animation-delay: 0.3s; }
+ion-menu ion-item:nth-child(6) { animation-delay: 0.35s; }
+ion-menu ion-item:nth-child(7) { animation-delay: 0.4s; }

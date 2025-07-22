@@ -32,7 +32,10 @@ import {
   layersOutline,
   cubeOutline,
   cloudUploadOutline,
-  helpCircleOutline
+  helpCircleOutline,
+  flaskOutline,
+  analyticsOutline,
+  documentsOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -86,6 +89,13 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
                 <ion-item routerLink="/models" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
                   <ion-icon slot="start" name="cube-outline"></ion-icon>
                   <ion-label>Models</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
+                <ion-item routerLink="/experiments" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon slot="start" name="flask-outline"></ion-icon>
+                  <ion-label>Experiments</ion-label>
                 </ion-item>
               </ion-menu-toggle>
 
@@ -335,7 +345,10 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       layersOutline,
       cubeOutline,
       cloudUploadOutline,
-      helpCircleOutline
+      helpCircleOutline,
+      flaskOutline,
+      analyticsOutline,
+      documentsOutline
     });
   }
 

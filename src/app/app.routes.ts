@@ -57,6 +57,11 @@ export const routes: Routes = [
           .then(m => m.DatasetsComponent)
       },
       {
+        path: 'experiments',
+        loadComponent: () => import('./pages/experiments/experiments.page')
+          .then(m => m.ExperimentsPage)
+      },
+      {
         path: 'datasets/new',
         loadComponent: () => import('./pages/dataset-form/dataset-form.page')
           .then(m => m.DatasetFormPage)
@@ -142,6 +147,11 @@ export const routes: Routes = [
         path: 'deployments',
         loadComponent: () => import('./pages/deployments/deployments.page')
           .then(m => m.DeploymentsPage)
+      },
+      {
+        path: 'experiments',
+        loadComponent: () => import('./pages/experiments/experiments.page')
+          .then(m => m.ExperimentsPage)
       }
     ]
   },

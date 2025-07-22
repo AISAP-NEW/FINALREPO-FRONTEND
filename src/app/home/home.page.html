@@ -7,160 +7,199 @@
   </ion-toolbar>
 </ion-header>
 
-<div class="app-bg"></div>
-<ion-content class="ai-glass">
-  <!-- Summary Cards -->
-  <ion-grid class="ion-padding">
-    <ion-row>
-      <ion-col size="12" size-md="6" size-lg="3">
-        <ion-card class="summary-card">
-          <ion-card-content>
-            <div class="card-icon" style="background: var(--ion-color-primary-light)">
-              <ion-icon name="folder-outline" color="primary"></ion-icon>
+<ion-content class="mlflow-dashboard">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>ML Platform Dashboard</h1>
+      <p class="header-subtitle">Monitor your machine learning projects and datasets</p>
+    </div>
+  </div>
+
+  <!-- Metrics Overview -->
+  <div class="metrics-section">
+    <div class="section-header">
+      <h2>Overview</h2>
+      <p>Key metrics and statistics</p>
+    </div>
+    
+    <ion-grid class="metrics-grid">
+      <ion-row>
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon projects">
+              <ion-icon name="folder-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : totalProjects }}</div>
+              <div class="metric-label">Total Projects</div>
+              <div class="metric-change positive">+12% from last month</div>
+            </div>
+          </div>
+        </ion-col>
+
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon datasets">
+              <ion-icon name="database-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : activeDatasets }}</div>
+              <div class="metric-label">Active Datasets</div>
+              <div class="metric-change positive">+8% from last month</div>
+            </div>
+          </div>
+        </ion-col>
+
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon experiments">
+              <ion-icon name="flask-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : pendingTasks }}</div>
+              <div class="metric-label">Running Experiments</div>
+              <div class="metric-change neutral">No change</div>
+            </div>
+          </div>
+        </ion-col>
+
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon models">
+              <ion-icon name="cube-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : unreadNotifications }}</div>
+              <div class="metric-label">Deployed Models</div>
+              <div class="metric-change positive">+3 this week</div>
+            </div>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <!-- Content Sections -->
+  <div class="content-sections">
+    <ion-grid>
+      <ion-row>
+        <!-- Recent Experiments -->
+        <ion-col size="12" size-lg="6">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Recent Experiments</h3>
+              <ion-button fill="clear" size="small">
+                <ion-icon name="add-outline" slot="start"></ion-icon>
+                New Experiment
+              </ion-button>
             </div>
             <div class="card-content">
-              <h3>Total Projects</h3>
-              <h2>{{ loading ? '...' : totalProjects }}</h2>
+              <div class="experiment-list">
+                <div class="experiment-item" *ngFor="let activity of recentActivities">
+                  <div class="experiment-info">
+                    <div class="experiment-name">{{ activity.action }}</div>
+                    <div class="experiment-meta">
+                      <span class="experiment-user">by {{ activity.user || 'Unknown' }}</span>
+                      <span class="experiment-time">
+                        <ng-container *ngIf="activity.timestamp && (activity.timestamp | date:'short') !== 'Invalid Date'; else invalidDate">
+                          {{ activity.timestamp | date:'short' }}
+                        </ng-container>
+                        <ng-template #invalidDate>N/A</ng-template>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="experiment-status">
+                    <ion-badge color="success">Completed</ion-badge>
+                  </div>
+                </div>
+              </div>
             </div>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
+          </div>
+        </ion-col>
 
-      <ion-col size="12" size-md="6" size-lg="3">
-        <ion-card class="summary-card">
-          <ion-card-content>
-            <div class="card-icon" style="background: var(--ion-color-success-light)">
-              <ion-icon name="documents-outline" color="success"></ion-icon>
+        <!-- Recent Models -->
+        <ion-col size="12" size-lg="6">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Model Registry</h3>
+              <ion-button fill="clear" size="small">
+                <ion-icon name="cube-outline" slot="start"></ion-icon>
+                Register Model
+              </ion-button>
             </div>
             <div class="card-content">
-              <h3>Active Datasets</h3>
-              <h2>{{ loading ? '...' : activeDatasets }}</h2>
+              <div class="model-list">
+                <div class="model-item" *ngFor="let project of activeProjects">
+                  <div class="model-info">
+                    <div class="model-name">{{ project.name }}</div>
+                    <div class="model-meta">
+                      <span class="model-version">v1.2.0</span>
+                      <span class="model-stage">Production</span>
+                    </div>
+                    <div class="model-progress">
+                      <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="project.progress * 100"></div>
+                      </div>
+                      <span class="progress-text">{{ (project.progress * 100) | number:'1.0-0' }}% accuracy</span>
+                    </div>
+                  </div>
+                  <div class="model-actions">
+                    <ion-button fill="clear" size="small" color="primary">
+                      <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" color="medium">
+                      <ion-icon name="download-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
+          </div>
+        </ion-col>
+      </ion-row>
 
-      <ion-col size="12" size-md="6" size-lg="3">
-        <ion-card class="summary-card">
-          <ion-card-content>
-            <div class="card-icon" style="background: var(--ion-color-warning-light)">
-              <ion-icon name="time-outline" color="warning"></ion-icon>
+      <ion-row>
+        <!-- Datasets Overview -->
+        <ion-col size="12">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Datasets</h3>
+              <ion-button fill="clear" size="small">
+                <ion-icon name="add-outline" slot="start"></ion-icon>
+                Upload Dataset
+              </ion-button>
             </div>
             <div class="card-content">
-              <h3>Pending Tasks</h3>
-              <h2>{{ loading ? '...' : pendingTasks }}</h2>
+              <div class="dataset-grid">
+                <div class="dataset-item" *ngFor="let dataset of recentDatasets">
+                  <div class="dataset-icon">
+                    <ion-icon name="database-outline"></ion-icon>
+                  </div>
+                  <div class="dataset-info">
+                    <div class="dataset-name">{{ dataset.name }}</div>
+                    <div class="dataset-meta">
+                      <span class="dataset-records">{{ dataset.records }} records</span>
+                      <span class="dataset-type">{{ dataset.type }}</span>
+                    </div>
+                  </div>
+                  <div class="dataset-actions">
+                    <ion-button fill="clear" size="small" color="primary">
+                      <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" color="medium">
+                      <ion-icon name="download-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" color="danger">
+                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-
-      <ion-col size="12" size-md="6" size-lg="3">
-        <ion-card class="summary-card">
-          <ion-card-content>
-            <div class="card-icon" style="background: var(--ion-color-danger-light)">
-              <ion-icon name="notifications-outline" color="danger"></ion-icon>
-            </div>
-            <div class="card-content">
-              <h3>Unread Notifications</h3>
-              <h2>{{ loading ? '...' : unreadNotifications }}</h2>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-
-    <!-- Main Content Area -->
-    <ion-row>
-      <!-- Recent Activity Feed -->
-      <ion-col size="12" size-lg="4">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Recent Activity</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <ion-list>
-              <ion-item *ngFor="let activity of recentActivities">
-                <ion-avatar slot="start">
-                  <img [src]="activity.userAvatar" alt="User avatar">
-                </ion-avatar>
-                <ion-label>
-                  <h3>{{ activity.action }}</h3>
-                  <p>
-  <ng-container *ngIf="activity.timestamp && (activity.timestamp | date:'short') !== 'Invalid Date'; else invalidDate">
-    {{ activity.timestamp | date:'short' }}
-  </ng-container>
-  <ng-template #invalidDate>N/A</ng-template>
-</p>
-                </ion-label>
-              </ion-item>
-            </ion-list>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-
-      <!-- Dataset Visualization -->
-      <ion-col size="12" size-lg="4">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Recent Datasets</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <ion-list>
-              <ion-item *ngFor="let dataset of recentDatasets">
-                <ion-icon name="documents-outline" slot="start" color="primary"></ion-icon>
-                <ion-label>
-                  <h3>{{ dataset.name }}</h3>
-                  <p>
-                    {{ dataset.records }} records
-                    <ion-chip color="primary" class="ion-margin-start">
-                      {{ dataset.type }}
-                    </ion-chip>
-                  </p>
-                </ion-label>
-                <ion-buttons slot="end">
-                  <ion-button color="primary">
-                    <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
-                  </ion-button>
-                  <ion-button color="danger">
-                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-                  </ion-button>
-                </ion-buttons>
-              </ion-item>
-            </ion-list>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-
-      <!-- Project Status -->
-      <ion-col size="12" size-lg="4">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Active Projects</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <ion-list>
-              <ion-item *ngFor="let project of activeProjects">
-                <ion-avatar slot="start">
-                  <img [src]="'assets/default-avatar.png'" alt="Project">
-                </ion-avatar>
-                <ion-label>
-                  <h3>{{ project.name }}</h3>
-                  <p>{{ project.members.length }} members</p>
-                  <ion-progress-bar 
-                    [value]="project.progress" 
-                    [color]="project.progress < 0.3 ? 'danger' : project.progress < 0.7 ? 'warning' : 'success'">
-                  </ion-progress-bar>
-                </ion-label>
-                <ion-badge 
-                  slot="end" 
-                  [color]="project.status === 'On Track' ? 'success' : 'warning'">
-                  {{ project.status }}
-                </ion-badge>
-              </ion-item>
-            </ion-list>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
 </ion-content>
