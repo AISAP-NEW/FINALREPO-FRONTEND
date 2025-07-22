@@ -91,6 +91,13 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
               </ion-menu-toggle>
 
               <ion-menu-toggle auto-hide="false">
+                <ion-item routerLink="/experiments" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon slot="start" name="people-outline"></ion-icon>
+                  <ion-label>Experiments</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
                 <ion-item routerLink="/reports" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
                   <ion-icon slot="start" name="document-text-outline"></ion-icon>
                   <ion-label>Reports</ion-label>

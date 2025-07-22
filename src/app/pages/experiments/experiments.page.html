@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Experiments</ion-title>
+  </ion-toolbar>
+</ion-header>
+<ion-content class="ion-padding">
+  <ion-searchbar [(ngModel)]="searchTerm" placeholder="Search experiments..."></ion-searchbar>
+  <ion-button expand="block" color="primary" [routerLink]="'/experiments/create'" class="ion-margin-bottom">
+    <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+    Add Experiment
+  </ion-button>
+  <app-experiment-modal
+    [isOpen]="modalOpen"
+    [experiment]="modalExperiment"
+    [mode]="modalMode"
+    [datasets]="datasets"
+    (dismiss)="closeModal()"
+    (save)="saveExperiment($event)">
+  </app-experiment-modal>
+  <ion-list>
+    <ion-item *ngFor="let experiment of filteredExperiments()">
+      <ion-label>
+        <h2>{{ experiment.name }}</h2>
+        <p>{{ experiment.description }}</p>
+      </ion-label>
+      <ion-button fill="clear" slot="end" (click)="viewExperiment(experiment)">
+        <ion-icon name="eye-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" slot="end" color="medium" (click)="openEditModal(experiment)">
+        <ion-icon name="create-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" slot="end" color="danger" (click)="deleteExperiment(experiment)">
+        <ion-icon name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-list>
+  <ion-button expand="block" (click)="loadExperiments()">Refresh</ion-button>
+</ion-content> 
