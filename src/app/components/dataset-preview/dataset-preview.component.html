@@ -1,0 +1,77 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Dataset Preview</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner></ion-spinner>
+    <p>Loading preview data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!isLoading && !hasPreviewData" class="ion-text-center ion-padding">
+    <ion-icon name="alert-circle" size="large" color="warning"></ion-icon>
+    <p>No preview data available</p>
+  </div>
+
+  <!-- Data Preview -->
+  <div *ngIf="!isLoading && hasPreviewData">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Data Preview</ion-card-title>
+        <ion-card-subtitle>
+          Showing {{ previewRowCount }} of {{ totalRowCount }} rows
+        </ion-card-subtitle>
+      </ion-card-header>
+      
+      <ion-card-content>
+        <div class="table-responsive">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th *ngFor="let header of previewData.headers">
+                  {{ header }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of previewData.data">
+                <td *ngFor="let header of previewData.headers">
+                  {{ getCellValue(row, header) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Schema Info -->
+    <ion-card *ngIf="previewData.schema?.length" class="ion-margin-top">
+      <ion-card-header>
+        <ion-card-title>Schema</ion-card-title>
+      </ion-card-header>
+      
+      <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let field of previewData.schema">
+            <ion-label>
+              <h3>{{ field.name }}</h3>
+              <p>
+                <ion-badge [color]="getTypeColor(field.type)" class="type-badge">
+                  {{ field.type }}
+                </ion-badge>
+                <span *ngIf="field.sampleValues?.length" class="sample-values">
+                  Sample: {{ field.sampleValues.join(', ') }}
+                </span>
+              </p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

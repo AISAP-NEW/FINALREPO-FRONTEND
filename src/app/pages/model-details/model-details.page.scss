@@ -1,0 +1,263 @@
+/* Header styles */
+ion-toolbar {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
+}
+
+/* Content styles */
+ion-content {
+  --background: var(--ion-color-light);
+}
+
+/* Loading and error states */
+.ion-text-center {
+  height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  
+  ion-spinner {
+    --color: var(--ion-color-primary);
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    color: var(--ion-color-medium);
+    margin-top: 0.5rem;
+  }
+  
+  ion-button {
+    margin-top: 1.5rem;
+  }
+}
+
+/* Model details card */
+.model-details {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+ion-card {
+  margin: 1rem 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  
+  ion-card-header {
+    padding: 1.5rem 1.5rem 1rem;
+    background: var(--ion-color-light);
+    border-bottom: 1px solid var(--ion-color-light-shade);
+    
+    .model-header {
+      display: flex;
+      align-items: center;
+      
+      .model-icon {
+        font-size: 2.5rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+      }
+      
+      .model-title {
+        flex: 1;
+        min-width: 0;
+        
+        h1 {
+          margin: 0 0 0.5rem;
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: var(--ion-color-dark);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        
+        .model-meta {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          
+          ion-badge {
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            
+            &[color="light"] {
+              background: var(--ion-color-light);
+              color: var(--ion-color-dark);
+            }
+          }
+          
+          ion-note {
+            font-size: 0.8rem;
+            color: var(--ion-color-medium);
+          }
+        }
+      }
+    }
+  }
+  
+  ion-card-content {
+    padding: 1.5rem;
+    
+    .model-description {
+      margin-bottom: 1.5rem;
+      
+      h3 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+      }
+      
+      p {
+        margin: 0;
+        line-height: 1.6;
+        color: var(--ion-color-medium);
+        white-space: pre-line;
+      }
+    }
+    
+    .model-info {
+      background: var(--ion-color-light);
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      
+      ion-item {
+        --padding-start: 16px;
+        --padding-end: 16px;
+        --inner-padding-end: 0;
+        --min-height: 48px;
+        --background: transparent;
+        --border-color: var(--ion-color-light-shade);
+        
+        ion-label {
+          font-weight: 500;
+          color: var(--ion-color-dark);
+        }
+        
+        ion-note {
+          font-size: 0.9rem;
+          color: var(--ion-color-medium);
+          
+          a {
+            color: var(--ion-color-primary);
+            text-decoration: none;
+            
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+      }
+    }
+    
+    .model-tags {
+      margin-top: 1.5rem;
+      
+      h3 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+      }
+      
+      .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        
+        ion-chip {
+          --background: transparent;
+          --border-color: var(--ion-color-medium);
+          --color: var(--ion-color-medium);
+          height: 28px;
+          margin: 0;
+          
+          ion-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Action buttons */
+.action-buttons {
+  margin: 1.5rem 0;
+  
+  ion-button {
+    --border-radius: 8px;
+    height: 48px;
+    font-weight: 500;
+    text-transform: none;
+    margin: 0.5rem 0;
+    
+    ion-icon {
+      font-size: 1.2em;
+    }
+  }
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  ion-content {
+    --padding-start: 5%;
+    --padding-end: 5%;
+  }
+  
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    
+    ion-button {
+      width: auto;
+      min-width: 200px;
+      margin-left: 1rem;
+    }
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  ion-content {
+    --background: var(--ion-color-dark);
+  }
+  
+  ion-card {
+    --background: var(--ion-color-dark-tint);
+    
+    ion-card-header {
+      background: var(--ion-color-dark-shade);
+      border-bottom-color: var(--ion-color-dark-shade);
+      
+      .model-title h1 {
+        color: var(--ion-color-light);
+      }
+    }
+    
+    .model-info {
+      background: var(--ion-color-dark-shade);
+      
+      ion-item {
+        --border-color: var(--ion-color-dark-shade);
+        
+        ion-label {
+          color: var(--ion-color-light);
+        }
+      }
+    }
+  }
+  
+  .model-description h3,
+  .model-tags h3 {
+    color: var(--ion-color-light) !important;
+  }
+}

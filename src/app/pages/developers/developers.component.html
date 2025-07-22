@@ -1,0 +1,219 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Developers</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar
+      [(ngModel)]="searchTerm"
+      (ionInput)="handleSearch($event)"
+      placeholder="Search developers..."
+      [animated]="true"
+      show-clear-button="focus">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="ion-text-center ion-padding">
+    <ion-spinner></ion-spinner>
+    <p>Loading developers...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="ion-padding">
+    <ion-item color="danger">
+      <ion-icon name="alert-circle-outline" slot="start"></ion-icon>
+      <ion-label class="ion-text-wrap">{{ error }}</ion-label>
+    </ion-item>
+  </div>
+
+  <!-- Data State -->
+  <ion-list *ngIf="!loading && !error">
+    <ion-item *ngFor="let user of filteredUsers" [button]="true" (click)="showUserDetails(user)">
+      <ion-icon slot="start" name="person-outline" color="medium"></ion-icon>
+      <ion-label>
+        <h2>{{ user.username }}</h2>
+        <p>
+          <ion-icon name="mail-outline"></ion-icon>
+          {{ user.email }}
+        </p>
+      </ion-label>
+      <ion-chip [color]="getRoleColor(user.role)" slot="end">
+        {{ user.role }}
+      </ion-chip>
+      <ion-button 
+        slot="end" 
+        fill="clear" 
+        color="primary"
+        (click)="openAssignToProject(user); $event.stopPropagation()">
+        <ion-icon name="add-outline"></ion-icon>
+      </ion-button>
+      <ion-button 
+        slot="end" 
+        fill="clear" 
+        color="danger"
+        *ngIf="canDeleteUser(user)"
+        (click)="confirmDelete(user); $event.stopPropagation()">
+        <ion-icon name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredUsers.length === 0" class="ion-text-center ion-padding">
+      <p *ngIf="searchTerm">No developers found matching "{{ searchTerm }}"</p>
+      <p *ngIf="!searchTerm">No developers found</p>
+    </div>
+  </ion-list>
+
+  <!-- User Details Modal -->
+  <ion-modal [isOpen]="!!selectedUser" (didDismiss)="closeUserDetails()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Developer Details</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeUserDetails()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding" *ngIf="selectedUser">
+        <div class="user-header">
+          <ion-icon name="person-outline" size="large"></ion-icon>
+          <h1>{{ selectedUser.username }}</h1>
+          <ion-chip [color]="getRoleColor(selectedUser.role)">
+            {{ selectedUser.role }}
+          </ion-chip>
+        </div>
+
+        <ion-list>
+          <ion-item>
+            <ion-icon name="mail-outline" slot="start"></ion-icon>
+            <ion-label>
+              <h2>Email</h2>
+              <p>{{ selectedUser.email }}</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item lines="none">
+            <ion-icon name="briefcase-outline" slot="start"></ion-icon>
+            <ion-label>
+              <h2>Projects</h2>
+            </ion-label>
+          </ion-item>
+
+          <div *ngIf="selectedUser.projects?.length === 0" class="ion-padding ion-text-center">
+            <p>Not assigned to any projects</p>
+          </div>
+
+          <ion-item *ngFor="let project of selectedUser.projects" lines="none" class="project-item">
+            <ion-label>
+              <h3>{{ project.name }}</h3>
+              <p>
+                <ion-icon name="code-slash-outline"></ion-icon>
+                {{ project.technologies }}
+              </p>
+              <p>
+                <ion-chip color="tertiary" size="small">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <ion-label>{{ project.members.length || 0 }} members</ion-label>
+                </ion-chip>
+              </p>
+            </ion-label>
+            <div slot="end" class="project-status">
+              <ion-chip [color]="project.isActive ? 'success' : 'medium'" class="role-chip">
+                {{ project.role }}
+              </ion-chip>
+              <ion-chip [color]="project.isActive ? 'success' : 'medium'" class="status-chip">
+                {{ project.isActive ? 'Active' : 'Inactive' }}
+              </ion-chip>
+            </div>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>
+
+<style>
+  .user-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .user-header ion-icon {
+    font-size: 48px;
+    color: var(--ion-color-medium);
+  }
+  .user-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  ion-item {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    margin-bottom: 8px;
+  }
+  ion-item ion-label h2 {
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--ion-color-dark);
+  }
+  ion-item ion-label p {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+    color: var(--ion-color-medium);
+  }
+  ion-item ion-label p ion-icon {
+    font-size: 16px;
+    min-width: 16px;
+    color: var(--ion-color-medium);
+  }
+  .project-item {
+    margin-left: 16px;
+    --background: var(--ion-color-light);
+    border-radius: 8px;
+  }
+  .project-item ion-label h3 {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--ion-color-dark);
+  }
+  ion-item ion-icon[slot="start"] {
+    color: var(--ion-color-medium);
+    font-size: 24px;
+    margin-right: 16px;
+  }
+  .project-status {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+  }
+  .role-chip {
+    margin: 0;
+  }
+  .status-chip {
+    margin: 0;
+    font-size: 0.8em;
+  }
+  ion-searchbar {
+    padding: 0 16px;
+    --box-shadow: none;
+    --border-radius: 8px;
+  }
+  ion-searchbar::part(container) {
+    border: 1px solid var(--ion-color-medium-shade);
+  }
+</style> 

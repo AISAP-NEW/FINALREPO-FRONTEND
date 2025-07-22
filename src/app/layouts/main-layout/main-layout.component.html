@@ -1,0 +1,85 @@
+<ion-split-pane contentId="main-content">
+  <ion-menu contentId="main-content" type="overlay">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Menu</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-list>
+        <ion-menu-toggle auto-hide="false">
+          <ion-item routerLink="/home" routerDirection="root" routerLinkActive="selected">
+            <ion-icon slot="start" name="home-outline"></ion-icon>
+            <ion-label>Home</ion-label>
+          </ion-item>
+
+          <ion-item routerLink="/projects" routerDirection="root" routerLinkActive="selected">
+            <ion-icon slot="start" name="folder-outline"></ion-icon>
+            <ion-label>Projects</ion-label>
+          </ion-item>
+
+          <ion-item routerLink="/datasets" routerDirection="root" routerLinkActive="selected">
+            <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
+            <ion-label>Datasets</ion-label>
+          </ion-item>
+
+          <ion-item routerLink="/developers" routerDirection="root" routerLinkActive="selected">
+            <ion-icon slot="start" name="people-outline"></ion-icon>
+            <ion-label>Developers</ion-label>
+          </ion-item>
+
+          <ion-item routerLink="/reports" routerDirection="root" routerLinkActive="selected">
+            <ion-icon slot="start" name="analytics-outline"></ion-icon>
+            <ion-label>Reports</ion-label>
+          </ion-item>
+
+          <ion-item routerLink="/notifications" routerDirection="root" routerLinkActive="selected">
+            <ion-icon slot="start" name="notifications-outline"></ion-icon>
+            <ion-label>Notifications</ion-label>
+          </ion-item>
+
+          <ion-item routerLink="/deployments" routerDirection="root" routerLinkActive="selected">
+            <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+            <ion-label>Deployments</ion-label>
+          </ion-item>
+
+          <ion-item (click)="openHelp()" button class="help-menu-item">
+            <ion-icon slot="start" name="help-circle-outline" color="primary"></ion-icon>
+            <ion-label color="primary">Help</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+
+      <ion-list class="logout-section">
+        <ion-menu-toggle auto-hide="false">
+          <ion-item (click)="confirmLogout()" button>
+            <ion-icon slot="start" name="log-out-outline" color="danger"></ion-icon>
+            <ion-label color="danger">Logout</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+    </ion-content>
+  </ion-menu>
+
+  <div class="ion-page" id="main-content">
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button></ion-menu-button>
+        </ion-buttons>
+        <ion-title>
+          AISAP
+          <ion-icon 
+            name="help-circle-outline" 
+            (click)="openHelp()" 
+            class="help-icon"
+            color="medium">
+          </ion-icon>
+        </ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-router-outlet></ion-router-outlet>
+    </ion-content>
+  </div>
+</ion-split-pane> 

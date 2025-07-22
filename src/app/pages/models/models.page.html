@@ -1,0 +1,185 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>AI Models</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="loadModels()">
+        <ion-icon slot="icon-only" name="refresh"></ion-icon>
+      </ion-button>
+      <ion-button [routerLink]="['/models/upload']" color="light">
+        <ion-icon slot="start" name="cloud-upload"></ion-icon>
+        Upload Model
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner></ion-spinner>
+    <p>Loading models...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="ion-text-center ion-padding">
+    <ion-icon name="warning" size="large" color="danger"></ion-icon>
+    <p>{{ error }}</p>
+    <ion-button (click)="loadModels()" fill="outline">
+      <ion-icon slot="start" name="refresh"></ion-icon>
+      Try Again
+    </ion-button>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && !error && models.length === 0" class="ion-text-center ion-padding">
+    <ion-icon name="cube" size="large" color="medium"></ion-icon>
+    <h3>No Models Found</h3>
+    <p class="ion-text-wrap">Upload your first AI model to get started.</p>
+  </div>
+
+  <!-- Model Cards Grid -->
+  <div class="models-grid">
+    <ion-card *ngFor="let model of models" class="model-card" (click)="selectModel(model)">
+      <ion-card-header>
+        <ion-card-title>{{ model.modelName }}</ion-card-title>
+        <p class="muted">{{ model.creationDate | date:'mediumDate' }}</p>
+      </ion-card-header>
+      <ion-card-content>
+        <p>{{ model.description || 'No description provided.' }}</p>
+        <div class="card-actions">
+          <ion-button size="small" fill="outline" color="primary" (click)="$event.stopPropagation(); selectModel(model)">
+            <ion-icon slot="start" name="eye"></ion-icon> View Details
+          </ion-button>
+          <ion-button size="small" fill="outline" color="danger" (click)="$event.stopPropagation(); confirmDeleteModel(model)">
+            <ion-icon slot="icon-only" name="trash"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Model Details Panel -->
+  <div *ngIf="selectedModel" class="detail-panel">
+    <div class="detail-header">
+      <h2>{{ selectedModel.modelName }}</h2>
+      <ion-button fill="clear" size="small" color="medium" (click)="clearDetails()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </div>
+    <p><strong>Description:</strong> {{ selectedModel.description }}</p>
+    <p><strong>Created:</strong> {{ selectedModel.creationDate | date:'medium' }}</p>
+
+    <ion-accordion-group *ngIf="selectedModel.versions && selectedModel.versions.length">
+      <ion-accordion *ngFor="let version of selectedModel.versions">
+        <ion-item slot="header">
+          <ion-label>Version {{ version.versionNumber }}</ion-label>
+          <ion-button slot="end" fill="clear" color="primary" (click)="$event.stopPropagation(); startTraining(selectedModel, version)">
+            <ion-icon slot="start" name="play"></ion-icon>
+            Train
+          </ion-button>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <ion-list>
+            <ion-item *ngFor="let file of version.files" (click)="onFileClick(file)" class="file-row">
+              <ion-label>{{ file.fileName }}</ion-label>
+              <ion-note slot="end">{{ file.fileSize | number }} bytes</ion-note>
+              <ion-button fill="clear" size="small" slot="end" (click)="$event.stopPropagation(); downloadFile(file)">
+                <ion-icon name="download"></ion-icon>
+              </ion-button>
+              <ion-button fill="clear" size="small" color="danger" slot="end" (click)="$event.stopPropagation(); confirmDeleteFile(file)">
+                <ion-icon name="trash"></ion-icon>
+              </ion-button>
+            </ion-item>
+          </ion-list>
+        </div>
+      </ion-accordion>
+    </ion-accordion-group>
+
+    <ion-card *ngIf="fileContent">
+      <ion-card-header>
+        <ion-card-title>File Preview</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <pre class="code-box">{{ fileContent }}</pre>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Notebook Editor Section -->
+    <div class="notebook-editor-section">
+      <h3>Notebook Editor</h3>
+      <app-notebook-panel *ngIf="selectedModel" [modelId]="selectedModel.modelId"></app-notebook-panel>
+    </div>
+  </div>
+
+  <style>
+    .models-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+    .model-card-header {
+      --padding-start: 0;
+      --inner-padding-end: 0;
+      align-items: flex-start;
+    }
+    .model-meta {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .model-card {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-radius: 12px;
+      transition: box-shadow 0.2s;
+    }
+    .model-card:hover {
+      box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+    }
+    .detail-panel {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: var(--ion-color-light);
+      border-radius: 12px;
+    }
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .file-row {
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .file-row:hover {
+      --background: var(--ion-color-light-shade);
+    }
+    .code-box {
+      background: var(--ion-color-dark);
+      color: var(--ion-color-light);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .muted {
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+    }
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</ion-content>
+
+<app-training-config-modal></app-training-config-modal>

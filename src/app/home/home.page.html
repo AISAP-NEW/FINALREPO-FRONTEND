@@ -1,0 +1,166 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Dashboard</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<div class="app-bg"></div>
+<ion-content class="ai-glass">
+  <!-- Summary Cards -->
+  <ion-grid class="ion-padding">
+    <ion-row>
+      <ion-col size="12" size-md="6" size-lg="3">
+        <ion-card class="summary-card">
+          <ion-card-content>
+            <div class="card-icon" style="background: var(--ion-color-primary-light)">
+              <ion-icon name="folder-outline" color="primary"></ion-icon>
+            </div>
+            <div class="card-content">
+              <h3>Total Projects</h3>
+              <h2>{{ loading ? '...' : totalProjects }}</h2>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col size="12" size-md="6" size-lg="3">
+        <ion-card class="summary-card">
+          <ion-card-content>
+            <div class="card-icon" style="background: var(--ion-color-success-light)">
+              <ion-icon name="documents-outline" color="success"></ion-icon>
+            </div>
+            <div class="card-content">
+              <h3>Active Datasets</h3>
+              <h2>{{ loading ? '...' : activeDatasets }}</h2>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col size="12" size-md="6" size-lg="3">
+        <ion-card class="summary-card">
+          <ion-card-content>
+            <div class="card-icon" style="background: var(--ion-color-warning-light)">
+              <ion-icon name="time-outline" color="warning"></ion-icon>
+            </div>
+            <div class="card-content">
+              <h3>Pending Tasks</h3>
+              <h2>{{ loading ? '...' : pendingTasks }}</h2>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col size="12" size-md="6" size-lg="3">
+        <ion-card class="summary-card">
+          <ion-card-content>
+            <div class="card-icon" style="background: var(--ion-color-danger-light)">
+              <ion-icon name="notifications-outline" color="danger"></ion-icon>
+            </div>
+            <div class="card-content">
+              <h3>Unread Notifications</h3>
+              <h2>{{ loading ? '...' : unreadNotifications }}</h2>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+
+    <!-- Main Content Area -->
+    <ion-row>
+      <!-- Recent Activity Feed -->
+      <ion-col size="12" size-lg="4">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Recent Activity</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-list>
+              <ion-item *ngFor="let activity of recentActivities">
+                <ion-avatar slot="start">
+                  <img [src]="activity.userAvatar" alt="User avatar">
+                </ion-avatar>
+                <ion-label>
+                  <h3>{{ activity.action }}</h3>
+                  <p>
+  <ng-container *ngIf="activity.timestamp && (activity.timestamp | date:'short') !== 'Invalid Date'; else invalidDate">
+    {{ activity.timestamp | date:'short' }}
+  </ng-container>
+  <ng-template #invalidDate>N/A</ng-template>
+</p>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <!-- Dataset Visualization -->
+      <ion-col size="12" size-lg="4">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Recent Datasets</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-list>
+              <ion-item *ngFor="let dataset of recentDatasets">
+                <ion-icon name="documents-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <h3>{{ dataset.name }}</h3>
+                  <p>
+                    {{ dataset.records }} records
+                    <ion-chip color="primary" class="ion-margin-start">
+                      {{ dataset.type }}
+                    </ion-chip>
+                  </p>
+                </ion-label>
+                <ion-buttons slot="end">
+                  <ion-button color="primary">
+                    <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-button color="danger">
+                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </ion-buttons>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <!-- Project Status -->
+      <ion-col size="12" size-lg="4">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Active Projects</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-list>
+              <ion-item *ngFor="let project of activeProjects">
+                <ion-avatar slot="start">
+                  <img [src]="'assets/default-avatar.png'" alt="Project">
+                </ion-avatar>
+                <ion-label>
+                  <h3>{{ project.name }}</h3>
+                  <p>{{ project.members.length }} members</p>
+                  <ion-progress-bar 
+                    [value]="project.progress" 
+                    [color]="project.progress < 0.3 ? 'danger' : project.progress < 0.7 ? 'warning' : 'success'">
+                  </ion-progress-bar>
+                </ion-label>
+                <ion-badge 
+                  slot="end" 
+                  [color]="project.status === 'On Track' ? 'success' : 'warning'">
+                  {{ project.status }}
+                </ion-badge>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

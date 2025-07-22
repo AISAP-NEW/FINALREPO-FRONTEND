@@ -1,0 +1,320 @@
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { DatasetOperationsService } from '../../services/dataset-operations.service';
+import { DatasetService } from '../../services/dataset.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
+import { finalize } from 'rxjs/operators';
+
+interface DatasetSchemaField {
+  name: string;
+  type: string;
+  nullable: boolean;
+  sampleValues: any[];
+}
+
+interface PreviewData {
+  headers: string[];
+  data: Array<Record<string, any>>;
+  schema: DatasetSchemaField[];
+  totalRows: number;
+}
+
+@Component({
+  selector: 'app-dataset-details',
+  templateUrl: './dataset-details.page.html',
+  styleUrls: ['./dataset-details.page.scss'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    SafeHtmlPipe
+  ]
+})
+export class DatasetDetailsPage implements OnInit {
+  datasetId: string | null = null;
+  isLoading = true;
+  showDebugInfo = false;
+  previewData: PreviewData = {
+    headers: [],
+    data: [],
+    schema: [],
+    totalRows: 0
+  };
+  previewRowsToShow = 10;
+  activeTab: 'preview' | 'schema' | 'operations' = 'preview';
+
+  constructor(
+    private route: ActivatedRoute,
+    private datasetOps: DatasetOperationsService,
+    private datasetService: DatasetService
+  ) {}
+
+  ngOnInit() {
+    this.datasetId = this.route.snapshot.paramMap.get('id');
+    if (this.datasetId) {
+      this.loadDatasetInfo();
+    } else {
+      this.isLoading = false;
+    }
+  }
+
+  /**
+   * Loads dataset information including preview and schema
+   */
+  loadDatasetInfo(): void {
+    if (!this.datasetId) {
+      console.warn('No dataset ID provided');
+      this.isLoading = false;
+      return;
+    }
+    
+    console.log(`Loading dataset content for ID: ${this.datasetId}`);
+    this.isLoading = true;
+    
+    // Reset preview data
+    this.previewData = {
+      headers: [],
+      data: [],
+      schema: [],
+      totalRows: 0
+    };
+    
+    // First, get the dataset content using the read endpoint
+    this.datasetService.getDatasetContent(this.datasetId)
+      .pipe(
+        finalize(() => this.isLoading = false)
+      )
+      .subscribe({
+        next: (response: any) => {
+          try {
+            console.log('Raw dataset content response:', response);
+            
+            if (!response?.content) {
+              throw new Error('No content in response');
+            }
+            
+            // Parse CSV content
+            const lines = response.content.split('\n').filter((line: string) => line.trim() !== '');
+            if (lines.length === 0) {
+              throw new Error('Empty dataset content');
+            }
+            
+            // Parse headers (first line)
+            const headers = this.parseCsvLine(lines[0]);
+            
+            // Parse data rows (limited to previewRowsToShow)
+            const data = [];
+            for (let i = 1; i < Math.min(lines.length, this.previewRowsToShow + 1); i++) {
+              const values = this.parseCsvLine(lines[i]);
+              const row: Record<string, any> = { rowNumber: i };
+              headers.forEach((header, index) => {
+                row[header] = values[index] || '';
+              });
+              data.push(row);
+            }
+            
+            console.log('Parsed CSV data:', { 
+              headers, 
+              rowCount: data.length, 
+              totalRows: lines.length - 1,
+              firstRow: data[0] || null 
+            });
+            
+            // Update component state
+            this.previewData = {
+              headers,
+              data,
+              schema: [],
+              totalRows: lines.length - 1
+            };
+            
+            // Load schema after preview data is processed
+            this.loadSchema();
+            
+          } catch (error) {
+            console.error('Error parsing dataset content:', error);
+            this.handlePreviewError(error);
+          }
+        },
+        error: (error: any) => {
+          console.error('Error loading dataset content:', error);
+          this.handlePreviewError(error);
+        }
+      });
+  }
+
+  /**
+   * Parses a single CSV line, handling quoted fields
+   */
+  private parseCsvLine(line: string): string[] {
+    const result: string[] = [];
+    let inQuotes = false;
+    let currentField = '';
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        // Toggle inQuotes when we hit a quote
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        result.push(currentField.trim());
+        currentField = '';
+      } else {
+        currentField += char;
+      }
+    }
+    
+    // Add the last field
+    result.push(currentField.trim());
+    
+    return result;
+  }
+
+  /**
+   * Loads and processes the dataset schema
+   */
+  private loadSchema(): void {
+    if (!this.datasetId) {
+      console.warn('No dataset ID available for schema loading');
+      this.inferSchemaFromPreviewData();
+      return;
+    }
+
+    this.datasetOps.getDatasetSchema(this.datasetId).subscribe({
+      next: (schemaResponse: any) => {
+        try {
+          let schema = schemaResponse;
+          
+          // Handle different response formats
+          if (schemaResponse?.schema) {
+            schema = schemaResponse.schema;
+          } else if (Array.isArray(schemaResponse)) {
+            schema = schemaResponse;
+          }
+          
+          if (!Array.isArray(schema) || schema.length === 0) {
+            throw new Error('Invalid schema format');
+          }
+          
+          // Update preview data with schema
+          this.previewData = {
+            ...this.previewData,
+            schema: schema.map((field: any) => ({
+              name: field.name || field.column_name || '',
+              type: field.type || field.data_type || 'string',
+              nullable: field.nullable !== undefined ? field.nullable : true,
+              sampleValues: field.sample_values || []
+            }))
+          };
+          
+        } catch (error) {
+          console.warn('Error processing schema, falling back to inference', error);
+          this.inferSchemaFromPreviewData();
+        }
+      },
+      error: (error: any) => {
+        console.warn('Error loading schema, falling back to inference', error);
+        this.inferSchemaFromPreviewData();
+      }
+    });
+  }
+
+  /**
+   * Infers schema from the available preview data
+   */
+  private inferSchemaFromPreviewData(): void {
+    if (!this.previewData.data.length) {
+      console.warn('No preview data available for schema inference');
+      return;
+    }
+    
+    try {
+      const sampleRow = this.previewData.data[0];
+      const inferredSchema: DatasetSchemaField[] = [];
+      
+      // Get all unique keys from the first row
+      const headers = Object.keys(sampleRow).filter(key => key !== 'rowNumber');
+      
+      // Infer type from sample values
+      headers.forEach(header => {
+        const sampleValues = this.previewData.data
+          .slice(0, 10) // Use first 10 rows for type inference
+          .map(row => row[header])
+          .filter(val => val !== undefined && val !== null && val !== '');
+        
+        let type = 'string';
+        if (sampleValues.length > 0) {
+          const firstValue = sampleValues[0];
+          if (!isNaN(Number(firstValue))) {
+            type = 'number';
+          } else if (typeof firstValue === 'boolean' || 
+                    (typeof firstValue === 'string' && (firstValue.toLowerCase() === 'true' || firstValue.toLowerCase() === 'false'))) {
+            type = 'boolean';
+          } else if (Date.parse(firstValue)) {
+            type = 'date';
+          }
+        }
+        
+        inferredSchema.push({
+          name: header,
+          type,
+          nullable: sampleValues.length < 10, // Assume nullable if not all samples have values
+          sampleValues: Array.from(new Set(sampleValues)).slice(0, 5) // Get first 5 unique values
+        });
+      });
+      
+      // Update preview data with inferred schema
+      this.previewData = {
+        ...this.previewData,
+        schema: inferredSchema
+      };
+      
+    } catch (error) {
+      console.error('Error inferring schema:', error);
+    }
+  }
+
+  /**
+   * Handles preview loading errors
+   */
+  private handlePreviewError(error: any): void {
+    console.error('Error loading dataset content:', error);
+    // Reset preview data to show error state
+    this.previewData = {
+      headers: [],
+      data: [],
+      schema: [],
+      totalRows: 0
+    };
+  }
+
+  /**
+   * Formats a cell value for display in the preview table
+   */
+  formatCellValue(value: any): string {
+    if (value === null || value === undefined || value === '') {
+      return '—'; // Use em dash for empty/null values
+    }
+    return String(value);
+  }
+
+  /**
+   * Toggles debug information display
+   */
+  toggleDebugInfo(): void {
+    this.showDebugInfo = !this.showDebugInfo;
+  }
+
+  /**
+   * Changes the active tab
+   */
+  setActiveTab(tab: 'preview' | 'schema' | 'operations'): void {
+    this.activeTab = tab;
+  }
+}

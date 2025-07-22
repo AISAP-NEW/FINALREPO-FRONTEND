@@ -1,0 +1,219 @@
+<!-- Professional Register Page -->
+<div class="register-container">
+  <!-- Left Side - Branding -->
+  <div class="register-branding">
+    <div class="branding-content">
+      <div class="brand-logo">
+        <ion-icon name="analytics-outline"></ion-icon>
+        <span class="brand-name">AISAP</span>
+      </div>
+      <h1 class="brand-title">Join the Future of ML Development</h1>
+      <p class="brand-description">
+        Create your AISAP account and start building, training, and deploying machine learning models with our comprehensive platform.
+      </p>
+      
+      <div class="feature-highlights">
+        <div class="highlight-item">
+          <ion-icon name="rocket-outline"></ion-icon>
+          <span>Quick Setup & Onboarding</span>
+        </div>
+        <div class="highlight-item">
+          <ion-icon name="people-outline"></ion-icon>
+          <span>Team Collaboration Tools</span>
+        </div>
+        <div class="highlight-item">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          <span>Enterprise-Grade Security</span>
+        </div>
+        <div class="highlight-item">
+          <ion-icon name="trending-up-outline"></ion-icon>
+          <span>Scalable ML Infrastructure</span>
+        </div>
+      </div>
+      
+      <div class="stats-section">
+        <div class="stat-item">
+          <span class="stat-number">10K+</span>
+          <span class="stat-label">Active Users</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">500+</span>
+          <span class="stat-label">Companies</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side - Registration Form -->
+  <div class="register-form-section">
+    <div class="form-container">
+      <div class="form-header">
+        <h2>Create Your Account</h2>
+        <p>Get started with AISAP today</p>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <div class="input-wrapper">
+              <ion-icon name="person-outline" class="input-icon"></ion-icon>
+              <input 
+                type="text" 
+                formControlName="Username" 
+                class="form-input"
+                [class.error]="hasFieldError('Username')"
+                placeholder="Enter your username"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('Username')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('Username') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <div class="input-wrapper">
+              <ion-icon name="mail-outline" class="input-icon"></ion-icon>
+              <input 
+                type="email" 
+                formControlName="Email" 
+                class="form-input"
+                [class.error]="hasFieldError('Email')"
+                placeholder="Enter your email"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('Email')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('Email') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <div class="input-wrapper">
+              <ion-icon name="briefcase-outline" class="input-icon"></ion-icon>
+              <select 
+                formControlName="Role" 
+                class="form-input"
+                [class.error]="hasFieldError('Role')"
+              >
+                <option value="Developer">Developer</option>
+                <option value="LeadDeveloper">Lead Developer</option>
+              </select>
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('Role')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('Role') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrapper">
+              <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+              <input 
+                type="password" 
+                formControlName="Password" 
+                class="form-input"
+                [class.error]="hasFieldError('Password')"
+                placeholder="Enter your password"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('Password')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('Password') }}
+            </div>
+            <div class="password-requirements" *ngIf="registerForm.get('Password')?.touched">
+              <p class="requirements-title">Password Requirements:</p>
+              <ul class="requirements-list">
+                <li>At least 8 characters</li>
+                <li>One uppercase letter</li>
+                <li>One lowercase letter</li>
+                <li>One number</li>
+                <li>One special character (&#64;$!%*?&)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <div class="input-wrapper">
+              <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+              <input 
+                type="password" 
+                formControlName="ConfirmPassword" 
+                class="form-input"
+                [class.error]="hasFieldError('ConfirmPassword')"
+                placeholder="Confirm your password"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('ConfirmPassword')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('ConfirmPassword') }}
+            </div>
+            <div class="validation-error" *ngIf="registerForm.errors?.['mismatch'] && registerForm.get('ConfirmPassword')?.touched">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              Passwords do not match
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <!-- Debug button for testing -->
+          <button 
+            type="button" 
+            (click)="getFormValidationStatus()" 
+            class="debug-button"
+            style="margin-bottom: 10px; background: #666; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;"
+          >
+            Debug Form Status
+          </button>
+          
+          <button 
+            type="submit" 
+            [disabled]="!isFormReady() || isLoading" 
+            class="primary-button"
+            [class.disabled]="!isFormReady() || isLoading"
+          >
+            <ion-spinner name="dots" *ngIf="isLoading"></ion-spinner>
+            <ion-icon name="person-add-outline" *ngIf="!isLoading" slot="start"></ion-icon>
+            <span *ngIf="!isLoading">Create Account</span>
+            <span *ngIf="isLoading">Creating Account...</span>
+          </button>
+          
+          <!-- Form validation status indicator -->
+          <div *ngIf="!isFormReady() && !isLoading" class="form-status" style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; color: #856404; font-size: 14px;">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Please fill in all required fields correctly to enable registration.
+          </div>
+        </div>
+      </form>
+
+      <div class="form-footer">
+        <p>Already have an account? 
+          <a routerLink="/login" class="login-link">
+            Sign in here
+          </a>
+        </p>
+      </div>
+
+      <div class="terms-section">
+        <p class="terms-text">
+          By creating an account, you agree to our 
+          <a href="#" class="terms-link">Terms of Service</a> and 
+          <a href="#" class="terms-link">Privacy Policy</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
