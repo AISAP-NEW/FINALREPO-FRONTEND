@@ -21,6 +21,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatasetService, Dataset } from '../../services/dataset.service';
+import { ToastService } from '../../services/toast.service';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-datasets',
@@ -35,6 +37,10 @@ import { DatasetService, Dataset } from '../../services/dataset.service';
           <ion-button routerLink="/datasets/new">
             <ion-icon name="add-outline" slot="start"></ion-icon>
             New Dataset
+          </ion-button>
+          <ion-button (click)="downloadLogsJson()">
+            <ion-icon name="download-outline" slot="start"></ion-icon>
+            Download Logs (JSON)
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -127,7 +133,7 @@ export class DatasetsComponent implements OnInit {
   error: string | null = null;
   searchTerm: string = '';
 
-  constructor(private datasetService: DatasetService) {
+  constructor(private datasetService: DatasetService, private toastService: ToastService, private http: HttpClient) {
     addIcons({ addOutline, searchOutline, closeOutline });
   }
 
@@ -177,5 +183,23 @@ export class DatasetsComponent implements OnInit {
         searchableFields.some(field => field.includes(term))
       );
     });
+  }
+
+  async downloadLogsJson() {
+    try {
+      const blob = await this.http.get('http://localhost:5183/api/export/download/logs-json', { responseType: 'blob' }).toPromise();
+      if (!blob) throw new Error('No data received');
+      const url = window.URL.createObjectURL(blob as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dataset-logs.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      this.toastService.presentToast('success', '✅ Logs downloaded successfully!', 3500);
+    } catch (error) {
+      this.toastService.presentToast('error', '❌ Failed to download logs.', 3500);
+    }
   }
 } 

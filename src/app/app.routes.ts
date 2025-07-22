@@ -137,16 +137,20 @@ export const routes: Routes = [
         path: 'notebook/:modelId',
         loadComponent: () => import('./notebook-panel/notebook-panel.component')
           .then(m => m.NotebookPanelComponent)
+      },
+      {
+        path: 'deployments',
+        loadComponent: () => import('./pages/deployments/deployments.page')
+          .then(m => m.DeploymentsPage)
+      },
+      {
+        path: 'calendar-models',
+        loadComponent: () => import('./pages/calendar-models/calendar-models.page').then(m => m.CalendarModelsPage)
       }
     ]
   },
   {
     path: '**',
     redirectTo: 'login'
-  },
-  {
-    path: 'landing',
-    loadComponent: () => import('./pages/landing/landing.page').then( m => m.LandingPage)
-  },
-
+  }
 ];

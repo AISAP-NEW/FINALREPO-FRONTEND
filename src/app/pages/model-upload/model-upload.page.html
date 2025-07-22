@@ -35,29 +35,6 @@
             Description must be at least 10 characters
           </ion-note>
         </ion-item>
-
-      
-
-        <ion-item>
-          <ion-label position="stacked">Version</ion-label>
-          <ion-input formControlName="version" type="text" placeholder="e.g., 1.0.0"></ion-input>
-        </ion-item>
-
-        
-
-        <ion-item>
-          <ion-label position="stacked">Dataset (Optional)</ion-label>
-          <ion-select formControlName="datasetId" placeholder="Select dataset" [disabled]="isDatasetsLoading">
-            <ion-select-option value="">None</ion-select-option>
-            <ion-select-option *ngFor="let dataset of datasets" [value]="dataset.datasetId">
-              {{ dataset.datasetName }}
-            </ion-select-option>
-          </ion-select>
-          <ion-spinner *ngIf="isDatasetsLoading" slot="end" name="crescent"></ion-spinner>
-          <ion-note slot="helper">
-            {{ datasets.length }} dataset{{ datasets.length !== 1 ? 's' : '' }} available
-          </ion-note>
-        </ion-item>
       </ion-card-content>
     </ion-card>
 

@@ -1,3 +1,27 @@
+@import '../../global.scss';
+
+:host {
+  display: block;
+  min-height: 100vh;
+  @extend .app-grid-bg;
+}
+
+.models-header-row {
+  margin-bottom: 1.5rem;
+}
+
+.model-card {
+  @extend .neon-card;
+}
+
+.neon-btn {
+  @extend .neon-btn;
+}
+
+.neon-header {
+  @extend .neon-header;
+}
+
 /* Header styles */
 ion-toolbar {
   --background: var(--ion-color-primary);

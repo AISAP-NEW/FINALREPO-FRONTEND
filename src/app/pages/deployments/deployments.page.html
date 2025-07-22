@@ -1,0 +1,71 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Deployments</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refreshDeployments()" fill="clear">
+        <ion-icon slot="icon-only" [name]="refreshIcon"></ion-icon>
+      </ion-button>
+      <ion-button (click)="addDeployment()" fill="solid" color="primary">
+        <ion-icon slot="start" [name]="addIcon"></ion-icon>
+        New Deployment
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <ion-spinner></ion-spinner>
+    <p>Loading deployments...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && (!deployments || deployments.length === 0)" class="empty-state">
+    <ion-icon [name]="cloudOfflineOutline"></ion-icon>
+    <h3>No Deployments</h3>
+    <p>You haven't created any deployments yet.</p>
+    <ion-button (click)="addDeployment()" fill="solid" color="primary">
+      <ion-icon slot="start" name="add"></ion-icon>
+      Create Deployment
+    </ion-button>
+  </div>
+
+  <!-- Deployments List -->
+  <ion-list *ngIf="!loading && deployments && deployments.length > 0">
+    <ion-item-sliding *ngFor="let deployment of deployments">
+      <ion-item [routerLink]="['/deployments', deployment.id]">
+        <ion-icon slot="start" [name]="getStatusIcon(deployment.status)" [color]="getStatusColor(deployment.status)"></ion-icon>
+        <ion-label>
+          <h2>{{ deployment.name }}</h2>
+          <p>{{ deployment.modelName }} • {{ deployment.environment | titlecase }}</p>
+          <ion-note>{{ deployment.lastUpdated | date:'medium' }}</ion-note>
+        </ion-label>
+        <ion-badge slot="end" [color]="getStatusColor(deployment.status)">
+          {{ deployment.status }}
+        </ion-badge>
+      </ion-item>
+      <ion-item-options side="end">
+        <ion-item-option (click)="viewDeployment(deployment)" color="primary">
+          <ion-icon slot="icon-only" [name]="eyeIcon"></ion-icon>
+        </ion-item-option>
+        <ion-item-option (click)="editDeployment(deployment)" color="warning">
+          <ion-icon slot="icon-only" [name]="createIcon"></ion-icon>
+        </ion-item-option>
+        <ion-item-option (click)="deleteDeployment(deployment)" color="danger">
+          <ion-icon slot="icon-only" [name]="trashIcon"></ion-icon>
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+  </ion-list>
+
+  <!-- FAB for Mobile -->
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end" (click)="addDeployment()">
+    <ion-fab-button>
+      <ion-icon [name]="addIcon"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
