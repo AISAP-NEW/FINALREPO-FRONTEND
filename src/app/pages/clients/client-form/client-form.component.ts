@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import {
   IonHeader,
   IonToolbar,
@@ -20,6 +20,41 @@ import {
 import { addIcons } from 'ionicons';
 import { closeOutline } from 'ionicons/icons';
 import { Client, CreateClientDTO, UpdateClientDTO } from '../../../services/client.service';
+
+/**
+ * South African phone number validator
+ * Accepts formats:
+ * - +27 XX XXX XXXX (international)
+ * - 0XX XXX XXXX (national)
+ * - XXXXXXXXXX (10 digits)
+ * - +27XXXXXXXXX (11 digits with +27)
+ */
+function southAfricanPhoneValidator(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) {
+    return null; // Let required validator handle empty values
+  }
+
+  const phoneNumber = control.value.toString().replace(/\s+/g, ''); // Remove spaces
+  
+  // South African phone number patterns
+  const patterns = [
+    /^\+27[1-9]\d{8}$/, // +27XXXXXXXXX (11 digits, mobile/landline)
+    /^0[1-9]\d{8}$/, // 0XXXXXXXXX (10 digits, national format)
+    /^[1-9]\d{8}$/ // XXXXXXXXX (9 digits, without leading 0)
+  ];
+  
+  const isValid = patterns.some(pattern => pattern.test(phoneNumber));
+  
+  if (!isValid) {
+    return {
+      southAfricanPhone: {
+        message: 'Please enter a valid South African phone number (e.g., +27 XX XXX XXXX or 0XX XXX XXXX)'
+      }
+    };
+  }
+  
+  return null;
+}
 
 @Component({
   selector: 'app-client-form',
@@ -72,11 +107,17 @@ import { Client, CreateClientDTO, UpdateClientDTO } from '../../../services/clie
             <ion-input
               type="tel"
               formControlName="telephoneNumber"
-              placeholder="Enter telephone number"
+              placeholder="e.g., +27 XX XXX XXXX or 0XX XXX XXXX"
               [clearInput]="true">
             </ion-input>
             <div class="error-message" *ngIf="clientForm.get('telephoneNumber')?.touched && clientForm.get('telephoneNumber')?.errors?.['required']">
               Telephone number is required
+            </div>
+            <div class="error-message" *ngIf="clientForm.get('telephoneNumber')?.touched && clientForm.get('telephoneNumber')?.errors?.['southAfricanPhone']">
+              Please enter a valid South African phone number (e.g., +27 XX XXX XXXX or 0XX XXX XXXX)
+            </div>
+            <div class="help-text" *ngIf="!clientForm.get('telephoneNumber')?.touched">
+              Accepted formats: +27 XX XXX XXXX, 0XX XXX XXXX, or XXXXXXXXXX
             </div>
           </ion-item>
 
@@ -108,6 +149,13 @@ import { Client, CreateClientDTO, UpdateClientDTO } from '../../../services/clie
       color: var(--ion-color-danger);
       font-size: 0.8em;
       margin: 8px 0 0 16px;
+    }
+
+    .help-text {
+      color: var(--ion-color-medium);
+      font-size: 0.75em;
+      margin: 4px 0 0 16px;
+      font-style: italic;
     }
 
     ion-item {
@@ -169,7 +217,7 @@ export class ClientFormComponent implements OnInit {
     this.clientForm = this.formBuilder.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-      telephoneNumber: ['', [Validators.required, Validators.maxLength(20)]],
+      telephoneNumber: ['', [Validators.required, southAfricanPhoneValidator, Validators.maxLength(20)]],
       address: ['', [Validators.required, Validators.maxLength(200)]]
     });
   }

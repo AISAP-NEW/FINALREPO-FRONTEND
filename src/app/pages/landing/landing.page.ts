@@ -40,4 +40,11 @@ export class LandingPage implements OnInit {
     this.router.navigate(['/register']);
   }
 
+  scrollToFeatures() {
+    const element = document.getElementById('features');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
 }

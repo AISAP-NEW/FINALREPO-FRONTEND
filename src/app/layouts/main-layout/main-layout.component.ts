@@ -15,7 +15,8 @@ import {
   IonLabel,
   IonRouterOutlet,
   IonBadge,
-  IonSpinner
+  IonSpinner,
+  ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -29,10 +30,15 @@ import {
   logOutOutline,
   businessOutline,
   layersOutline,
-  cubeOutline
+  cubeOutline,
+  cloudUploadOutline,
+  helpCircleOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { SessionTimeoutService } from '../../services/session-timeout.service';
+import { SessionTimeoutWarningComponent } from '../../components/session-timeout-warning/session-timeout-warning.component';
+import { HelpComponent } from '../../pages/help/help.component';
 import { interval, Subscription, Subject, BehaviorSubject, timer } from 'rxjs';
 import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
 
@@ -46,7 +52,7 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
           <ion-content>
             <ion-list id="inbox-list">
               <ion-list-header>AISAP</ion-list-header>
-              <ion-note>{{ currentUserEmail }}</ion-note>
+              <ion-note>{{ currentUserUserName }}</ion-note>
 
               <ion-menu-toggle auto-hide="false">
                 <ion-item routerLink="/home" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
@@ -98,6 +104,13 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
               </ion-menu-toggle>
 
               <ion-menu-toggle auto-hide="false">
+                <ion-item routerLink="/deployments" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+                  <ion-label>Deployments</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
                 <ion-item routerLink="/access-levels" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
                   <ion-icon slot="start" name="key-outline"></ion-icon>
                   <ion-label>Access Levels</ion-label>
@@ -114,6 +127,13 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
               </ion-menu-toggle>
 
               <ion-menu-toggle auto-hide="false">
+                <ion-item (click)="openHelp()" lines="none" detail="false" button>
+                  <ion-icon slot="start" name="help-circle-outline"></ion-icon>
+                  <ion-label>Help</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
                 <ion-item (click)="logout()" lines="none" detail="false">
                   <ion-icon slot="start" name="log-out-outline"></ion-icon>
                   <ion-label>Logout</ion-label>
@@ -124,6 +144,9 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
         </ion-menu>
         <ion-router-outlet id="main-content"></ion-router-outlet>
       </ion-split-pane>
+      
+      <!-- Session Timeout Warning Component -->
+      <app-session-timeout-warning></app-session-timeout-warning>
     </ion-app>
   `,
   styles: [`
@@ -277,11 +300,13 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
     IonLabel,
     IonRouterOutlet,
     IonBadge,
-    IonSpinner
+    IonSpinner,
+    SessionTimeoutWarningComponent
   ]
 })
 export class MainLayoutComponent implements OnInit, OnDestroy {
   currentUserEmail = '';
+  currentUserUserName = '';
   unreadCount = 0;
   isLoadingNotifications = false;
   hasNewNotifications = false;
@@ -293,7 +318,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private sessionTimeoutService: SessionTimeoutService,
+    private modalController: ModalController
   ) {
     addIcons({
       homeOutline,
@@ -306,24 +333,49 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       logOutOutline,
       businessOutline,
       layersOutline,
-      cubeOutline
+      cubeOutline,
+      cloudUploadOutline,
+      helpCircleOutline
     });
   }
 
   ngOnInit() {
     const currentUser = this.authService.getCurrentUser();
     this.currentUserEmail = currentUser?.email || currentUser?.Email || '';
+    this.currentUserUserName = currentUser?.username || currentUser?.Username || '';
     this.startPolling();
 
     // Subscribe to notification updates
     this.notificationUpdate$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.refreshUnreadCount());
+
+    // Start session timeout monitoring if user is authenticated
+    if (this.authService.isAuthenticated()) {
+      console.log('Starting session timeout monitoring for authenticated user');
+      this.sessionTimeoutService.startMonitoring();
+    }
+
+    // Subscribe to authentication state changes
+    this.authService.isAuthenticated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(isAuthenticated => {
+        if (isAuthenticated) {
+          console.log('User authenticated - starting session monitoring');
+          this.sessionTimeoutService.startMonitoring();
+        } else {
+          console.log('User not authenticated - stopping session monitoring');
+          this.sessionTimeoutService.stopMonitoring();
+        }
+      });
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    
+    // Stop session monitoring when component is destroyed
+    this.sessionTimeoutService.stopMonitoring();
   }
 
   private startPolling() {
@@ -387,7 +439,22 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.notificationUpdate$.next();
   }
 
+  /**
+   * Open the help modal with comprehensive documentation
+   */
+  async openHelp() {
+    const modal = await this.modalController.create({
+      component: HelpComponent,
+      cssClass: 'help-modal'
+    });
+    
+    await modal.present();
+  }
+
   logout() {
+    console.log('Logout initiated from main layout');
+    // Stop session monitoring before logout
+    this.sessionTimeoutService.stopMonitoring();
     this.authService.logout();
   }
 } 

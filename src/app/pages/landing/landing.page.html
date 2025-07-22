@@ -1,57 +1,277 @@
-<!-- Animated Background Elements -->
-<div class="background">
-  <div class="shape shape-1"></div>
-  <div class="shape shape-2"></div>
-  <div class="shape shape-3"></div>
-  <div class="grid-overlay"></div>
+<!-- Professional Header -->
+<div class="professional-header">
+  <div class="header-content">
+    <div class="logo-section">
+      <ion-icon name="analytics-outline" class="logo-icon"></ion-icon>
+      <span class="logo-text">AISAP</span>
+      <span class="logo-subtitle">AI Solutions & Analytics Platform</span>
+    </div>
+    <div class="header-actions">
+      <ion-button (click)="navigateToLogin()" fill="clear" class="header-btn">
+        Sign In
+      </ion-button>
+      <ion-button (click)="navigateToRegister()" class="header-btn-primary">
+        Get Started
+      </ion-button>
+    </div>
+  </div>
 </div>
 
 <ion-content [fullscreen]="true" class="landing-content">
   <!-- Hero Section -->
   <div class="hero-section">
-    <div class="hero-content">
-      <h1 class="glitch" data-text="AI Data Platform">AISAP Platform</h1>
-      <p class="subtitle">Manage Your Models with Ease</p>
-      
-      <div class="cta-buttons">
-        <ion-button (click)="navigateToLogin()" shape="round" class="login-btn">
-          <ion-icon slot="start" name="log-in"></ion-icon>
-          Login
-        </ion-button>
-        <ion-button (click)="navigateToRegister()" fill="outline" shape="round" class="signup-btn">
-          <ion-icon slot="start" name="person-add"></ion-icon>
-          Sign Up
-        </ion-button>
+    <div class="hero-container">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          The Complete Platform for
+          <span class="highlight">Machine Learning Lifecycle</span>
+        </h1>
+        <p class="hero-description">
+          Track experiments, manage models, and deploy ML solutions at scale. 
+          AISAP provides the tools and infrastructure to streamline your entire ML workflow.
+        </p>
+        <div class="hero-actions">
+          <ion-button (click)="navigateToRegister()" size="large" class="primary-cta">
+            <ion-icon slot="start" name="rocket-outline"></ion-icon>
+            Start Building
+          </ion-button>
+          <ion-button (click)="scrollToFeatures()" fill="outline" size="large" class="secondary-cta">
+            <ion-icon slot="start" name="play-outline"></ion-icon>
+            See How It Works
+          </ion-button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">10K+</span>
+            <span class="stat-label">Models Deployed</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">500+</span>
+            <span class="stat-label">Active Projects</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">99.9%</span>
+            <span class="stat-label">Uptime</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="dashboard-preview">
+          <div class="preview-header">
+            <div class="preview-tabs">
+              <span class="tab active">Experiments</span>
+              <span class="tab">Models</span>
+              <span class="tab">Deployments</span>
+            </div>
+          </div>
+          <div class="preview-content">
+            <div class="metric-cards">
+              <div class="metric-card">
+                <div class="metric-icon">
+                  <ion-icon name="trending-up-outline"></ion-icon>
+                </div>
+                <div class="metric-info">
+                  <span class="metric-value">94.2%</span>
+                  <span class="metric-label">Accuracy</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon">
+                  <ion-icon name="time-outline"></ion-icon>
+                </div>
+                <div class="metric-info">
+                  <span class="metric-value">12ms</span>
+                  <span class="metric-label">Latency</span>
+                </div>
+              </div>
+            </div>
+            <div class="chart-placeholder">
+              <div class="chart-bars">
+                <div class="bar" style="height: 60%"></div>
+                <div class="bar" style="height: 80%"></div>
+                <div class="bar" style="height: 45%"></div>
+                <div class="bar" style="height: 90%"></div>
+                <div class="bar" style="height: 75%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Features Section -->
+  <!-- ML Workflow Section -->
+  <div class="workflow-section" id="features">
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">Complete ML Lifecycle Management</h2>
+        <p class="section-description">
+          From data ingestion to model deployment, manage every step of your machine learning pipeline
+        </p>
+      </div>
+      
+      <div class="workflow-steps">
+        <div class="workflow-step">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <div class="step-icon">
+              <ion-icon name="folder-outline"></ion-icon>
+            </div>
+            <h3>Data & Projects</h3>
+            <p>Organize datasets, manage project lifecycles, and track client requirements in one centralized platform.</p>
+            <ul class="step-features">
+              <li>Dataset versioning and validation</li>
+              <li>Project templates and workflows</li>
+              <li>Client management and tracking</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <div class="step-icon">
+              <ion-icon name="flask-outline"></ion-icon>
+            </div>
+            <h3>Experiment & Train</h3>
+            <p>Track experiments, compare models, and optimize hyperparameters with comprehensive logging and visualization.</p>
+            <ul class="step-features">
+              <li>Experiment tracking and comparison</li>
+              <li>Hyperparameter optimization</li>
+              <li>Model performance metrics</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <div class="step-icon">
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+            </div>
+            <h3>Deploy & Monitor</h3>
+            <p>Deploy models to production with automated scaling, monitoring, and performance tracking capabilities.</p>
+            <ul class="step-features">
+              <li>One-click model deployment</li>
+              <li>Real-time monitoring and alerts</li>
+              <li>A/B testing and rollback</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Grid -->
   <div class="features-section">
-    <h2>Why Choose Our Platform?</h2>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">
-          <ion-icon name="analytics"></ion-icon>
-        </div>
-        <h3>Advanced Analytics</h3>
-        <p>Leverage cutting-edge AI to analyze your data with precision.</p>
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">Built for ML Teams</h2>
+        <p class="section-description">
+          Everything you need to accelerate your machine learning development and deployment
+        </p>
       </div>
       
-      <div class="feature-card">
-        <div class="feature-icon">
-          <ion-icon name="cloud-upload"></ion-icon>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <ion-icon name="git-branch-outline"></ion-icon>
+          </div>
+          <h3>Version Control</h3>
+          <p>Track model versions, compare experiments, and maintain reproducible ML workflows with built-in versioning.</p>
         </div>
-        <h3>Seamless Integration</h3>
-        <p>Connect with your existing data sources effortlessly.</p>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <ion-icon name="people-outline"></ion-icon>
+          </div>
+          <h3>Team Collaboration</h3>
+          <p>Share experiments, collaborate on models, and manage team access with role-based permissions.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <ion-icon name="speedometer-outline"></ion-icon>
+          </div>
+          <h3>Performance Monitoring</h3>
+          <p>Monitor model performance in real-time with automated alerts and drift detection capabilities.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+          </div>
+          <h3>Enterprise Security</h3>
+          <p>Enterprise-grade security with encryption, audit logs, and compliance features for sensitive data.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <ion-icon name="layers-outline"></ion-icon>
+          </div>
+          <h3>Model Registry</h3>
+          <p>Centralized model registry with metadata tracking, lineage, and automated model lifecycle management.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <ion-icon name="analytics-outline"></ion-icon>
+          </div>
+          <h3>Advanced Analytics</h3>
+          <p>Comprehensive analytics and reporting tools to track project progress and model performance metrics.</p>
+        </div>
       </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">
-          <ion-icon name="shield-checkmark"></ion-icon>
+    </div>
+  </div>
+
+  <!-- CTA Section -->
+  <div class="cta-section">
+    <div class="section-container">
+      <div class="cta-content">
+        <h2>Ready to Transform Your ML Workflow?</h2>
+        <p>Join thousands of ML teams who trust AISAP to manage their machine learning lifecycle</p>
+        <div class="cta-actions">
+          <ion-button (click)="navigateToRegister()" size="large" class="cta-primary">
+            <ion-icon slot="start" name="rocket-outline"></ion-icon>
+            Get Started Free
+          </ion-button>
+          <ion-button (click)="navigateToLogin()" fill="outline" size="large" class="cta-secondary">
+            <ion-icon slot="start" name="log-in-outline"></ion-icon>
+            Sign In
+          </ion-button>
         </div>
-        <h3>Secure & Private</h3>
-        <p>Your data's security is our top priority.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="section-container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <ion-icon name="analytics-outline"></ion-icon>
+            <span>AISAP</span>
+          </div>
+          <p>AI Solutions & Analytics Platform</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>Platform</h4>
+            <a href="#" (click)="navigateToLogin()">Dashboard</a>
+            <a href="#" (click)="scrollToFeatures()">Features</a>
+            <a href="#" (click)="navigateToRegister()">Get Started</a>
+          </div>
+          <div class="footer-column">
+            <h4>Support</h4>
+            <a href="#">Documentation</a>
+            <a href="#">Help Center</a>
+            <a href="#">Contact</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 AISAP. All rights reserved.</p>
       </div>
     </div>
   </div>

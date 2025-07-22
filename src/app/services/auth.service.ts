@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { SessionTimeoutService } from './session-timeout.service';
 
 export interface LoginDTO {
   Username: string;
@@ -229,10 +230,32 @@ export class AuthService {
   }
 
   logout(): void {
+    console.log('Logging out user');
+    
+    // Clear authentication state
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
-    this.router.navigate(['/login']);
+    
+    // Use window.location for more reliable navigation
+    console.log('Redirecting to login page...');
+    
+    // Force a complete page reload to login to avoid routing issues
+    if (typeof window !== 'undefined') {
+      window.location.replace('/login');
+    } else {
+      // Fallback for server-side rendering
+      this.router.navigate(['/login']);
+    }
+  }
+
+  /**
+   * Start session monitoring after successful login
+   */
+  startSessionMonitoring(): void {
+    // This will be called by the main layout component
+    // We can't inject SessionTimeoutService here due to circular dependency
+    console.log('Session monitoring should be started by main layout');
   }
 
   getCurrentUser(): User | null {

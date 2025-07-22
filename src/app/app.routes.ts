@@ -14,7 +14,7 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
+    loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent)
   },
   {
     path: 'register',
@@ -137,16 +137,16 @@ export const routes: Routes = [
         path: 'notebook/:modelId',
         loadComponent: () => import('./notebook-panel/notebook-panel.component')
           .then(m => m.NotebookPanelComponent)
+      },
+      {
+        path: 'deployments',
+        loadComponent: () => import('./pages/deployments/deployments.page')
+          .then(m => m.DeploymentsPage)
       }
     ]
   },
   {
     path: '**',
     redirectTo: 'login'
-  },
-  {
-    path: 'landing',
-    loadComponent: () => import('./pages/landing/landing.page').then( m => m.LandingPage)
-  },
-
+  }
 ];

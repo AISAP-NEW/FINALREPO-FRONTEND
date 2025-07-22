@@ -229,3 +229,102 @@ ion-segment-button {
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
+
+// === HELP MODAL STYLING ===
+.help-modal {
+  --width: 90%;
+  --max-width: 800px;
+  --height: 90%;
+  --max-height: 600px;
+  --border-radius: 16px;
+  --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.help-modal ion-content {
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.help-modal ion-header {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.help-modal ion-toolbar {
+  --background: var(--ai-primary);
+  --color: white;
+}
+
+.help-modal ion-title {
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .help-modal {
+    --width: 95%;
+    --height: 95%;
+  }
+}
+
+// === HELP ICON STYLING ===
+.help-icon {
+  margin-left: 12px;
+  font-size: 1.8rem !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 1 !important;
+  color: var(--ai-primary) !important;
+  display: inline-block !important;
+  vertical-align: middle;
+  
+  &:hover {
+    opacity: 1 !important;
+    transform: scale(1.2);
+    color: var(--ai-accent) !important;
+  }
+  
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+// === ENSURE HEADER IS VISIBLE ===
+ion-header {
+  display: block !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+ion-toolbar {
+  display: flex !important;
+  min-height: 56px !important;
+  background: var(--ai-white) !important;
+  border-bottom: 2px solid var(--ai-primary-light) !important;
+}
+
+ion-title {
+  display: flex !important;
+  align-items: center !important;
+  font-size: 1.5rem !important;
+  font-weight: bold !important;
+  color: var(--ai-primary) !important;
+}
+
+// === HELP MENU ITEM STYLING ===
+.help-menu-item {
+  border-top: 1px solid var(--ai-primary-light);
+  margin-top: 8px;
+  padding-top: 8px;
+  
+  &:hover {
+    --background: var(--ai-primary-light);
+  }
+  
+  ion-icon {
+    font-size: 1.2rem;
+  }
+  
+  ion-label {
+    font-weight: 600;
+  }
+}

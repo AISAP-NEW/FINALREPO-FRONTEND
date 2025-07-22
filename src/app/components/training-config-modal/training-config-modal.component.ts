@@ -16,7 +16,6 @@ import {
   IonSelectOption,
   IonInput,
   IonNote,
-  IonTextarea,
   ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -44,8 +43,7 @@ import { DatasetService, Dataset } from '../../services/dataset.service';
     IonSelect,
     IonSelectOption,
     IonInput,
-    IonNote,
-    IonTextarea
+    IonNote
   ],
   providers: [DatasetService]
 })

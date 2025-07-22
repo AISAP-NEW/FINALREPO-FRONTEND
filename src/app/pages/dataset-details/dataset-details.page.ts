@@ -6,7 +6,6 @@ import { DatasetService } from '../../services/dataset.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
 import { finalize } from 'rxjs/operators';
 import { IonCardSubtitle, IonChip } from '@ionic/angular/standalone';
 import { Pipe, PipeTransform } from '@angular/core';
@@ -20,8 +19,7 @@ import {
   IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle,
   IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader,
   IonCardTitle, IonCardContent, IonBadge, IonText, IonNote, IonGrid,
-  IonRow, IonCol, IonAccordionGroup, IonAccordion, IonSelect, IonSelectOption,
-  IonToggle, IonRange, IonInput, IonSegment, IonSegmentButton, IonBackButton
+  IonRow, IonCol, IonAccordionGroup, IonAccordion, IonInput, IonSegment, IonSegmentButton, IonBackButton
 } from '@ionic/angular/standalone';
 
 interface DatasetSchemaField {
@@ -47,15 +45,14 @@ interface PreviewData {
     CommonModule,
     FormsModule,
     RouterModule,
-    SafeHtmlPipe,
     TruncatePipe,
     IonCardSubtitle,
     IonChip,
     IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle,
     IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader,
     IonCardTitle, IonCardContent, IonBadge, IonText, IonNote, IonGrid,
-    IonRow, IonCol, IonAccordionGroup, IonAccordion, IonSelect, IonSelectOption,
-    IonToggle, IonRange, IonInput, IonSegment, IonSegmentButton, IonBackButton
+    IonRow, IonCol, IonAccordionGroup, IonAccordion,
+    IonInput, IonSegment, IonSegmentButton, IonBackButton
   ]
 })
 export class DatasetDetailsPage implements OnInit {
