@@ -9,6 +9,7 @@ import { RouterModule } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { IonCardSubtitle, IonChip } from '@ionic/angular/standalone';
 import { Pipe, PipeTransform } from '@angular/core';
+import { ToastService } from '../../services/toast.service';
 @Pipe({name: 'truncate'})
 export class TruncatePipe implements PipeTransform {
   transform(value: string, limit = 15): string {
@@ -45,12 +46,12 @@ interface PreviewData {
     CommonModule,
     FormsModule,
     RouterModule,
-    TruncatePipe,
+
     IonCardSubtitle,
     IonChip,
     IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle,
-    IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader,
-    IonCardTitle, IonCardContent, IonBadge, IonText, IonNote, IonGrid,
+    IonContent, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader,
+    IonCardTitle, IonCardContent, IonText, IonGrid,
     IonRow, IonCol, IonAccordionGroup, IonAccordion,
     IonInput, IonSegment, IonSegmentButton, IonBackButton
   ]
@@ -73,6 +74,9 @@ export class DatasetDetailsPage implements OnInit {
   activeTab: 'preview' | 'schema' | 'operations' = 'preview';
   previewRowsToShow = 5;
   previewData: PreviewData = { headers: [], data: [], schema: [], totalRows: 0 };
+  previewHeaders: string[] = [];
+  previewRows: any[] = [];
+  previewPagination: any = null;
 
   // --- Pagination properties for preview table ---
   public pagedPreviewRows: any[] = [];
@@ -114,17 +118,37 @@ export class DatasetDetailsPage implements OnInit {
     }
   }
 
+  fetchJsonPreview(page: number = 1, pageSize: number = 50): void {
+    if (!this.datasetId) return;
+    this.isLoading = true;
+    this.http.get<any>(`http://localhost:5183/api/Dataset/read/${this.datasetId}?page=${page}&pageSize=${pageSize}&sortOrder=asc`).pipe(finalize(() => this.isLoading = false)).subscribe({
+      next: (response: any) => {
+        this.previewHeaders = response.Headers || [];
+        this.previewRows = (response.Data || []).map((row: any) => row.Data);
+        this.previewPagination = response.Pagination || null;
+      },
+      error: (err: any) => {
+        this.previewHeaders = [];
+        this.previewRows = [];
+        this.previewPagination = null;
+        this.error = 'Failed to load preview: ' + (err?.message || err);
+      }
+    });
+  }
+
   constructor(
     private route: ActivatedRoute,
     private datasetOps: DatasetOperationsService,
     private datasetService: DatasetService,
-    private http: HttpClient
+    private http: HttpClient,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
     this.datasetId = this.route.snapshot.paramMap.get('id');
     if (this.datasetId) {
       this.loadDatasetInfo();
+      this.fetchJsonPreview();
       // Also load datasetInfo for template
       this.datasetService.getDatasetContent(this.datasetId).subscribe(
         (info) => { this.datasetInfo = info; },
@@ -321,10 +345,35 @@ export class DatasetDetailsPage implements OnInit {
     return result;
 }
 
+  schemaInfo: any = null;
+  schemaOverview: any = null;
+  schemaColumns: any[] = [];
+
+  fetchSchemaInfo(): void {
+    if (!this.datasetId) return;
+    this.isLoading = true;
+    this.http.get<any>(`http://localhost:5183/api/Dataset/${this.datasetId}/schema`).pipe(finalize(() => this.isLoading = false)).subscribe({
+      next: (response: any) => {
+        this.schemaInfo = response.DatasetInfo || null;
+        this.schemaOverview = response.SchemaOverview || null;
+        this.schemaColumns = response.Columns || [];
+      },
+      error: (err: any) => {
+        this.schemaInfo = null;
+        this.schemaOverview = null;
+        this.schemaColumns = [];
+        this.error = 'Failed to load schema: ' + (err?.message || err);
+      }
+    });
+  }
+
 onSegmentChange(event: any): void {
   const tab = event.detail.value;
   if (tab === 'preview' || tab === 'schema' || tab === 'operations') {
     this.activeTab = tab;
+    if (tab === 'schema') {
+      this.fetchSchemaInfo();
+    }
   } else {
     this.activeTab = 'preview';
   }
@@ -441,6 +490,24 @@ splitDataset(train?: number, test?: number): void {
           this.error = 'Validation failed: ' + (err?.message || err);
         }
       });
+  }
+
+  async downloadLogsJson() {
+    try {
+      const blob = await this.http.get('http://localhost:5183/api/export/download/logs-json', { responseType: 'blob' }).toPromise();
+      if (!blob) throw new Error('No data received');
+      const url = window.URL.createObjectURL(blob as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dataset-logs.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      this.toastService.presentToast('success', '✅ Logs downloaded successfully!', 3500);
+    } catch (error) {
+      this.toastService.presentToast('error', '❌ Failed to download logs.', 3500);
+    }
   }
 
  

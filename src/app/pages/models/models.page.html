@@ -5,6 +5,13 @@
     </ion-buttons>
     <ion-title>AI Models</ion-title>
     <ion-buttons slot="end">
+      <ion-button [routerLink]="['/calendar-models']" color="primary">
+        📅 Calendar View
+      </ion-button>
+      <ion-button (click)="downloadExcelReport()" color="success">
+        <ion-icon name="download-outline" slot="start"></ion-icon>
+        Download Excel Report
+      </ion-button>
       <ion-button (click)="loadModels()">
         <ion-icon slot="icon-only" name="refresh"></ion-icon>
       </ion-button>
@@ -17,6 +24,18 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
+  <div class="kaggle-intro-row">
+    <p class="kaggle-intro-simple">
+      Come and have a deep dive and take a look at the models that we offer. Stick around and create a model.
+    </p>
+    <ion-icon name="cube-outline" class="models-icon"></ion-icon>
+  </div>
+  <div class="models-header-row">
+    <ion-item class="search-bar" lines="none">
+      <ion-label position="floating">Search Model…</ion-label>
+      <ion-input [(ngModel)]="searchTerm" (ionInput)="onSearch()"></ion-input>
+    </ion-item>
+  </div>
   <!-- Loading State -->
   <div *ngIf="isLoading" class="ion-text-center ion-padding">
     <ion-spinner></ion-spinner>
@@ -42,10 +61,13 @@
 
   <!-- Model Cards Grid -->
   <div class="models-grid">
-    <ion-card *ngFor="let model of models" class="model-card" (click)="selectModel(model)">
+    <ion-card *ngFor="let model of filteredModels" class="model-card" (click)="selectModel(model)">
       <ion-card-header>
         <ion-card-title>{{ model.modelName }}</ion-card-title>
         <p class="muted">{{ model.creationDate | date:'mediumDate' }}</p>
+        <ion-button fill="clear" size="small" color="warning" (click)="$event.stopPropagation(); openUpdateModel(model)">
+          <ion-icon name="create-outline"></ion-icon>
+        </ion-button>
       </ion-card-header>
       <ion-card-content>
         <p>{{ model.description || 'No description provided.' }}</p>
@@ -179,7 +201,26 @@
       margin-top: 1rem;
       flex-wrap: wrap;
     }
+    .kaggle-intro-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .kaggle-intro-simple {
+      flex-grow: 1;
+      margin-right: 1rem;
+    }
+    .models-icon {
+      font-size: 2rem;
+      color: var(--ion-color-primary);
+    }
   </style>
 </ion-content>
 
 <app-training-config-modal></app-training-config-modal>
+<ion-fab vertical="bottom" horizontal="end" slot="fixed">
+  <ion-fab-button [routerLink]="['/calendar-models']" color="primary">
+    <ion-icon name="calendar-outline"></ion-icon>
+  </ion-fab-button>
+</ion-fab>

@@ -50,10 +50,64 @@ $ai-grid:         linear-gradient(rgba(74,144,226,0.05) 1px, transparent 1px), l
   --ion-color-dark: #2d3748;
 }
 
-body, ion-app, .ion-page {
-  background: var(--ai-bg-dark) !important;
-  color: var(--ai-text) !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+body, ion-app, .app-root {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%) fixed;
+  background-color: #0f2027;
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+  color: #fff;
+}
+
+.app-grid-bg {
+  background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%) fixed;
+  position: relative;
+}
+.app-grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="39" height="39" rx="3.5" fill="none" stroke="%2333f3ff" stroke-opacity="0.08"/></svg>');
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.neon-header {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #00f2fe 0%, #a100ff 50%, #f953c6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+}
+
+.neon-btn {
+  background: linear-gradient(90deg, #00f2fe 0%, #a100ff 100%);
+  color: #fff;
+  border: none;
+  border-radius: 2rem;
+  box-shadow: 0 0 16px #00f2fe80, 0 0 32px #a100ff40;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 0.7rem 2.2rem;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.neon-btn:hover {
+  box-shadow: 0 0 32px #00f2fe, 0 0 64px #a100ff;
+  background: linear-gradient(90deg, #f953c6 0%, #00f2fe 100%);
+}
+
+.neon-card {
+  background: rgba(20, 24, 40, 0.95);
+  border-radius: 18px;
+  box-shadow: 0 2px 24px 0 #00ffe7a0;
+  border: 1.5px solid #a100ff;
+  color: #fff;
+  padding: 1.5rem 1rem;
+  margin: 1.5rem 1rem;
 }
 
 // === BACKGROUND EFFECTS ===
@@ -199,12 +253,12 @@ ion-segment-button {
 // === SCROLLBAR ===
 ::-webkit-scrollbar {
   width: 8px;
-  background: var(--ai-primary-light);
+  background: #232526;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--ai-primary);
-  border-radius: 4px;
+  background: #a100ff;
+  border-radius: 8px;
 }
 
 // === UTILITY CLASSES ===

@@ -52,8 +52,7 @@ import { cloudUploadOutline, trashOutline } from 'ionicons/icons';
     IonLabel,
     IonInput,
     IonTextarea,
-    IonSelect,
-    IonSelectOption,
+
     IonButton,
     IonSpinner,
     IonIcon,
@@ -174,41 +173,30 @@ export class ModelUploadPage implements OnInit {
     }
 
     this.isLoading = true;
-    
+
     const formValue = this.uploadForm.value;
-    const modelData: ModelUploadRequest = {
-      modelName: formValue.name,
-      description: formValue.description,
-     
-      version: formValue.version || undefined,
-      datasetId: formValue.datasetId ? formValue.datasetId : undefined,
-      file: this.selectedFile!,
+    const formData = new FormData();
+    formData.append('modelName', formValue.name);
+    formData.append('description', formValue.description);
+    formData.append('topicId', '2'); // Hardcoded for now, or make dynamic if needed
+    formData.append('codeFile', this.selectedFile!);
 
-    };
-
-    console.log('Submitting form with data:', modelData);
-
-    this.modelService.uploadModel(modelData).subscribe({
-      next: (response) => {
+    fetch('http://localhost:5183/api/ModelFile/create-model-with-file', {
+      method: 'POST',
+      body: formData
+    })
+      .then(async response => {
         this.isLoading = false;
-        this.toastService.presentToast('success' as any, 'Model uploaded successfully!');
-        this.router.navigate(['/models', response.id]);
-      },
-      error: (error) => {
-        this.isLoading = false;
-        console.error('Error uploading model:', error);
-        let errorMessage = 'Failed to upload model. ';
-        if (error.error?.message) {
-          errorMessage += error.error.message;
-        } else if (error.status === 413) {
-          errorMessage += 'File size is too large.';
-        } else if (error.status === 415) {
-          errorMessage += 'Invalid file type.';
-        } else if (error.status === 0) {
-          errorMessage += 'Server is not responding. Please try again later.';
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to upload model.');
         }
-        this.toastService.presentToast('error' as any, errorMessage);
-      }
-    });
+        this.toastService.presentToast('success' as any, 'Model uploaded successfully!');
+        this.router.navigate(['/models']);
+      })
+      .catch(error => {
+        this.isLoading = false;
+        this.toastService.presentToast('error' as any, error.message || 'Failed to upload model.');
+      });
   }
 }

@@ -21,7 +21,10 @@ import {
   IonAccordionGroup,
   IonAccordion,
   IonNote,
-  ModalController
+  ModalController,
+  IonFab,
+  IonFabButton,
+  IonIcon as IonFabIcon
 } from '@ionic/angular/standalone';
 import { ModelService } from '../../services/model.service';
 import { DatasetService } from '../../services/dataset.service';
@@ -42,6 +45,11 @@ import {
 import { TrainingConfigModalComponent } from '../../components/training-config-modal/training-config-modal.component';
 import { TrainingService } from '../../services/training.service';
 import { NotebookPanelComponent } from '../../notebook-panel/notebook-panel.component';
+import { FormsModule } from '@angular/forms';
+import { UpdateModelModalComponent } from '../../components/update-model-modal/update-model-modal.component';
+import { ToastService } from '../../services/toast.service';
+import { HttpClient } from '@angular/common/http';
+import { LoadingController } from '@ionic/angular';
 
 @Component({
   selector: 'app-models',
@@ -50,6 +58,7 @@ import { NotebookPanelComponent } from '../../notebook-panel/notebook-panel.comp
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     IonHeader,
     NotebookPanelComponent,
     IonToolbar,
@@ -70,11 +79,16 @@ import { NotebookPanelComponent } from '../../notebook-panel/notebook-panel.comp
     IonAccordionGroup,
     IonAccordion,
     IonNote,
-    TrainingConfigModalComponent
+    TrainingConfigModalComponent,
+    IonFab,
+    IonFabButton,
+    IonFabIcon
   ]
 })
 export class ModelsPage implements OnInit {
   models: any[] = [];
+  filteredModels: any[] = [];
+  searchTerm: string = '';
   isLoading = false;
   error: string | null = null;
   selectedModel: any = null;
@@ -84,7 +98,10 @@ export class ModelsPage implements OnInit {
     private modelService: ModelService,
     private modalController: ModalController,
     private trainingService: TrainingService,
-    private datasetService: DatasetService
+    private datasetService: DatasetService,
+    private toastService: ToastService,
+    private http: HttpClient,
+    private loadingCtrl: LoadingController
   ) {
     addIcons({
       cubeOutline,
@@ -120,12 +137,41 @@ export class ModelsPage implements OnInit {
             description: m.description || m.Description || m.desc || '',
             creationDate: m.creationDate || m.CreationDate || m.uploadDate || m.UploadDate || m.created || '',
           }));
+          this.filteredModels = this.models;
         },
         error: err => {
           console.error('[loadModels] Error:', err);
           this.error = 'Failed to load models.';
         },
       });
+  }
+
+  onSearch() {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredModels = this.models.filter(model =>
+      model.modelName.toLowerCase().includes(term) ||
+      (model.description && model.description.toLowerCase().includes(term))
+    );
+  }
+
+  async openUpdateModel(model: any) {
+    const modal = await this.modalController.create({
+      component: UpdateModelModalComponent,
+      componentProps: {
+        model: {
+          modelId: model.modelId,
+          modelName: model.modelName,
+          topicId: model.topicId,
+          categoryId: model.categoryId
+        }
+      },
+      cssClass: 'update-model-modal-small'
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data && data.updated) {
+      this.loadModels();
+    }
   }
 
   selectModel(model: any) {
@@ -289,6 +335,30 @@ export class ModelsPage implements OnInit {
   downloadFile(file: any) {
     const url = this.modelService.getFileDownloadUrl(file.filePath);
     window.open(url, '_blank');
+  }
+
+  async downloadExcelReport() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Downloading Excel report...'
+    });
+    await loading.present();
+    try {
+      const blob = await this.http.get('http://localhost:5183/api/export/models-to-excel', { responseType: 'blob' }).toPromise();
+      if (!blob) throw new Error('No data received');
+      const url = window.URL.createObjectURL(blob as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'AI_Model_Report.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      await loading.dismiss();
+      this.toastService.presentToast('success', '✅ Excel report downloaded!', 3500);
+    } catch (error) {
+      await loading.dismiss();
+      this.toastService.presentToast('error', '❌ Failed to download Excel report.', 3500);
+    }
   }
 
   clearDetails() {

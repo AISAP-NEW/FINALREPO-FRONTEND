@@ -149,6 +149,10 @@ export const routes: Routes = [
           .then(m => m.DeploymentsPage)
       },
       {
+        path: 'calendar-models',
+        loadComponent: () => import('./pages/calendar-models/calendar-models.page').then(m => m.CalendarModelsPage)
+      },
+      {
         path: 'experiments',
         loadComponent: () => import('./pages/experiments/experiments.page')
           .then(m => m.ExperimentsPage)
@@ -159,4 +163,5 @@ export const routes: Routes = [
     path: '**',
     redirectTo: 'login'
   }
+  
 ];

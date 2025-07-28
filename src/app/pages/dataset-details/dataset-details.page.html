@@ -58,29 +58,28 @@
     </ion-card>
 
     <!-- Dataset Preview Table (paged) -->
-    <ion-card *ngIf="previewData.headers && previewData.headers.length > 0 && previewData.data && previewData.data.length > 0">
+    <ion-card *ngIf="previewHeaders && previewHeaders.length > 0 && previewRows && previewRows.length > 0">
       <ion-card-header>
-        <ion-card-title>Dataset Preview ({{ previewData.data.length }} rows)</ion-card-title>
+        <ion-card-title>Dataset Preview ({{ previewRows.length }} rows)</ion-card-title>
       </ion-card-header>
       <ion-card-content class="table-scroll">
         <table class="preview-table">
           <thead>
             <tr>
-              <th *ngFor="let header of previewData.headers">{{ header }}</th>
+              <th *ngFor="let header of previewHeaders">{{ header }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of pagedPreviewRows">
-              <td *ngFor="let header of previewData.headers">{{ getCellValue(row, header) }}</td>
+            <tr *ngFor="let row of previewRows">
+              <td *ngFor="let header of previewHeaders">{{ row[header] }}</td>
             </tr>
           </tbody>
         </table>
-        <P> BROOOOOOO</P>
         <!-- Pagination Controls -->
-        <div class="pagination-controls" *ngIf="totalPreviewPages > 1">
-          <ion-button size="small" [disabled]="previewPage === 1" (click)="changePreviewPage(previewPage - 1)">Previous</ion-button>
-          <span>Page {{ previewPage }} of {{ totalPreviewPages }}</span>
-          <ion-button size="small" [disabled]="previewPage === totalPreviewPages" (click)="changePreviewPage(previewPage + 1)">Next</ion-button>
+        <div class="pagination-controls" *ngIf="previewPagination?.TotalPages > 1">
+          <ion-button size="small" [disabled]="previewPagination.CurrentPage === 1" (click)="fetchJsonPreview(previewPagination.CurrentPage - 1, previewPagination.PageSize)">Previous</ion-button>
+          <span>Page {{ previewPagination.CurrentPage }} of {{ previewPagination.TotalPages }}</span>
+          <ion-button size="small" [disabled]="previewPagination.CurrentPage === previewPagination.TotalPages" (click)="fetchJsonPreview(previewPagination.CurrentPage + 1, previewPagination.PageSize)">Next</ion-button>
         </div>
       </ion-card-content>
     </ion-card>
@@ -116,37 +115,51 @@
 
   <!-- Schema Tab Content -->
   <div *ngIf="activeTab === 'schema' && !isLoading">
-    <ion-card *ngIf="previewData.schema && previewData.schema.length > 0">
+    <ion-card *ngIf="schemaOverview">
       <ion-card-header>
-        <ion-card-title>Dataset Schema</ion-card-title>
-        <ion-card-subtitle>Structure and data types</ion-card-subtitle>
+        <ion-card-title>Schema Overview</ion-card-title>
+        <ion-card-subtitle>{{ schemaInfo?.DatasetName }}</ion-card-subtitle>
       </ion-card-header>
       <ion-card-content>
-        <ion-list lines="full">
-          <ion-item *ngFor="let field of previewData.schema">
-            <ion-label>
-              <h3>{{ field.name }}</h3>
-              <p>
-                <ion-badge [color]="field.nullable ? 'medium' : 'primary'">
-                  {{ field.nullable ? 'Optional' : 'Required' }}
-                </ion-badge>
-                <ion-badge color="tertiary" class="ion-margin-start">
-                  {{ field.type }}
-                </ion-badge>
-              </p>
-            </ion-label>
-            <ion-note slot="end" *ngIf="field.sampleValues" class="sample-values">
-              <div class="sample-values">
-                <ion-chip *ngFor="let value of field.sampleValues.slice(0, 3)" class="sample-value">
-                  {{ value | truncate:15 }}
-                </ion-chip>
-                <ion-chip *ngIf="field.sampleValues.length > 3" color="medium">
-                  +{{ field.sampleValues.length - 3 }} more
-                </ion-chip>
-              </div>
-            </ion-note>
-          </ion-item>
-        </ion-list>
+        <p><strong>Total Columns:</strong> {{ schemaOverview.TotalColumns }}</p>
+        <p><strong>Total Rows:</strong> {{ schemaOverview.TotalRows }}</p>
+        <p><strong>Required Columns:</strong> {{ schemaOverview.RequiredColumns }}</p>
+        <p><strong>Optional Columns:</strong> {{ schemaOverview.OptionalColumns }}</p>
+        <div *ngIf="schemaOverview.ColumnTypes">
+          <strong>Column Types:</strong>
+          <ul>
+            <li *ngFor="let type of (schemaOverview.ColumnTypes | keyvalue)">
+              {{ type.key }}: {{ type.value }}
+            </li>
+          </ul>
+        </div>
+      </ion-card-content>
+    </ion-card>
+    <ion-card *ngIf="schemaColumns && schemaColumns.length > 0">
+      <ion-card-header>
+        <ion-card-title>Columns</ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="table-scroll">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>Column Name</th>
+              <th>Index</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Null Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let col of schemaColumns">
+              <td>{{ col.ColumnName }}</td>
+              <td>{{ col.ColumnIndex }}</td>
+              <td>{{ col.DataType }}</td>
+              <td>{{ col.IsRequired ? 'Yes' : 'No' }}</td>
+              <td>{{ col.NullCount }}</td>
+            </tr>
+          </tbody>
+        </table>
       </ion-card-content>
     </ion-card>
   </div>
@@ -159,6 +172,10 @@
         <ion-card-subtitle>Validate, split, and export your dataset</ion-card-subtitle>
       </ion-card-header>
       <ion-card-content>
+        <ion-button expand="block" color="success" (click)="downloadLogsJson()">
+          <ion-icon name="download-outline" slot="start"></ion-icon>
+          Download Logs (JSON)
+        </ion-button>
         <ion-accordion-group>
           <ion-accordion value="validation">
             <ion-item slot="header" color="light">

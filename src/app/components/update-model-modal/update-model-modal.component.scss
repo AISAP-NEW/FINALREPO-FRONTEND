@@ -1,0 +1,16 @@
+@import '../../../global.scss';
+
+.update-model-modal-content {
+  @extend .neon-card;
+  max-width: 420px;
+  margin: 2rem auto;
+  background: rgba(20, 24, 40, 0.98);
+  border: 2px solid #00f2fe;
+  box-shadow: 0 0 32px #a100ff80;
+}
+
+.update-model-modal-small .modal-wrapper {
+  max-width: 440px !important;
+  border-radius: 18px !important;
+  margin: 2rem auto !important;
+}

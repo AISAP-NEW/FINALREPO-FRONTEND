@@ -1,0 +1,54 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Model Upload Calendar</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="prevMonth()" fill="clear" color="primary">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </ion-button>
+      <span class="month-label">{{ monthNames[currentMonth] }} {{ currentYear }}</span>
+      <ion-button (click)="nextMonth()" fill="clear" color="primary">
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="calendar-container">
+    <div class="calendar-grid">
+      <div class="calendar-row calendar-header">
+        <div *ngFor="let day of weekDays" class="calendar-cell header-cell">{{ day }}</div>
+      </div>
+      <div class="calendar-row" *ngFor="let week of getWeeks()">
+        <div *ngFor="let day of week" class="calendar-cell" [ngClass]="{'has-upload': day?.hasUpload, 'selected': day?.date === selectedDate}" (click)="selectDate(day)">
+          <span *ngIf="day">{{ day.day }}</span>
+          <span *ngIf="day?.hasUpload" class="upload-dot"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debug info -->
+  <div class="debug-info" style="background: #333; color: #fff; padding: 10px; margin: 10px;">
+    <p>Selected Date: {{ selectedDate }}</p>
+    <p>Selected Models Count: {{ selectedDateModels.length }}</p>
+    <p>Total Models: {{ modelUploads.length }}</p>
+    <p>Selected Models: {{ selectedDateModels | json }}</p>
+  </div>
+
+  <div *ngIf="selectedDateModels.length > 0" class="models-list futuristic-card">
+    <h2>Models uploaded on {{ selectedDate }}</h2>
+    <ion-list>
+      <ion-item *ngFor="let model of selectedDateModels" [routerLink]="['/model-details', model.id]">
+        <ion-label>
+          <h3>{{ model.title }}</h3>
+          <p>{{ model.date | date:'shortTime' }}</p>
+        </ion-label>
+        <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+      </ion-item>
+    </ion-list>
+  </div>
+  <div *ngIf="selectedDate && selectedDateModels.length === 0" class="no-models futuristic-card">
+    <p>No models uploaded on this day.</p>
+  </div>
+</ion-content>
