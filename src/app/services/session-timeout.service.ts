@@ -8,7 +8,7 @@ import { AuthService } from './auth.service';
   providedIn: 'root'
 })
 export class SessionTimeoutService {
-  private readonly TIMEOUT_DURATION = 30000; // 30 seconds in milliseconds
+  private readonly TIMEOUT_DURATION = 90000000000000000000; // 30 seconds in milliseconds
   private readonly WARNING_DURATION = 10000; // Show warning 10 seconds before timeout
   
   private timeoutTimer?: Subscription;
