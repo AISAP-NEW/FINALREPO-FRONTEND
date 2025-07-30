@@ -1,207 +1,362 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Reports Dashboard</ion-title>
+    <ion-title>{{ getCurrentReportTitle() }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="exportToPdf()" [disabled]="isLoading">
+        <ion-icon name="document-outline"></ion-icon>
+        PDF
+      </ion-button>
+      <ion-button (click)="exportToJson()" [disabled]="isLoading" color="secondary">
+        <ion-icon name="code-outline"></ion-icon>
+        JSON
+      </ion-button>
+      <ion-button (click)="exportToExcel()" [disabled]="isLoading" color="tertiary">
+        <ion-icon name="grid-outline"></ion-icon>
+        EXCEL
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
   <ion-grid>
-    <!-- Charts Section -->
     <ion-row>
-      <ion-col size="12" size-md="6">
-        <ion-card>
+      <!-- Sub-sidebar for report types -->
+      <ion-col size="12" size-md="3">
+        <ion-card class="sidebar-card">
           <ion-card-header>
-            <ion-card-title>User Distribution</ion-card-title>
+            <ion-card-title>Report Types</ion-card-title>
+            <ion-card-subtitle>Select a report to generate</ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <canvas #usersPieChart></canvas>
-            <ion-button expand="block" (click)="downloadChartAsPNG('users')" class="ion-margin-top">
-              <ion-icon name="download-outline" slot="start"></ion-icon>
-              Download Chart
-            </ion-button>
+            <ion-list>
+              <ion-item 
+                *ngFor="let reportType of reportTypes" 
+                (click)="loadReport(reportType.id)"
+                [class.selected]="selectedReportType === reportType.id"
+                button>
+                <ion-icon [name]="reportType.icon" slot="start"></ion-icon>
+                <ion-label>
+                  <h3>{{ reportType.name }}</h3>
+                  <p>{{ reportType.description }}</p>
+                  <ion-badge [color]="getCategoryColor(reportType.category)">
+                    {{ reportType.category }}
+                  </ion-badge>
+                </ion-label>
+              </ion-item>
+            </ion-list>
           </ion-card-content>
         </ion-card>
       </ion-col>
 
-      <ion-col size="12" size-md="6">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Project Activity Trends</ion-card-title>
-          </ion-card-header>
+      <!-- Main content area -->
+      <ion-col size="12" size-md="9">
+        <!-- Loading state -->
+        <ion-card *ngIf="isLoading" class="loading-card">
           <ion-card-content>
-            <canvas #trendsBarChart></canvas>
-            <ion-button expand="block" (click)="downloadChartAsPNG('trends')" class="ion-margin-top">
-              <ion-icon name="download-outline" slot="start"></ion-icon>
-              Download Chart
-            </ion-button>
+            <ion-spinner name="crescent"></ion-spinner>
+            <p>Loading report...</p>
           </ion-card-content>
         </ion-card>
-      </ion-col>
-    </ion-row>
 
-    <!-- Dataset Activities Table -->
-    <ion-row>
-      <ion-col size="12">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Dataset Activities Report</ion-card-title>
-            <ion-card-subtitle>Recent dataset operations and changes</ion-card-subtitle>
-          </ion-card-header>
+        <!-- Error state -->
+        <ion-card *ngIf="errorMessage" class="error-card">
           <ion-card-content>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th *ngFor="let header of datasetActivities.headers">{{ header }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let row of datasetActivities.rows">
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.action }}</td>
-                    <td>{{ row.user }}</td>
-                    <td>{{ row.date }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="download-buttons ion-margin-top">
-              <ion-button (click)="downloadTableAsPDF(datasetActivities, 'Dataset Activities Report')">
-                <ion-icon name="document-outline" slot="start"></ion-icon>
-                Download PDF
-              </ion-button>
-              <ion-button (click)="downloadTableAsJSON(datasetActivities, 'dataset-activities')" color="secondary">
-                <ion-icon name="code-outline" slot="start"></ion-icon>
-                Download JSON
-              </ion-button>
-            </div>
+            <ion-icon name="warning-outline" color="danger"></ion-icon>
+            <p>{{ errorMessage }}</p>
           </ion-card-content>
         </ion-card>
-      </ion-col>
-    </ion-row>
 
-    <!-- Users Report Table -->
-    <ion-row>
-      <ion-col size="12">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Users Report</ion-card-title>
-            <ion-card-subtitle>Overview of system users and their status</ion-card-subtitle>
-          </ion-card-header>
-          <ion-card-content>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th *ngFor="let header of usersReport.headers">{{ header }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let row of usersReport.rows">
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.email }}</td>
-                    <td>{{ row.role }}</td>
-                    <td>{{ row.status }}</td>
-                    <td>{{ row.lastActive }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="download-buttons ion-margin-top">
-              <ion-button (click)="downloadTableAsPDF(usersReport, 'Users Report')">
-                <ion-icon name="document-outline" slot="start"></ion-icon>
-                Download PDF
-              </ion-button>
-              <ion-button (click)="downloadTableAsJSON(usersReport, 'users-report')" color="secondary">
-                <ion-icon name="code-outline" slot="start"></ion-icon>
-                Download JSON
-              </ion-button>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
+        <!-- Report content -->
+        <div *ngIf="!isLoading && !errorMessage">
+          <!-- Users Report -->
+          <div *ngIf="selectedReportType === 'users' && usersReport" class="report-content">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Registered Users Report</ion-card-title>
+                <ion-card-subtitle>Total Users: {{usersReport.summary.totalRecords}}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <!-- Debug Info -->
+                <div style="background: #f0f0f0; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                  <p><strong>Debug Info:</strong></p>
+                  <p>Selected Report Type: {{selectedReportType}}</p>
+                  <p>Users Report exists: {{usersReport ? 'Yes' : 'No'}}</p>
+                  <p>Users array exists: {{usersReport?.users ? 'Yes' : 'No'}}</p>
+                  <p>Users array length: {{usersReport?.users?.length || 0}}</p>
+                  <p>Users array content: {{usersReport?.users | json}}</p>
+                </div>
+                
+                <ion-list *ngIf="usersReport.users && usersReport.users.length > 0; else noUsersData">
+                  <ion-item *ngFor="let user of usersReport.users" button>
+                    <ion-avatar slot="start">
+                      <ion-icon name="person"></ion-icon>
+                    </ion-avatar>
+                    <ion-label>
+                      <h2>{{user.username}}</h2>
+                      <p>{{user.email}}</p>
+                      <p>Role: {{user.role}} | Projects: {{user.projectCount}}</p>
+                    </ion-label>
+                    <ion-badge slot="end" [color]="user.isActive ? 'success' : 'medium'">
+                      {{user.isActive ? 'Active' : 'Inactive'}}
+                    </ion-badge>
+                  </ion-item>
+                </ion-list>
+                <ng-template #noUsersData>
+                  <ion-item>
+                    <ion-label class="ion-text-center">
+                      <p *ngIf="errorMessage">{{errorMessage}}</p>
+                      <p *ngIf="!errorMessage">No users data available</p>
+                      <p>Debug: usersReport.users = {{usersReport?.users | json}}</p>
+                    </ion-label>
+                  </ion-item>
+                </ng-template>
+              </ion-card-content>
+            </ion-card>
+          </div>
 
-    <!-- Projects Report Table -->
-    <ion-row>
-      <ion-col size="12">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Projects Report</ion-card-title>
-            <ion-card-subtitle>Status and details of all projects</ion-card-subtitle>
-          </ion-card-header>
-          <ion-card-content>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th *ngFor="let header of projectsReport.headers">{{ header }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let row of projectsReport.rows">
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.status }}</td>
-                    <td>{{ row.teamSize }}</td>
-                    <td>{{ row.startDate }}</td>
-                    <td>{{ row.dueDate }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="download-buttons ion-margin-top">
-              <ion-button (click)="downloadTableAsPDF(projectsReport, 'Projects Report')">
-                <ion-icon name="document-outline" slot="start"></ion-icon>
-                Download PDF
-              </ion-button>
-              <ion-button (click)="downloadTableAsJSON(projectsReport, 'projects-report')" color="secondary">
-                <ion-icon name="code-outline" slot="start"></ion-icon>
-                Download JSON
-              </ion-button>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
+          <!-- Clients & Projects Report -->
+          <div *ngIf="selectedReportType === 'clients-projects' && clientsProjectsReport" class="report-content">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Clients & Projects Report</ion-card-title>
+                <ion-card-subtitle>Total Clients: {{clientsProjectsReport.summary.totalRecords}}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-list *ngIf="clientsProjectsReport.clients && clientsProjectsReport.clients.length > 0; else noClientsData">
+                  <ion-item *ngFor="let client of clientsProjectsReport.clients" button>
+                    <ion-avatar slot="start">
+                      <ion-icon name="business"></ion-icon>
+                    </ion-avatar>
+                    <ion-label>
+                      <h2>{{client.clientName}}</h2>
+                      <p>{{client.clientEmail}} | {{client.clientPhone}}</p>
+                      <p>Projects: {{client.totalProjects}} ({{client.activeProjects}} active)</p>
+                    </ion-label>
+                    <ion-badge slot="end" color="primary">{{client.totalProjects}}</ion-badge>
+                  </ion-item>
+                </ion-list>
+                <ng-template #noClientsData>
+                  <ion-item>
+                    <ion-label class="ion-text-center">
+                      <p>No clients data available</p>
+                    </ion-label>
+                  </ion-item>
+                </ng-template>
+              </ion-card-content>
+            </ion-card>
+          </div>
 
-    <!-- Clients Report Table -->
-    <ion-row>
-      <ion-col size="12">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>Clients Report</ion-card-title>
-            <ion-card-subtitle>Overview of client activities and status</ion-card-subtitle>
-          </ion-card-header>
-          <ion-card-content>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th *ngFor="let header of clientsReport.headers">{{ header }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let row of clientsReport.rows">
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.projectsCount }}</td>
-                    <td>{{ row.status }}</td>
-                    <td>{{ row.joinDate }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="download-buttons ion-margin-top">
-              <ion-button (click)="downloadTableAsPDF(clientsReport, 'Clients Report')">
-                <ion-icon name="document-outline" slot="start"></ion-icon>
-                Download PDF
-              </ion-button>
-              <ion-button (click)="downloadTableAsJSON(clientsReport, 'clients-report')" color="secondary">
-                <ion-icon name="code-outline" slot="start"></ion-icon>
-                Download JSON
-              </ion-button>
-            </div>
-          </ion-card-content>
-        </ion-card>
+          <!-- Training Sessions Report -->
+          <div *ngIf="selectedReportType === 'training-sessions' && trainingSessionReport" class="report-content">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Model Training Sessions Report</ion-card-title>
+                <ion-card-subtitle>Total Sessions: {{trainingSessionReport.summary.totalRecords}}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-list *ngIf="trainingSessionReport.sessions && trainingSessionReport.sessions.length > 0; else noTrainingData">
+                  <ion-item *ngFor="let session of trainingSessionReport.sessions" button>
+                    <ion-avatar slot="start">
+                      <ion-icon name="analytics"></ion-icon>
+                    </ion-avatar>
+                    <ion-label>
+                      <h2>{{session.modelName}}</h2>
+                      <p>Started: {{formatDateTime(session.startedAt)}}</p>
+                      <p>Duration: {{session.duration}} | Learning Rate: {{session.learningRate}}</p>
+                    </ion-label>
+                    <ion-badge slot="end" [color]="getStatusColor(session.status)">
+                      {{session.status}}
+                    </ion-badge>
+                  </ion-item>
+                </ion-list>
+                <ng-template #noTrainingData>
+                  <ion-item>
+                    <ion-label class="ion-text-center">
+                      <p>No training sessions data available</p>
+                    </ion-label>
+                  </ion-item>
+                </ng-template>
+              </ion-card-content>
+            </ion-card>
+          </div>
+
+          <!-- Model Deployments Report -->
+          <div *ngIf="selectedReportType === 'model-deployments' && modelDeploymentReport" class="report-content">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Model Deployment Report</ion-card-title>
+                <ion-card-subtitle>Total Deployments: {{modelDeploymentReport.summary.totalRecords}}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-list *ngIf="modelDeploymentReport.deployments && modelDeploymentReport.deployments.length > 0; else noDeploymentData">
+                  <ion-item *ngFor="let deployment of modelDeploymentReport.deployments" button>
+                    <ion-avatar slot="start">
+                      <ion-icon name="rocket"></ion-icon>
+                    </ion-avatar>
+                    <ion-label>
+                      <h2>{{deployment.appName}}</h2>
+                      <p>Environment: {{deployment.environment}} | Version: {{deployment.version}}</p>
+                      <p>Requested by: {{deployment.requestedBy}} | Approved by: {{deployment.approvedBy}}</p>
+                    </ion-label>
+                    <ion-badge slot="end" [color]="getDeploymentStatusColor(deployment.status)">
+                      {{deployment.status}}
+                    </ion-badge>
+                  </ion-item>
+                </ion-list>
+                <ng-template #noDeploymentData>
+                  <ion-item>
+                    <ion-label class="ion-text-center">
+                      <p>No deployment data available</p>
+                    </ion-label>
+                  </ion-item>
+                </ng-template>
+              </ion-card-content>
+            </ion-card>
+          </div>
+
+          <!-- Dataset Transaction Report -->
+          <div *ngIf="selectedReportType === 'dataset-transactions' && datasetTransactionReport" class="report-content">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Dataset Transaction Summary Report</ion-card-title>
+                <ion-card-subtitle>Total Transactions: {{datasetTransactionReport.summary.totalRecords}}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div *ngIf="datasetTransactionReport.transactionGroups && datasetTransactionReport.transactionGroups.length > 0; else noTransactionData">
+                  <div *ngFor="let group of datasetTransactionReport.transactionGroups" class="transaction-group">
+                    <ion-item>
+                      <ion-label>
+                        <h2>{{group.developerName}}</h2>
+                        <p>Total Actions: {{group.totalActions}} | Last Action: {{formatDateTime(group.lastActionDate)}}</p>
+                      </ion-label>
+                    </ion-item>
+                    <div *ngFor="let datasetGroup of group.datasetActions" class="dataset-action">
+                      <ion-item>
+                        <ion-label>
+                          <h3>{{datasetGroup.datasetName}}</h3>
+                          <p>Actions: {{datasetGroup.totalActions}} | Last: {{formatDateTime(datasetGroup.lastActionDate)}}</p>
+                        </ion-label>
+                      </ion-item>
+                      <ion-list>
+                        <ion-item *ngFor="let transaction of datasetGroup.transactions">
+                          <ion-label>
+                            <p>{{transaction.action}} - {{transaction.details}}</p>
+                            <p>{{formatDateTime(transaction.timestamp)}} | {{transaction.fileName}}</p>
+                          </ion-label>
+                        </ion-item>
+                      </ion-list>
+                    </div>
+                  </div>
+                </div>
+                <ng-template #noTransactionData>
+                  <ion-item>
+                    <ion-label class="ion-text-center">
+                      <p>No transaction data available</p>
+                    </ion-label>
+                  </ion-item>
+                </ng-template>
+              </ion-card-content>
+            </ion-card>
+          </div>
+
+          <!-- Dataset Status Report -->
+          <div *ngIf="selectedReportType === 'dataset-status' && datasetStatusReport" class="report-content">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Dataset Status Report</ion-card-title>
+                <ion-card-subtitle>Total Datasets: {{datasetStatusReport.summary.totalRecords}}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-list *ngIf="datasetStatusReport.datasets && datasetStatusReport.datasets.length > 0; else noStatusData">
+                  <ion-item *ngFor="let dataset of datasetStatusReport.datasets" button>
+                    <ion-avatar slot="start">
+                      <ion-icon name="document"></ion-icon>
+                    </ion-avatar>
+                    <ion-label>
+                      <h2>{{dataset.datasetName}}</h2>
+                      <p>{{dataset.description}}</p>
+                      <p>Type: {{dataset.fileType}} | Version: {{dataset.version}}</p>
+                      <p>Files: {{dataset.fileCount}} | Size: {{formatBytes(dataset.totalFileSize)}}</p>
+                    </ion-label>
+                    <ion-badge slot="end" [color]="getValidationStatusColor(dataset.validationStatus)">
+                      {{dataset.validationStatus}}
+                    </ion-badge>
+                  </ion-item>
+                </ion-list>
+                <ng-template #noStatusData>
+                  <ion-item>
+                    <ion-label class="ion-text-center">
+                      <p>No dataset status data available</p>
+                    </ion-label>
+                  </ion-item>
+                </ng-template>
+              </ion-card-content>
+            </ion-card>
+          </div>
+
+          <!-- Dataset Trends Report -->
+          <div *ngIf="selectedReportType === 'dataset-trends' && datasetTrendsReport" class="report-content">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Dataset Trends Report</ion-card-title>
+                <ion-card-subtitle>Adjustable Criteria Report</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <!-- Filters Section -->
+                <div class="filters-section">
+                  <ion-item>
+                    <ion-label position="stacked">Start Date</ion-label>
+                    <ion-datetime [(ngModel)]="trendsFilters.startDate" presentation="date"></ion-datetime>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label position="stacked">End Date</ion-label>
+                    <ion-datetime [(ngModel)]="trendsFilters.endDate" presentation="date"></ion-datetime>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label position="stacked">Status Filter</ion-label>
+                    <ion-select [(ngModel)]="trendsFilters.status">
+                      <ion-select-option value="">All Statuses</ion-select-option>
+                      <ion-select-option value="uploaded">Uploaded</ion-select-option>
+                      <ion-select-option value="processed">Processed</ion-select-option>
+                      <ion-select-option value="validated">Validated</ion-select-option>
+                      <ion-select-option value="failed">Failed</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                  <ion-button expand="block" (click)="applyTrendsFilters()">Apply Filters</ion-button>
+                  <ion-button expand="block" fill="outline" (click)="clearTrendsFilters()">Clear Filters</ion-button>
+                </div>
+
+                <!-- Chart -->
+                <div class="chart-container">
+                  <canvas #trendsChart></canvas>
+                </div>
+
+                <!-- Trends Data -->
+                <div *ngIf="datasetTrendsReport.trends && datasetTrendsReport.trends.length > 0; else noTrendsData">
+                  <ion-list>
+                    <ion-item *ngFor="let trend of datasetTrendsReport.trends">
+                      <ion-label>
+                        <h2>{{trend.period}}</h2>
+                        <p>Uploads: {{trend.uploadCount}} | Processed: {{trend.processedCount}}</p>
+                        <p>Validated: {{trend.validatedCount}} | Failed: {{trend.failedCount}}</p>
+                        <p>Success Rate: {{trend.successRate}}% | Avg Time: {{trend.averageProcessingTime}}ms</p>
+                      </ion-label>
+                      <ion-badge slot="end" color="primary">{{trend.totalDatasets}}</ion-badge>
+                    </ion-item>
+                  </ion-list>
+                </div>
+                <ng-template #noTrendsData>
+                  <ion-item>
+                    <ion-label class="ion-text-center">
+                      <p>No trends data available</p>
+                    </ion-label>
+                  </ion-item>
+                </ng-template>
+              </ion-card-content>
+            </ion-card>
+          </div>
+        </div>
       </ion-col>
     </ion-row>
   </ion-grid>

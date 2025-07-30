@@ -90,3 +90,352 @@ ion-item {
 .ion-margin-top {
   margin-top: 1rem;
 } 
+
+// Sidebar styling
+.sidebar-card {
+  height: fit-content;
+  position: sticky;
+  top: 1rem;
+}
+
+ion-item.selected {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
+  
+  ion-icon {
+    color: var(--ion-color-primary-contrast);
+  }
+}
+
+ion-item {
+  --background: transparent;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    --background: var(--ion-color-light);
+  }
+
+  h3 {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  ion-badge {
+    font-size: 0.7rem;
+  }
+}
+
+// Loading and error states
+.loading-card, .error-card {
+  text-align: center;
+  padding: 2rem;
+
+  ion-spinner {
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+  }
+}
+
+.error-card {
+  ion-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+}
+
+// Table styling
+.table-container {
+  overflow-x: auto;
+  margin: 1rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--ion-color-light);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--ion-background-color);
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--ion-color-light);
+}
+
+th {
+  background-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+tr:nth-child(even) {
+  background-color: var(--ion-color-light-tint);
+}
+
+tr:hover {
+  background-color: var(--ion-color-light-shade);
+}
+
+// Transaction groups styling
+.transaction-group {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border: 1px solid var(--ion-color-light);
+  border-radius: 8px;
+  background: var(--ion-color-light-tint);
+
+  h3 {
+    color: var(--ion-color-primary);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+}
+
+.dataset-action {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--ion-color-light);
+  border-radius: 8px;
+  background: white;
+
+  h4 {
+    color: var(--ion-color-secondary);
+    margin-bottom: 1rem;
+    font-size: 1rem;
+  }
+}
+
+// Filters section
+.filters-section {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--ion-color-light-tint);
+  border-radius: 8px;
+  border: 1px solid var(--ion-color-light);
+
+  ion-item {
+    --background: transparent;
+    margin-bottom: 0;
+  }
+}
+
+// Chart styling
+canvas {
+  width: 100% !important;
+  height: 300px !important;
+  margin: 1rem 0;
+  border-radius: 8px;
+  background: white;
+  padding: 1rem;
+  border: 1px solid var(--ion-color-light);
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .sidebar-card {
+    position: static;
+    margin-bottom: 1rem;
+  }
+
+  ion-item {
+    h3 {
+      font-size: 0.85rem;
+    }
+
+    p {
+      font-size: 0.75rem;
+    }
+  }
+
+  th, td {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+
+  .filters-section {
+    ion-col {
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+// Export buttons styling
+ion-buttons {
+  ion-button {
+    margin-left: 0.5rem;
+    
+    ion-icon {
+      margin-right: 0.25rem;
+    }
+  }
+}
+
+// Card styling
+ion-card {
+  margin: 1rem 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
+
+ion-card-content {
+  padding: 1rem;
+}
+
+ion-card-header {
+  ion-card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  ion-card-subtitle {
+    font-size: 0.9rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+// Badge styling
+ion-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+// General spacing
+.ion-margin-top {
+  margin-top: 1rem;
+}
+
+.ion-margin-bottom {
+  margin-bottom: 1rem;
+} 
+
+.report-content {
+  margin-top: 1rem;
+}
+
+.loading-card {
+  text-align: center;
+  padding: 2rem;
+  
+  ion-spinner {
+    margin-bottom: 1rem;
+  }
+}
+
+.error-card {
+  text-align: center;
+  padding: 2rem;
+  color: var(--ion-color-danger);
+  
+  ion-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.transaction-group {
+  margin-bottom: 2rem;
+  border-left: 3px solid var(--ion-color-primary);
+  padding-left: 1rem;
+}
+
+.dataset-action {
+  margin-left: 1rem;
+  margin-bottom: 1rem;
+  border-left: 2px solid var(--ion-color-secondary);
+  padding-left: 0.5rem;
+}
+
+.filters-section {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--ion-color-light);
+  border-radius: 8px;
+  
+  ion-item {
+    margin-bottom: 1rem;
+  }
+  
+  ion-button {
+    margin-top: 1rem;
+  }
+}
+
+.chart-container {
+  margin: 2rem 0;
+  height: 300px;
+  position: relative;
+}
+
+ion-item {
+  --padding-start: 1rem;
+  --padding-end: 1rem;
+  
+  ion-avatar {
+    margin-right: 1rem;
+  }
+  
+  ion-label {
+    h2 {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    p {
+      margin: 0.25rem 0;
+      color: var(--ion-color-medium);
+    }
+  }
+  
+  ion-badge {
+    font-size: 0.8rem;
+  }
+}
+
+ion-card {
+  margin-bottom: 1rem;
+  
+  ion-card-header {
+    background: var(--ion-color-light);
+  }
+  
+  ion-card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  
+  ion-card-subtitle {
+    color: var(--ion-color-medium);
+  }
+}
+
+ion-list {
+  ion-item {
+    --border-color: var(--ion-color-light);
+  }
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--ion-color-medium);
+  
+  ion-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+} 
