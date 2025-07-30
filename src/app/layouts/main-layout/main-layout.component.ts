@@ -29,7 +29,8 @@ import {
   logOutOutline,
   businessOutline,
   layersOutline,
-  cubeOutline
+  cubeOutline,
+  cloudOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -80,6 +81,13 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
                 <ion-item routerLink="/models" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
                   <ion-icon slot="start" name="cube-outline"></ion-icon>
                   <ion-label>Models</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
+                <ion-item routerLink="/cloudstorage" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon slot="start" name="cloud-outline"></ion-icon>
+                  <ion-label>Cloud Storage</ion-label>
                 </ion-item>
               </ion-menu-toggle>
 
@@ -313,7 +321,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       logOutOutline,
       businessOutline,
       layersOutline,
-      cubeOutline
+      cubeOutline,
+      cloudOutline
     });
   }
 

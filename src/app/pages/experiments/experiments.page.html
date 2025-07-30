@@ -1,38 +1,71 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>Experiments</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="loadExperiments()">
+        <ion-icon slot="icon-only" name="refresh"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
-<ion-content class="ion-padding">
+<ion-content class="ion-padding" [scrollY]="true">
   <ion-searchbar [(ngModel)]="searchTerm" placeholder="Search experiments..."></ion-searchbar>
-  <ion-button expand="block" color="primary" [routerLink]="'/experiments/create'" class="ion-margin-bottom">
-    <ion-icon slot="start" name="add-circle-outline"></ion-icon>
-    Add Experiment
-  </ion-button>
+  
+  <div class="ion-margin-vertical">
+    <ion-button expand="block" color="primary" (click)="openCreateModal()" class="ion-margin-bottom">
+      <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+      Add Experiment
+    </ion-button>
+  </div>
+
+  <!-- Experiment Modal -->
   <app-experiment-modal
     [isOpen]="modalOpen"
     [experiment]="modalExperiment"
     [mode]="modalMode"
-    [datasets]="datasets"
     (dismiss)="closeModal()"
     (save)="saveExperiment($event)">
   </app-experiment-modal>
+  
+  <!-- Execution Modal -->
+  <app-experiment-execution
+    [isOpen]="executionModalOpen"
+    [experiment]="executionExperiment"
+    (dismiss)="closeExecutionModal()"
+    (executionComplete)="onExecutionComplete($event)">
+  </app-experiment-execution>
+  
+  <!-- Experiments List -->
   <ion-list>
-    <ion-item *ngFor="let experiment of filteredExperiments()">
+    <ion-item *ngFor="let exp of filteredExperiments">
       <ion-label>
-        <h2>{{ experiment.name }}</h2>
-        <p>{{ experiment.description }}</p>
+        <h2>{{ exp.Name || exp.name || 'Unnamed Experiment' }}</h2>
+        <p>{{ exp.Description || exp.description || 'No description' }}</p>
+        <p>
+          <ion-badge [color]="getStatusColor(exp.Status || exp.status)">
+            {{ exp.Status || exp.status || 'Unknown' }}
+          </ion-badge>
+          <span *ngIf="hasExecutionResult(exp.ExperimentId || exp.id)" style="margin-left: 8px;">
+            <ion-badge [color]="getExecutionStatusColor(exp.ExperimentId || exp.id)">
+              {{ getExecutionStatus(exp.ExperimentId || exp.id) }}
+            </ion-badge>
+          </span>
+        </p>
       </ion-label>
-      <ion-button fill="clear" slot="end" (click)="viewExperiment(experiment)">
-        <ion-icon name="eye-outline"></ion-icon>
-      </ion-button>
-      <ion-button fill="clear" slot="end" color="medium" (click)="openEditModal(experiment)">
-        <ion-icon name="create-outline"></ion-icon>
-      </ion-button>
-      <ion-button fill="clear" slot="end" color="danger" (click)="deleteExperiment(experiment)">
-        <ion-icon name="trash-outline"></ion-icon>
-      </ion-button>
+      <ion-buttons slot="end">
+        <ion-button fill="clear" color="success" (click)="runExperiment(exp)" title="Run Experiment">
+          <ion-icon name="play" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" color="primary" (click)="viewExperiment(exp)" title="View Details">
+          <ion-icon name="eye" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" color="warning" (click)="openEditModal(exp)" title="Edit">
+          <ion-icon name="create" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" color="danger" (click)="confirmDelete(exp)" title="Delete">
+          <ion-icon name="trash" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-buttons>
     </ion-item>
   </ion-list>
-  <ion-button expand="block" (click)="loadExperiments()">Refresh</ion-button>
 </ion-content> 

@@ -13,131 +13,116 @@ import { IonButton, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonList,
   templateUrl: './experiment-create.page.html'
 })
 export class ExperimentCreatePage implements OnInit {
-  experiment: any = { name: '', description: '', duration: 1, status: 'Draft' };
-  durationOptions = [
-    { label: '1 hour', value: 1 },
-    { label: '6 hours', value: 6 },
-    { label: '24 hours', value: 24 }
-  ];
-  artifactFile: File | null = null;
-  artifactError = '';
-  jsonError = '';
+  experiment: any = { Name: '', Description: '', Status: 'Draft', ModelFileType: '' };
+  modelFile: File | null = null;
+  modelFileError = '';
   showToast = false;
   toastMessage = '';
-  variables: { key: string, value: string }[] = [];
-  variablesKeyError = false;
-  variablesDuplicateError = false;
   missingFields: string[] = [];
-  datasets: any[] = [];
-  projects: any[] = [];
   submitting = false;
 
   constructor(private http: HttpClient, public router: Router) {}
 
   ngOnInit() {
     this.loadDatasets();
-    this.loadProjects();
-    this.variables = [];
-    this.experiment.variablesJson = '{}';
   }
 
   loadDatasets() {
-    this.http.get<any[]>(`${environment.apiUrl}/api/Dataset`).subscribe(data => {
-      this.datasets = data;
-    });
+    // No longer needed as we're not showing datasets in the simplified form
   }
 
-  loadProjects() {
-    this.http.get<any[]>(`${environment.apiUrl}/api/Project`).subscribe(data => {
-      this.projects = data;
-    });
-  }
-
-  addVariable() {
-    this.variables.push({ key: '', value: '' });
-    this.syncVariablesJson();
-  }
-
-  removeVariable(i: number) {
-    this.variables.splice(i, 1);
-    this.syncVariablesJson();
-  }
-
-  onVariableChange() {
-    this.syncVariablesJson();
-  }
-
-  syncVariablesJson() {
-    this.variablesKeyError = this.variables.some(v => !v.key.trim());
-    const keys = this.variables.map(v => v.key.trim());
-    this.variablesDuplicateError = keys.length !== new Set(keys).size;
-    if (!this.variablesKeyError && !this.variablesDuplicateError) {
-      const obj: any = {};
-      this.variables.forEach(v => { obj[v.key.trim()] = v.value; });
-      this.experiment.variablesJson = JSON.stringify(obj);
-      this.jsonError = '';
-    } else {
-      this.jsonError = this.variablesKeyError ? 'Parameter keys cannot be empty.' : 'Duplicate parameter keys are not allowed.';
-    }
-  }
-
-  onFileChange(event: any) {
-    this.artifactError = '';
+  onModelFileChange(event: any) {
+    this.modelFileError = '';
     const file = event.target.files[0];
     if (file) {
-      if (!['application/zip', 'application/json', 'application/x-zip-compressed', 'application/octet-stream'].includes(file.type) && !file.name.endsWith('.zip') && !file.name.endsWith('.json')) {
-        this.artifactError = 'Only .zip or .json files are allowed.';
-      } else if (file.size > 50 * 1024 * 1024) {
-        this.artifactError = 'File size must be less than 50MB.';
-      } else {
-        this.artifactFile = file;
+      // Get file extension and validate
+      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      const allowedTypes = ['.py', '.ipynb', '.pkl', '.h5', '.pt', '.pth', '.onnx'];
+      
+      if (!allowedTypes.includes(fileExtension)) {
+        this.modelFileError = 'Only .py, .ipynb, .pkl, .h5, .pt, .pth, .onnx files are allowed.';
+        return;
       }
+      
+      // Validate file size (100MB limit)
+      if (file.size > 100 * 1024 * 1024) {
+        this.modelFileError = 'File size must be less than 100MB.';
+        return;
+      }
+      
+      this.modelFile = file;
+      // Set the file type based on extension
+      this.experiment.ModelFileType = fileExtension.substring(1); // Remove the dot
     }
   }
 
+  // File upload method removed - files handled during experiment execution
+
   formInvalid() {
-    return !this.experiment.name || this.experiment.name.length > 50 ||
-      !this.experiment.projectId ||
-      !this.artifactFile ||
-      !!this.jsonError || !!this.artifactError || this.submitting;
+    return !this.experiment.Name || this.experiment.Name.length > 50 ||
+      !!this.modelFileError || this.submitting;
   }
 
   async onSubmit(form: NgForm) {
     console.log('onSubmit called', this.experiment);
-    this.syncVariablesJson();
     this.missingFields = [];
-    if (!this.experiment.name || this.experiment.name.length > 50) this.missingFields.push('Name');
-    if (!this.experiment.projectId) this.missingFields.push('Project');
-    if (!this.artifactFile) this.missingFields.push('Artifact');
-    if (form.invalid || this.jsonError || this.artifactError || this.missingFields.length) {
-      this.showError('Please fix errors before submitting.' + (this.missingFields.length ? ' Missing: ' + this.missingFields.join(', ') : ''));
+    
+    // Validate required fields
+    if (!this.experiment.Name || this.experiment.Name.length > 50) this.missingFields.push('Name');
+    
+    if (form.invalid || this.modelFileError || this.missingFields.length) {
+      this.showError('Please fix errors before submitting.' + (this.missingFields.length ? ' Missing or invalid: ' + this.missingFields.join(', ') : ''));
       return;
     }
+    
     this.submitting = true;
+
+    console.log('Submitting form with data:', {
+      Name: this.experiment.Name,
+      Description: this.experiment.Description,
+      Status: this.experiment.Status,
+      ModelFile: this.modelFile ? this.modelFile.name : 'none',
+      ModelFileType: this.experiment.ModelFileType || 'none'
+    });
+
+    // Create form data
     const formData = new FormData();
-    formData.append('name', this.experiment.name);
-    formData.append('description', this.experiment.description);
-    formData.append('duration', String(this.experiment.duration));
-    formData.append('status', this.experiment.status);
-    formData.append('variablesJson', this.experiment.variablesJson);
-    formData.append('projectId', String(this.experiment.projectId));
-    if (this.artifactFile) {
-      formData.append('artifactFile', this.artifactFile, this.artifactFile.name);
+    formData.append('Name', this.experiment.Name);
+    formData.append('Description', this.experiment.Description);
+    formData.append('Status', this.experiment.Status || 'Draft');
+    
+    if (this.modelFile) {
+      formData.append('ModelFile', this.modelFile);
+      formData.append('ModelFileType', this.experiment.ModelFileType || '');
     }
-    try {
-      await this.http.post(`${environment.apiUrl}/api/Experiment`, formData).toPromise();
-      this.toastMessage = 'Experiment created successfully!';
-      this.showToast = true;
-      setTimeout(() => {
-        this.showToast = false;
+
+    // Ensure the URL is correct
+    const url = `${environment.apiUrl}/api/Experiment`;
+    console.log('Sending request to:', url);
+    
+    this.http.post(url, formData, {
+      reportProgress: true,
+      observe: 'response'
+    }).subscribe({
+      next: (response) => {
+        console.log('Full response:', response);
+        console.log('Experiment created successfully:', response.body);
+        this.submitting = false;
         this.router.navigate(['/experiments']);
-      }, 1500);
-    } catch (error: any) {
-      console.error('Experiment creation failed:', error);
-      this.showError(error?.message || 'Failed to create experiment.');
-    } finally {
-      this.submitting = false;
-    }
+      },
+      error: (error) => {
+        console.error('Error creating experiment:', error);
+        console.error('Error details:', {
+          status: error.status,
+          message: error.message,
+          error: error.error,
+          url: error.url,
+          headers: error.headers
+        });
+        this.showError(error.error?.message || 'Failed to create experiment. Please check the console for details.');
+        this.submitting = false;
+      }
+    });
   }
 
   showError(message: string) {
@@ -145,4 +130,4 @@ export class ExperimentCreatePage implements OnInit {
     this.showToast = true;
     setTimeout(() => this.showToast = false, 2500);
   }
-} 
+}

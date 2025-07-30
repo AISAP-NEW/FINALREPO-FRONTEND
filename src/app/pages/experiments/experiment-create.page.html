@@ -8,55 +8,30 @@
   <div style="flex: 0 0 500px; max-width: 500px; height: 100vh; overflow-y: auto; border-right: 1px solid #eee; padding: 24px; box-sizing: border-box; background: #fff; position: relative;">
     <form #expForm="ngForm" (ngSubmit)="onSubmit(expForm)">
       <ion-list>
-        <ion-item [class.invalid-field]="expForm.submitted && (!experiment.name || experiment.name.length > 50)">
+        <ion-item [class.invalid-field]="expForm.submitted && (!experiment.Name || experiment.Name.length > 50)">
           <ion-label position="stacked">Name <span class="required">*</span></ion-label>
-          <ion-input [(ngModel)]="experiment.name" name="name" required maxlength="50"></ion-input>
+          <ion-input [(ngModel)]="experiment.Name" name="Name" required maxlength="50"></ion-input>
         </ion-item>
-        <ion-item [class.invalid-field]="experiment.description && experiment.description.length > 500">
+        <ion-item [class.invalid-field]="experiment.Description && experiment.Description.length > 1000">
           <ion-label position="stacked">Description</ion-label>
-          <ion-textarea [(ngModel)]="experiment.description" name="description" maxlength="500"></ion-textarea>
+          <ion-textarea [(ngModel)]="experiment.Description" name="Description" maxlength="1000"></ion-textarea>
         </ion-item>
         <ion-item>
-          <ion-label position="stacked">Duration</ion-label>
-          <ion-select [(ngModel)]="experiment.duration" name="duration" required>
-            <ion-select-option *ngFor="let opt of durationOptions" [value]="opt.value">{{ opt.label }}</ion-select-option>
-          </ion-select>
-        </ion-item>
-        <!-- Variables (JSON) as dynamic key-value editor -->
-        <ion-item lines="none">
-          <ion-label position="stacked">Parameters</ion-label>
-        </ion-item>
-        <div>
-          <div *ngFor="let v of variables; let i = index" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <ion-input placeholder="Key" [(ngModel)]="v.key" name="varKey{{i}}" (ngModelChange)="onVariableChange()" style="flex:1"></ion-input>
-            <ion-input placeholder="Value" [(ngModel)]="v.value" name="varValue{{i}}" (ngModelChange)="onVariableChange()" style="flex:1"></ion-input>
-            <ion-button fill="clear" color="danger" size="small" (click)="removeVariable(i)" *ngIf="variables.length > 1">
-              <ion-icon name="remove-circle-outline"></ion-icon>
-            </ion-button>
-          </div>
-          <ion-button fill="clear" size="small" (click)="addVariable()" style="margin-bottom: 8px;">
-            <ion-icon name="add-circle-outline"></ion-icon> Add Parameter
-          </ion-button>
-          <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="jsonError">{{ jsonError }}</div>
-        </div>
-        <ion-item>
-          <ion-label position="stacked">Artifacts <span class="required">*</span></ion-label>
-          <input type="file" (change)="onFileChange($event)" accept=".zip,.json" />
+          <ion-label position="stacked">Model File (Optional)</ion-label>
+          <input type="file" (change)="onModelFileChange($event)" accept=".py,.ipynb,.pkl,.h5,.pt,.pth,.onnx" />
         </ion-item>
         <div style="color: var(--ion-color-medium); font-size: 13px; margin-left: 16px; margin-bottom: 8px;">
-          Artifacts are files related to your experiment, such as model files, logs, or configuration files. You can upload a .zip or .json file up to 50MB.
+          Upload a model file (.py, .ipynb, .pkl, .h5, .pt, .pth, .onnx) up to 100MB. This can also be done during experiment execution.
         </div>
-        <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="artifactError">{{ artifactError }}</div>
+        <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="modelFileError">{{ modelFileError }}</div>
         <ion-item>
-          <ion-label position="stacked">Project</ion-label>
-          <ion-select *ngIf="projects && projects.length" [(ngModel)]="experiment.projectId" name="projectId" required>
-            <ion-select-option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</ion-select-option>
-          </ion-select>
-          <ion-input *ngIf="!projects || !projects.length" type="number" [(ngModel)]="experiment.projectId" name="projectId" required></ion-input>
-        </ion-item>
-        <ion-item *ngIf="experiment.status">
           <ion-label position="stacked">Status</ion-label>
-          <ion-input [(ngModel)]="experiment.status" name="status" readonly></ion-input>
+          <ion-select [(ngModel)]="experiment.Status" name="Status" interface="popover">
+            <ion-select-option value="Draft">Draft</ion-select-option>
+            <ion-select-option value="Active">Active</ion-select-option>
+            <ion-select-option value="Completed">Completed</ion-select-option>
+            <ion-select-option value="Archived">Archived</ion-select-option>
+          </ion-select>
         </ion-item>
       </ion-list>
       <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="expForm.submitted && missingFields.length">

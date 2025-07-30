@@ -1,0 +1,77 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Cloud Storage</ion-title>
+  </ion-toolbar>
+</ion-header>
+<ion-content class="ion-padding">
+  <ion-list>
+    <ion-item>
+      <ion-label position="stacked">Select Project</ion-label>
+      <ion-select [(ngModel)]="selectedProjectId" (ionChange)="onProjectChange()" [disabled]="loadingProjects">
+        <ion-select-option *ngFor="let p of projects" [value]="p.ProjectId">{{ p.Name }}</ion-select-option>
+      </ion-select>
+      <ion-spinner *ngIf="loadingProjects" slot="end"></ion-spinner>
+    </ion-item>
+  </ion-list>
+
+  <div *ngIf="selectedProjectId">
+    <ion-list>
+      <ion-item>
+        <ion-label position="stacked">Upload File</ion-label>
+        <input id="cloud-upload-input" type="file" (change)="onFileChange($event)" [disabled]="uploading" />
+        <ion-button expand="block" (click)="upload()" [disabled]="!uploadFile || uploading" style="margin-top: 8px;">
+          <ion-spinner *ngIf="uploading" name="dots"></ion-spinner>
+          <span *ngIf="!uploading">Upload</span>
+        </ion-button>
+      </ion-item>
+      <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="uploadError">{{ uploadError }}</div>
+    </ion-list>
+
+    <ion-list>
+      <ion-item-divider color="light">Project Files</ion-item-divider>
+      <ion-item *ngIf="loadingFiles">
+        <ion-spinner slot="start"></ion-spinner>
+        <ion-label>Loading files...</ion-label>
+      </ion-item>
+      <ion-item *ngFor="let file of files">
+        <ion-label>
+          <h2>{{ file.FileName }}</h2>
+          <p>Version: {{ file.Version }} | Uploaded: {{ file.UploadDate | date:'short' }} | By: {{ file.UploadedBy }}</p>
+        </ion-label>
+        <ion-button fill="clear" size="small" (click)="showFileVersions(file)">
+          <ion-icon name="list-outline"></ion-icon> Versions
+        </ion-button>
+      </ion-item>
+    </ion-list>
+
+    <ion-list *ngIf="selectedFileId">
+      <ion-item-divider color="medium">Versions for {{ selectedFileName }}</ion-item-divider>
+      <ion-item *ngIf="loadingVersions">
+        <ion-spinner slot="start"></ion-spinner>
+        <ion-label>Loading versions...</ion-label>
+      </ion-item>
+      <ion-item *ngFor="let v of versions">
+        <ion-label>Version: {{ v.Version || v.version }} | Uploaded: {{ v.UploadDate || v.uploadDate | date:'short' }}</ion-label>
+        <ion-button fill="clear" size="small" (click)="download(selectedFileId, v.Version || v.version)">
+          <ion-icon name="download-outline"></ion-icon> Download
+        </ion-button>
+      </ion-item>
+    </ion-list>
+  </div>
+
+  <div *ngIf="showToast" [style.background]="toastColor === 'danger' ? '#f44336' : '#4caf50'" style="position: fixed; bottom: 24px; left: 0; right: 0; z-index: 1000; text-align: center; color: white; padding: 12px 24px; border-radius: 8px;">
+    {{ toastMessage }}
+  </div>
+</ion-content>
+<style>
+  ion-item h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  ion-item p {
+    font-size: 13px;
+    color: var(--ion-color-medium);
+    margin: 0;
+  }
+</style> 

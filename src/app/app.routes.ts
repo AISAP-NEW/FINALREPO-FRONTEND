@@ -150,6 +150,10 @@ export const routes: Routes = [
       {
         path: 'experiments/create',
         loadComponent: () => import('./pages/experiments/experiment-create.page').then(m => m.ExperimentCreatePage)
+      },
+      {
+        path: 'cloudstorage',
+        loadComponent: () => import('./pages/cloudstorage/cloudstorage.page').then(m => m.CloudStoragePage)
       }
     ]
   },

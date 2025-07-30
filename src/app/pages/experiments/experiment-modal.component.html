@@ -2,149 +2,240 @@
   <ion-header>
     <ion-toolbar>
       <ion-title>{{ mode === 'create' ? 'Add' : mode === 'edit' ? 'Edit' : 'View' }} Experiment</ion-title>
+      <ion-buttons slot="end">
+        <ion-button (click)="close()" class="close-button">
+          <span aria-hidden="true">&times;</span>
+        </ion-button>
+      </ion-buttons>
     </ion-toolbar>
   </ion-header>
+  
   <ion-content class="ion-padding">
-    <form *ngIf="mode === 'create' || mode === 'edit'" #expForm="ngForm" (ngSubmit)="onSubmit(expForm)">
+    <!-- Create/Edit Form -->
+    <form #experimentForm="ngForm" (ngSubmit)="onSubmit(experimentForm)" *ngIf="mode === 'create' || mode === 'edit'">
       <ion-list>
-          <ion-item [class.invalid-field]="expForm.submitted && (!experiment.name || experiment.name.length > 50)">
-            <ion-label position="stacked">Name <span class="required">*</span></ion-label>
-            <ion-input [(ngModel)]="experiment.name" name="name" required maxlength="50"></ion-input>
-          </ion-item>
-          <ion-item [class.invalid-field]="experiment.description && experiment.description.length > 500">
-            <ion-label position="stacked">Description</ion-label>
-            <ion-textarea [(ngModel)]="experiment.description" name="description" maxlength="500"></ion-textarea>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Duration</ion-label>
-            <ion-select [(ngModel)]="experiment.duration" name="duration" required>
-              <ion-select-option *ngFor="let opt of durationOptions" [value]="opt.value">{{ opt.label }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-          <!-- Variables (JSON) as dynamic key-value editor -->
-          <ion-item lines="none">
-            <ion-label position="stacked">Parameters</ion-label>
-          </ion-item>
-          <div *ngIf="mode === 'create' || mode === 'edit'">
-            <div *ngFor="let v of variables; let i = index" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <ion-input placeholder="Key" [(ngModel)]="v.key" name="varKey{{i}}" (ngModelChange)="onVariableChange()" style="flex:1"></ion-input>
-              <ion-input placeholder="Value" [(ngModel)]="v.value" name="varValue{{i}}" (ngModelChange)="onVariableChange()" style="flex:1"></ion-input>
-              <ion-button fill="clear" color="danger" size="small" (click)="removeVariable(i)" *ngIf="variables.length > 1">
-                <ion-icon name="remove-circle-outline"></ion-icon>
+        <!-- Name Field -->
+        <ion-item [class.invalid-field]="hasMissingField('Name')">
+          <ion-label position="stacked">
+            Name <ion-text color="danger">*</ion-text>
+            <ion-text color="medium" class="hint-text">Required, max 50 characters</ion-text>
+          </ion-label>
+          <ion-input 
+            type="text" 
+            [(ngModel)]="experiment.Name" 
+            name="name" 
+            required
+            maxlength="50"
+            aria-required="true"
+            (ionInput)="updateFormValidity()"
+            placeholder="Enter experiment name"
+            [attr.aria-invalid]="hasMissingField('Name')">
+          </ion-input>
+          <ion-note slot="error" *ngIf="hasMissingField('Name')" color="danger">
+            {{ getMissingFieldMessage('Name') }}
+          </ion-note>
+        </ion-item>
+        
+        <!-- Description Field -->
+        <ion-item [class.invalid-field]="hasMissingField('Description')">
+          <ion-label position="stacked">
+            Description
+            <ion-text color="medium" class="hint-text">Optional, describe your experiment</ion-text>
+          </ion-label>
+          <ion-textarea 
+            [(ngModel)]="experiment.Description" 
+            name="description" 
+            [disabled]="mode === 'view'"
+            rows="3"
+            placeholder="Enter a brief description of your experiment"
+            maxlength="500"
+            autoGrow="true"
+            (ionInput)="updateFormValidity()"
+            [attr.aria-invalid]="hasMissingField('Description')">
+          </ion-textarea>
+          <ion-note slot="error" *ngIf="hasMissingField('Description')" color="danger">
+            {{ getMissingFieldMessage('Description') }}
+          </ion-note>
+        </ion-item>
+        
+        <!-- Model File Upload -->
+        <ion-item [class.invalid-field]="hasMissingField('ModelFile')" lines="none">
+          <ion-label position="stacked">
+            Model File <ion-text color="danger">*</ion-text>
+            <ion-text color="medium" class="hint-text">
+              Accepted formats: .py, .ipynb, .pkl, .h5, .pt, .pth, .onnx (max 100MB)
+            </ion-text>
+          </ion-label>
+          
+          <div class="file-upload-container">
+            <!-- Custom styled file input button -->
+            <ion-button 
+              fill="outline" 
+              (click)="fileInput.click()" 
+              expand="block" 
+              class="file-input-button"
+              [attr.aria-label]="'Select model file' + (existingModelFile ? '. Current file: ' + existingModelFile.name : '')"
+              [attr.aria-describedby]="'fileTypesHelp' + (modelFileError ? ' fileError' : '')"
+              [color]="modelFileError ? 'danger' : 'medium'"
+              [class.file-selected]="!!existingModelFile">
+              <ion-icon name="cloud-upload" slot="start"></ion-icon>
+              {{ existingModelFile ? 'Change File' : 'Choose File' }}
+            </ion-button>
+            
+            <!-- Hidden file input -->
+            <input 
+              #fileInput
+              type="file" 
+              (change)="onModelFileChange($event); updateFormValidity()"
+              id="modelFile"
+              accept=".py,.ipynb,.pkl,.h5,.pt,.pth,.onnx"
+              style="display: none;"
+              aria-describedby="fileTypesHelp fileError"
+              [attr.aria-invalid]="!!modelFileError">
+            
+            <!-- Selected file info -->
+            <div *ngIf="existingModelFile" class="file-info">
+              <ion-icon name="document" color="primary"></ion-icon>
+              <div class="file-details">
+                <div class="file-name">{{ existingModelFile.name }}</div>
+                <div class="file-size" *ngIf="existingModelFile.size">
+                  {{ formatFileSize(existingModelFile.size) }}
+                </div>
+              </div>
+              <ion-button 
+                fill="clear" 
+                size="small" 
+                color="danger" 
+                (click)="clearFileInput($event)"
+                aria-label="Remove file">
+                <ion-icon name="close-circle" slot="icon-only"></ion-icon>
               </ion-button>
             </div>
-            <ion-button fill="clear" size="small" (click)="addVariable()" style="margin-bottom: 8px;">
-              <ion-icon name="add-circle-outline"></ion-icon> Add Parameter
+            
+            <!-- Error message -->
+            <ion-note *ngIf="modelFileError" color="danger" id="fileError">
+              {{ modelFileError }}
+            </ion-note>
+          </div>
+          
+          <ion-note slot="error" *ngIf="hasMissingField('ModelFile')" color="danger">
+            {{ getMissingFieldMessage('ModelFile') }}
+          </ion-note>
+        </ion-item>
+        
+        <!-- Status Field (Edit Mode Only) -->
+        <ion-item *ngIf="mode === 'edit'" lines="none">
+          <ion-label position="stacked">Status</ion-label>
+          <ion-input 
+            [(ngModel)]="experiment.Status" 
+            name="status" 
+            readonly
+            [disabled]="true">
+          </ion-input>
+        </ion-item>
+        
+        <!-- Form-wide error messages -->
+        <ion-item *ngIf="missingFields.length > 0" lines="none">
+          <ion-text color="danger">
+            <p>Please correct the following issues:</p>
+            <ul>
+              <li *ngFor="let field of missingFields">{{ field }}</li>
+            </ul>
+          </ion-text>
+        </ion-item>
+      </ion-list>
+      
+      <!-- Form Actions -->
+      <ion-footer>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button (click)="close()" color="medium" fill="clear">
+              <ion-icon name="close-circle" slot="start"></ion-icon>
+              Cancel
             </ion-button>
-            <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="jsonError">{{ jsonError }}</div>
-          </div>
-          <div *ngIf="isViewMode()">
-            <ion-list>
-              <ion-item *ngFor="let v of variables">
-                <ion-label>{{ v.key }}</ion-label>
-                <ion-label>{{ v.value }}</ion-label>
-              </ion-item>
-            </ion-list>
-          </div>
-          <ion-item>
-            <ion-label position="stacked">Dataset</ion-label>
-            <ion-select *ngIf="datasets && datasets.length" [(ngModel)]="experiment.datasetVersionId" name="datasetVersionId" required>
-              <ion-select-option *ngFor="let ds of datasets" [value]="ds.id">{{ ds.name }}</ion-select-option>
-            </ion-select>
-            <ion-input *ngIf="!datasets || !datasets.length" type="number" [(ngModel)]="experiment.datasetVersionId" name="datasetVersionId" required></ion-input>
-          </ion-item>
-          <!-- Artifacts section: always visible in create mode -->
-          <ng-container *ngIf="mode === 'create'; else artifactsAccordion">
-            <ion-item>
-              <ion-label position="stacked">Artifacts <span class="required">*</span></ion-label>
-              <input type="file" (change)="onFileChange($event)" accept=".zip,.json" />
-            </ion-item>
-            <div style="color: var(--ion-color-medium); font-size: 13px; margin-left: 16px; margin-bottom: 8px;">
-              Artifacts are files related to your experiment, such as model files, logs, or configuration files. You can upload a .zip or .json file up to 50MB.
-            </div>
-            <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="artifactError">{{ artifactError }}</div>
-          </ng-container>
-          <ng-template #artifactsAccordion>
-            <ion-item lines="full" detail (click)="showArtifacts = !showArtifacts" style="cursor:pointer;">
-              <ion-label><b>Artifacts <span class="required">*</span></b></ion-label>
-              <ion-icon slot="end" [name]="showArtifacts ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
-            </ion-item>
-            <div *ngIf="showArtifacts" style="padding: 12px 0 0 0;">
-              <ion-item>
-                <ion-label position="stacked">Upload Artifact File</ion-label>
-                <input type="file" (change)="onFileChange($event)" accept=".zip,.json" />
-              </ion-item>
-              <div style="color: var(--ion-color-medium); font-size: 13px; margin-left: 16px; margin-bottom: 8px;">
-                Artifacts are files related to your experiment, such as model files, logs, or configuration files. You can upload a .zip or .json file up to 50MB.
+          </ion-buttons>
+          <ion-buttons slot="end">
+            <ion-button 
+              (click)="onSubmit(experimentForm)" 
+              [disabled]="!checkFormValidity() || isSubmitting"
+              [color]="checkFormValidity() ? 'primary' : 'medium'"
+              [strong]="checkFormValidity()"
+              fill="solid"
+              class="save-button">
+              <ion-icon name="save" slot="start" *ngIf="mode === 'edit'"></ion-icon>
+              <ion-icon name="add-circle" slot="start" *ngIf="mode === 'create'"></ion-icon>
+              {{ mode === 'create' ? 'Create Experiment' : 'Save Changes' }}
+              <ion-spinner *ngIf="isSubmitting" name="dots" class="ion-margin-start"></ion-spinner>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-footer>
+    </form>
+    
+    <!-- View Mode -->
+    <div *ngIf="mode === 'view'" class="view-mode">
+      <ion-list>
+        <ion-item>
+          <ion-label position="stacked" class="view-label">Name</ion-label>
+          <ion-text class="view-value">{{ experiment.Name || 'N/A' }}</ion-text>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked" class="view-label">Description</ion-label>
+          <ion-text class="view-value">{{ experiment.Description || 'No description provided' }}</ion-text>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked" class="view-label">Status</ion-label>
+          <ion-badge [color]="getStatusColor(experiment.Status)" class="status-badge">
+            {{ experiment.Status || 'N/A' }}
+          </ion-badge>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked" class="view-label">Model File</ion-label>
+          <div class="file-info" *ngIf="existingModelFile; else noFile">
+            <ion-icon name="document" color="primary"></ion-icon>
+            <div class="file-details">
+              <div class="file-name">{{ existingModelFile.name }}</div>
+              <div class="file-size" *ngIf="existingModelFile.size">
+                {{ formatFileSize(existingModelFile.size) }}
               </div>
-              <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="artifactError">{{ artifactError }}</div>
             </div>
-          </ng-template>
-          <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="expForm.submitted && missingFields.length">
-            Please complete the following required fields: {{ missingFields.join(', ') }}
           </div>
-          <ion-item>
-            <ion-label position="stacked">Project</ion-label>
-            <ion-select *ngIf="projects && projects.length" [(ngModel)]="experiment.projectId" name="projectId" required>
-              <ion-select-option *ngFor="let p of projects" [value]="p.id">{{ p.name }}</ion-select-option>
-            </ion-select>
-            <ion-input *ngIf="!projects || !projects.length" type="number" [(ngModel)]="experiment.projectId" name="projectId" required></ion-input>
-          </ion-item>
-          <ion-item *ngIf="mode !== 'create'">
-            <ion-label position="stacked">Status</ion-label>
-            <ion-input [(ngModel)]="experiment.status" name="status" readonly></ion-input>
-          </ion-item>
-        </ion-list>
-      </form>
-      <div *ngIf="mode === 'view'">
-        <ion-list>
-          <ion-item>
-            <ion-label>Name</ion-label>
-            <ion-label>{{ experiment.name }}</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>Description</ion-label>
-            <ion-label>{{ experiment.description }}</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>Duration</ion-label>
-            <ion-label>{{ experiment.duration }} hour(s)</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>Parameters</ion-label>
-            <ion-list>
-              <ion-item *ngFor="let v of variables">
-                <ion-label>{{ v.key }}</ion-label>
-                <ion-label>{{ v.value }}</ion-label>
-              </ion-item>
-            </ion-list>
-          </ion-item>
-          <ion-item>
-            <ion-label>Dataset</ion-label>
-            <ion-label>{{ experiment.datasetVersionId }}</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>Artifacts</ion-label>
-            <ion-label>{{ experiment.artifactFile?.name || 'N/A' }}</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>Project</ion-label>
-            <ion-label>{{ experiment.projectId }}</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-label>Status</ion-label>
-            <ion-label>{{ experiment.status }}</ion-label>
-          </ion-item>
-        </ion-list>
-        <ion-button expand="block" fill="clear" (click)="close()">Close</ion-button>
-      </div>
-    </ion-content>
-    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 24px; margin-bottom: 16px;">
-      <ion-button expand="block" type="submit" [disabled]="formInvalid()" *ngIf="mode === 'create'">Create</ion-button>
-      <ion-button expand="block" type="submit" [disabled]="formInvalid()" *ngIf="mode === 'edit'">Save</ion-button>
-      <ion-button expand="block" fill="clear" type="button" (click)="close()">Cancel</ion-button>
+          <ng-template #noFile>
+            <ion-text color="medium" class="view-value">No model file uploaded</ion-text>
+          </ng-template>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked" class="view-label">Created</ion-label>
+          <ion-text class="view-value">
+            {{ experiment.CreatedAt ? (experiment.CreatedAt | date:'medium') : 'N/A' }}
+          </ion-text>
+        </ion-item>
+        
+        <ion-item>
+          <ion-label position="stacked" class="view-label">Last Modified</ion-label>
+          <ion-text class="view-value">
+            {{ experiment.LastModified ? (experiment.LastModified | date:'medium') : 'N/A' }}
+          </ion-text>
+        </ion-item>
+      </ion-list>
+      
+      <ion-footer>
+        <ion-toolbar>
+          <ion-buttons slot="end">
+            <ion-button (click)="close()" color="primary" fill="solid" class="close-button">
+              <ion-icon name="close" slot="start"></ion-icon>
+              Close
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-footer>
     </div>
-  </ion-modal>
+  </ion-content>
+</ion-modal>
 
 <style>
   .invalid-field {
