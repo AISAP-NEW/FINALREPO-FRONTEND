@@ -109,7 +109,7 @@
               </div>
               <div class="report-info">
                 <h4>{{ reportType.name }}</h4>
-                <p>{{ reportType.description }}</p>
+                  <p>{{ reportType.description }}</p>
               </div>
               <div class="report-badge">
                 <span class="badge adjustable">{{ reportType.category }}</span>
@@ -122,32 +122,32 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <!-- Loading state -->
+        <!-- Loading state -->
       <div *ngIf="isLoading" class="loading-container">
         <div class="loading-spinner">
-          <ion-spinner name="crescent"></ion-spinner>
-          <p>Loading report...</p>
+            <ion-spinner name="crescent"></ion-spinner>
+            <p>Loading report...</p>
         </div>
       </div>
 
-      <!-- Error state -->
+        <!-- Error state -->
       <div *ngIf="errorMessage" class="error-container">
         <div class="error-card">
-          <ion-icon name="warning-outline" color="danger"></ion-icon>
+            <ion-icon name="warning-outline" color="danger"></ion-icon>
           <h3>Error Loading Report</h3>
-          <p>{{ errorMessage }}</p>
+            <p>{{ errorMessage }}</p>
         </div>
       </div>
 
-      <!-- Report content -->
+        <!-- Report content -->
       <div *ngIf="!isLoading && !errorMessage" class="report-container">
-        <!-- Users Report -->
-        <div *ngIf="selectedReportType === 'users' && usersReport" class="report-content">
+          <!-- Users Report -->
+          <div *ngIf="selectedReportType === 'users' && usersReport" class="report-content">
           <div class="report-header">
             <h2>Registered Users Report</h2>
             <div class="report-stats">
               <div class="stat-item">
-                <span class="stat-number">{{usersReport.Summary.TotalRecords}}</span>
+                <span class="stat-number">{{usersReport?.Summary?.TotalRecords || 0}}</span>
                 <span class="stat-label">Total Users</span>
               </div>
             </div>
@@ -162,7 +162,7 @@
                 <div class="header-cell">Status</div>
               </div>
               <div class="table-body">
-                <div *ngFor="let user of usersReport.Users" class="table-row">
+                <div *ngFor="let user of usersReport?.Users || []" class="table-row">
                   <div class="table-cell">
                     <div class="user-info">
                       <div class="user-avatar">
@@ -183,15 +183,15 @@
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <!-- Clients & Projects Report -->
-        <div *ngIf="selectedReportType === 'clients-projects' && clientsProjectsReport" class="report-content">
+          <!-- Clients & Projects Report -->
+          <div *ngIf="selectedReportType === 'clients-projects' && clientsProjectsReport" class="report-content">
           <div class="report-header">
             <h2>Clients & Projects Report</h2>
             <div class="report-stats">
               <div class="stat-item">
-                <span class="stat-number">{{clientsProjectsReport.Summary.TotalRecords}}</span>
+                <span class="stat-number">{{clientsProjectsReport?.Summary?.TotalRecords || 0}}</span>
                 <span class="stat-label">Total Clients</span>
               </div>
             </div>
@@ -206,11 +206,11 @@
                 <div class="header-cell">Status</div>
               </div>
               <div class="table-body">
-                <div *ngFor="let client of clientsProjectsReport.Clients" class="table-row">
+                <div *ngFor="let client of clientsProjectsReport?.Clients || []" class="table-row">
                   <div class="table-cell">
                     <div class="user-info">
                       <div class="user-avatar">
-                        <ion-icon name="business"></ion-icon>
+                      <ion-icon name="business"></ion-icon>
                       </div>
                       <span>{{client.ClientName}}</span>
                     </div>
@@ -227,15 +227,15 @@
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <!-- Training Sessions Report -->
-        <div *ngIf="selectedReportType === 'training-sessions' && trainingSessionReport" class="report-content">
+          <!-- Training Sessions Report -->
+          <div *ngIf="selectedReportType === 'training-sessions' && trainingSessionReport" class="report-content">
           <div class="report-header">
             <h2>Model Training Sessions Report</h2>
             <div class="report-stats">
               <div class="stat-item">
-                <span class="stat-number">{{trainingSessionReport.Summary.TotalRecords}}</span>
+                <span class="stat-number">{{trainingSessionReport?.Summary?.TotalRecords || 0}}</span>
                 <span class="stat-label">Total Sessions</span>
               </div>
             </div>
@@ -250,11 +250,11 @@
                 <div class="header-cell">Learning Rate</div>
               </div>
               <div class="table-body">
-                <div *ngFor="let session of trainingSessionReport.Sessions" class="table-row">
+                <div *ngFor="let session of trainingSessionReport?.Sessions || []" class="table-row">
                   <div class="table-cell">
                     <div class="user-info">
                       <div class="user-avatar">
-                        <ion-icon name="analytics"></ion-icon>
+                      <ion-icon name="analytics"></ion-icon>
                       </div>
                       <span>{{session.ModelName}}</span>
                     </div>
@@ -285,15 +285,15 @@
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <!-- Model Deployments Report -->
-        <div *ngIf="selectedReportType === 'model-deployments' && modelDeploymentReport" class="report-content">
+          <!-- Model Deployments Report -->
+          <div *ngIf="selectedReportType === 'model-deployments' && modelDeploymentReport" class="report-content">
           <div class="report-header">
             <h2>Model Deployment Report</h2>
             <div class="report-stats">
               <div class="stat-item">
-                <span class="stat-number">{{modelDeploymentReport.Summary.TotalRecords}}</span>
+                <span class="stat-number">{{modelDeploymentReport?.Summary?.TotalRecords || 0}}</span>
                 <span class="stat-label">Total Deployments</span>
               </div>
             </div>
@@ -308,11 +308,11 @@
                 <div class="header-cell">Status</div>
               </div>
               <div class="table-body">
-                <div *ngFor="let deployment of modelDeploymentReport.Deployments" class="table-row">
+                <div *ngFor="let deployment of modelDeploymentReport?.Deployments || []" class="table-row">
                   <div class="table-cell">
                     <div class="user-info">
                       <div class="user-avatar">
-                        <ion-icon name="rocket"></ion-icon>
+                      <ion-icon name="rocket"></ion-icon>
                       </div>
                       <span>{{deployment.AppName}}</span>
                     </div>
@@ -329,21 +329,21 @@
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <!-- Dataset Transaction Report -->
-        <div *ngIf="selectedReportType === 'dataset-transactions' && datasetTransactionReport" class="report-content">
+          <!-- Dataset Transaction Report -->
+          <div *ngIf="selectedReportType === 'dataset-transactions' && datasetTransactionReport" class="report-content">
           <div class="report-header">
             <h2>Dataset Transaction Summary Report</h2>
             <div class="report-stats">
               <div class="stat-item">
-                <span class="stat-number">{{datasetTransactionReport.Summary.TotalRecords}}</span>
+                <span class="stat-number">{{datasetTransactionReport?.Summary?.TotalRecords || 0}}</span>
                 <span class="stat-label">Total Transactions</span>
               </div>
             </div>
           </div>
           <div class="report-body">
-            <div *ngFor="let group of datasetTransactionReport.TransactionGroups" class="transaction-group">
+                          <div *ngFor="let group of datasetTransactionReport?.TransactionGroups || []" class="transaction-group">
               <div class="group-header">
                 <h3>{{group.DeveloperName}}</h3>
                 <div class="group-stats">
@@ -352,7 +352,7 @@
                 </div>
               </div>
               
-              <div *ngFor="let datasetGroup of group.DatasetActions" class="dataset-action">
+                              <div *ngFor="let datasetGroup of group?.DatasetActions || []" class="dataset-action">
                 <div class="dataset-header">
                   <h4>{{datasetGroup.DatasetName}}</h4>
                   <div class="dataset-stats">
@@ -362,7 +362,7 @@
                 </div>
                 
                 <div class="transactions-list">
-                  <div *ngFor="let transaction of datasetGroup.Transactions" class="transaction-item">
+                  <div *ngFor="let transaction of datasetGroup?.Transactions || []" class="transaction-item">
                     <div class="transaction-info">
                       <span class="transaction-action">{{transaction.Action}}</span>
                       <span class="transaction-details">{{transaction.Details}}</span>
@@ -374,15 +374,15 @@
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <!-- Dataset Status Report -->
-        <div *ngIf="selectedReportType === 'dataset-status' && datasetStatusReport" class="report-content">
+          <!-- Dataset Status Report -->
+          <div *ngIf="selectedReportType === 'dataset-status' && datasetStatusReport" class="report-content">
           <div class="report-header">
             <h2>Dataset Status Report</h2>
             <div class="report-stats">
               <div class="stat-item">
-                <span class="stat-number">{{datasetStatusReport.Summary.TotalRecords}}</span>
+                <span class="stat-number">{{datasetStatusReport?.Summary?.TotalRecords || 0}}</span>
                 <span class="stat-label">Total Datasets</span>
               </div>
             </div>
@@ -397,11 +397,11 @@
                 <div class="header-cell">Status</div>
               </div>
               <div class="table-body">
-                <div *ngFor="let dataset of datasetStatusReport.Datasets" class="table-row">
+                <div *ngFor="let dataset of datasetStatusReport?.Datasets || []" class="table-row">
                   <div class="table-cell">
                     <div class="user-info">
                       <div class="user-avatar">
-                        <ion-icon name="document"></ion-icon>
+                      <ion-icon name="document"></ion-icon>
                       </div>
                       <div>
                         <span class="dataset-name">{{dataset.DatasetName}}</span>
@@ -422,22 +422,22 @@
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <!-- Dataset Trends Report -->
-        <div *ngIf="selectedReportType === 'dataset-trends' && datasetTrendsReport" class="report-content">
+          <!-- Dataset Trends Report -->
+          <div *ngIf="selectedReportType === 'dataset-trends' && datasetTrendsReport" class="report-content">
           <div class="report-header">
             <h2>Dataset Trends Report</h2>
             <div class="report-stats">
               <div class="stat-item">
-                <span class="stat-number">{{datasetTrendsReport.Summary.TotalRecords}}</span>
+                <span class="stat-number">{{datasetTrendsReport?.Summary?.TotalRecords || 0}}</span>
                 <span class="stat-label">Total Records</span>
               </div>
             </div>
           </div>
           
           <!-- Professional Date Selector -->
-          <div class="filters-section">
+                <div class="filters-section">
             <div class="filter-header">
               <h3>Filter Options</h3>
               <div *ngIf="areFiltersActive()" class="filter-status">
@@ -562,12 +562,12 @@
                 Clear Filters
               </button>
             </div>
-          </div>
+                </div>
 
           <!-- Charts Section -->
           <div class="charts-section">
             <div class="chart-grid">
-              <div class="chart-container">
+                <div class="chart-container">
                 <h3>
                   <ion-icon name="trending-up-outline"></ion-icon>
                   Upload Trends
@@ -578,8 +578,8 @@
                     PNG
                   </button>
                 </div>
-                <canvas #trendsChart></canvas>
-                <div class="chart-info" *ngIf="datasetTrendsReport?.UploadTrends?.length > 0">
+                  <canvas #trendsChart></canvas>
+                <div class="chart-info" *ngIf="datasetTrendsReport && datasetTrendsReport.UploadTrends && datasetTrendsReport.UploadTrends.length > 0">
                   <div class="info-item">
                     <span class="info-label">Total Uploads:</span>
                     <span class="info-value">{{getTotalUploads()}}</span>
@@ -606,7 +606,7 @@
                   </button>
                 </div>
                 <canvas #processingChart></canvas>
-                <div class="chart-info" *ngIf="datasetTrendsReport?.ProcessingTrends?.length > 0">
+                <div class="chart-info" *ngIf="datasetTrendsReport && datasetTrendsReport.ProcessingTrends && datasetTrendsReport.ProcessingTrends.length > 0">
                   <div class="info-item">
                     <span class="info-label">Total Processed:</span>
                     <span class="info-value">{{getTotalProcessed()}}</span>
@@ -622,13 +622,13 @@
                 </div>
               </div>
             </div>
-          </div>
+                </div>
 
-          <!-- Trends Data -->
+                <!-- Trends Data -->
           <div class="data-section">
             <h3>Trend Data</h3>
-            <div *ngIf="datasetTrendsReport.Trends && datasetTrendsReport.Trends.length > 0; else noTrendsData" class="trends-grid">
-              <div *ngFor="let trend of datasetTrendsReport.Trends" class="trend-card">
+            <div *ngIf="datasetTrendsReport && datasetTrendsReport.Trends && datasetTrendsReport.Trends.length > 0; else noTrendsData" class="trends-grid">
+              <div *ngFor="let trend of datasetTrendsReport?.Trends || []" class="trend-card">
                 <div class="trend-header">
                   <h4>{{trend.Period}}</h4>
                   <span class="trend-badge">{{trend.TotalDatasets}}</span>
@@ -662,13 +662,13 @@
                   </div>
                 </div>
               </div>
-            </div>
-            <ng-template #noTrendsData>
+                </div>
+                <ng-template #noTrendsData>
               <div class="no-data">
                 <ion-icon name="analytics-outline"></ion-icon>
-                <p>No trends data available</p>
+                      <p>No trends data available</p>
               </div>
-            </ng-template>
+                </ng-template>
           </div>
         </div>
       </div>

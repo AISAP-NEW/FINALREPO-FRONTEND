@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, Pipe, PipeTran
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { ReportService, 
          UsersReportRequest, UsersReportResponse, UserReportItem,
@@ -138,7 +139,11 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     day: new Date().getDate()
   };
 
-  constructor(private reportService: ReportService, private http: HttpClient) {}
+  constructor(
+    private reportService: ReportService, 
+    private http: HttpClient,
+    private route: ActivatedRoute
+  ) {}
 
   async ngOnInit() {
     // Initialize custom date values
@@ -163,9 +168,18 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       // Test the health endpoint first
       await this.testApiHealth();
       
-      // Set default report
-      this.selectedReportType = 'users';
-      await this.loadReport('users');
+      // Check for query parameter to auto-load specific report
+      this.route.queryParams.subscribe(params => {
+        const reportType = params['type'];
+        if (reportType) {
+          console.log('Auto-loading report type from query params:', reportType);
+          this.loadReport(reportType);
+        } else {
+          // Set default report if no query parameter
+          this.selectedReportType = 'users';
+          this.loadReport('users');
+        }
+      });
     } catch (error) {
       console.error('Failed to load initial report:', error);
       this.errorMessage = 'Unable to connect to the backend API. Please check if the server is running.';

@@ -106,7 +106,7 @@ ion-header {
         --padding-bottom: 0.5rem;
         height: 36px;
         min-width: 80px;
-        display: flex;
+  display: flex;
         align-items: center;
         justify-content: center;
         margin: 0;
@@ -171,10 +171,10 @@ ion-header {
     p {
       margin: 0;
       color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
+    font-size: 0.9rem;
   }
-  
+}
+
   .report-categories {
     padding: 1rem;
     
@@ -245,17 +245,17 @@ ion-header {
             
             p {
               margin: 0;
-              font-size: 0.8rem;
+    font-size: 0.8rem;
               color: var(--text-secondary);
               line-height: 1.3;
             }
-          }
-          
+  }
+
           .report-badge {
             .badge {
               padding: 0.25rem 0.5rem;
               border-radius: 12px;
-              font-size: 0.7rem;
+    font-size: 0.7rem;
               font-weight: 500;
               text-transform: uppercase;
               
@@ -300,8 +300,8 @@ ion-header {
     
     .loading-spinner {
       text-align: center;
-      
-      ion-spinner {
+
+  ion-spinner {
         width: 3rem;
         height: 3rem;
         color: var(--primary-color);
@@ -320,8 +320,8 @@ ion-header {
     justify-content: center;
     align-items: center;
     height: 400px;
-    
-    .error-card {
+
+.error-card {
       text-align: center;
       padding: 2rem;
       background: white;
@@ -329,11 +329,11 @@ ion-header {
       box-shadow: var(--shadow-lg);
       border-left: 4px solid var(--danger-color);
       
-      ion-icon {
+  ion-icon {
         font-size: 3rem;
         color: var(--danger-color);
-        margin-bottom: 1rem;
-      }
+    margin-bottom: 1rem;
+  }
       
       h3 {
         margin: 0 0 1rem 0;
@@ -386,7 +386,7 @@ ion-header {
               font-size: 0.9rem;
               color: var(--text-secondary);
               text-transform: uppercase;
-              font-weight: 500;
+  font-weight: 500;
             }
           }
         }
@@ -436,7 +436,7 @@ ion-header {
       }
       
       .table-cell {
-        padding: 1rem;
+  padding: 1rem;
         display: flex;
         align-items: center;
         
@@ -456,9 +456,9 @@ ion-header {
             
             ion-icon {
               color: white;
-              font-size: 1rem;
-            }
-          }
+    font-size: 1rem;
+  }
+}
         }
         
         .status-badge {
@@ -563,7 +563,7 @@ ion-header {
               }
               
               ion-icon {
-                font-size: 0.8rem;
+    font-size: 0.8rem;
                 color: var(--text-secondary);
               }
             }
@@ -731,8 +731,8 @@ ion-header {
             background: #0056b3;
             transform: translateY(-1px);
           }
-          
-          ion-icon {
+    
+    ion-icon {
             font-size: 0.9rem;
           }
         }
@@ -747,7 +747,7 @@ ion-header {
       
       .chart-info {
         margin-top: 1rem;
-        padding: 1rem;
+  padding: 1rem;
         background: #f8f9fa;
         border-radius: 8px;
         border-left: 4px solid var(--primary-color);
@@ -770,7 +770,7 @@ ion-header {
           .info-value {
             font-weight: 600;
             color: var(--text-primary);
-            font-size: 0.9rem;
+    font-size: 0.9rem;
           }
         }
       }
@@ -827,7 +827,7 @@ ion-header {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
-        margin-bottom: 1rem;
+  margin-bottom: 1rem;
         
         .stat {
           text-align: center;
@@ -870,16 +870,16 @@ ion-header {
   }
   
   .no-data {
-    text-align: center;
+  text-align: center;
     padding: 3rem;
     background: white;
     border-radius: 12px;
     box-shadow: var(--shadow);
-    
-    ion-icon {
-      font-size: 3rem;
+  
+  ion-icon {
+    font-size: 3rem;
       color: var(--text-secondary);
-      margin-bottom: 1rem;
+    margin-bottom: 1rem;
     }
     
     p {
@@ -924,9 +924,9 @@ ion-header {
         font-weight: 500;
       }
     }
-  }
-  
-  .dataset-action {
+}
+
+.dataset-action {
     margin-bottom: 1.5rem;
     padding: 1rem;
     background: #f8f9fa;
@@ -941,7 +941,7 @@ ion-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
+  margin-bottom: 1rem;
       
       h4 {
         margin: 0;
@@ -1112,8 +1112,8 @@ ion-header {
           .btn-text {
             display: none;
           }
-          
-          ion-icon {
+  
+  ion-icon {
             margin-right: 0;
             font-size: 1rem;
           }
