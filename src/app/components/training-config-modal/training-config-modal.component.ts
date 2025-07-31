@@ -161,6 +161,11 @@ export class TrainingConfigModalComponent implements OnInit {
         epochs: parseInt(this.trainingForm.value.epochs, 10),
         batchSize: parseInt(this.trainingForm.value.batchSize, 10),
         datasetValidationId: selectedDataset.validationId, // This maps to DatasetValidationId in backend
+        trainingParameters: JSON.stringify({
+          learningRate: parseFloat(this.trainingForm.value.learningRate),
+          epochs: parseInt(this.trainingForm.value.epochs, 10),
+          batchSize: parseInt(this.trainingForm.value.batchSize, 10)
+        }),
         notes: this.trainingForm.value.notes || ''
       };
 

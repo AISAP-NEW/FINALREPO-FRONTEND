@@ -29,6 +29,7 @@
     "@capacitor/status-bar": "7.0.1",
     "@ionic/angular": "^8.7.0",
     "@ionic/core": "^8.7.0",
+    "@microsoft/signalr": "^8.0.7",
     "chart.js": "^4.4.9",
     "ion2-calendar": "^3.5.0",
     "ionicons": "^7.0.0",
