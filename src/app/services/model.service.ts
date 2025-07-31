@@ -32,6 +32,10 @@ export interface ModelDetails {
   description: string;
   creationDate: string;
   versions: ModelVersion[];
+  // Add thumbnail URL while keeping backward compatibility
+  Thumbnail_Url?: string;
+  // Add other optional fields from the API
+  [key: string]: any;
 }
 
 export interface ModelUploadRequest {
@@ -39,6 +43,7 @@ export interface ModelUploadRequest {
   description: string;
   version?: string;
   datasetId?: number;
+  topicId?: number;
   file: File;
 }
 
@@ -57,6 +62,12 @@ export class ModelService implements OnDestroy {
   // Fetch all models (summary)
   getAllModels(): Observable<any[]> {
     return this.http.get<any[]>(`${this.modelFileApiUrl}/all-models`);
+  }
+
+  // Get full URL for a thumbnail
+  getThumbnailUrl(thumbnailPath: string | null): string | null {
+    if (!thumbnailPath) return null;
+    return `${environment.apiUrl}/uploads/thumbnails/${thumbnailPath}`;
   }
 
   // Update model details
@@ -89,28 +100,59 @@ export class ModelService implements OnDestroy {
     return this.http.get<{ fileName: string, content: string }>(`${this.modelFileApiUrl}/read-file/${fileId}`);
   }
 
-  uploadModel(modelData: ModelUploadRequest): Observable<any> {
+  uploadModel(modelData: ModelUploadRequest, thumbnailFile?: File): Observable<any> {
     const formData = new FormData();
-    formData.append('modelName', modelData.modelName);
-    formData.append('description', modelData.description);
-    formData.append('file', modelData.file, modelData.file.name);
     
-    if (modelData.version) formData.append('version', modelData.version);
-    if (modelData.datasetId) formData.append('datasetId', modelData.datasetId.toString());
+    // Add model data with exact field names expected by the backend
+    formData.append('modelName', modelData.modelName);
+    formData.append('description', modelData.description || '');
+    formData.append('codeFile', modelData.file, modelData.file.name);
+    
+    // Add topicId if provided (required by backend)
+    if (modelData.topicId) {
+      formData.append('topicId', modelData.topicId.toString());
+    }
+    
+    // Add thumbnail if provided - note the field name must be 'thumbnailFile' to match the backend
+    if (thumbnailFile) {
+      formData.append('thumbnailFile', thumbnailFile, thumbnailFile.name);
+    }
 
     console.log('Uploading model with data:', {
       modelName: modelData.modelName,
       description: modelData.description,
+      topicId: modelData.topicId,
       version: modelData.version,
       datasetId: modelData.datasetId,
       fileName: modelData.file.name,
-      fileSize: modelData.file.size
+      fileSize: modelData.file.size,
+      hasThumbnail: !!thumbnailFile
     });
 
-    return this.http.post<any>(this.apiUrl, formData).pipe(
-      tap(response => console.log('Upload response:', response)),
+    // Log the form data keys for debugging
+    console.log('FormData entries:');
+    for (const pair of (formData as any).entries()) {
+      console.log(pair[0], pair[1]);
+    }
+
+    // Use the ModelFile controller endpoint for file uploads
+    return this.http.post<any>(`${this.modelFileApiUrl}/create-model-with-file`, formData, {
+      reportProgress: true,
+      observe: 'events'
+    }).pipe(
+      tap(event => {
+        if (event.type === 4) { // Response event
+          console.log('Upload response:', event.body);
+        }
+      }),
       catchError(error => {
-        console.error('Upload error:', error);
+        console.error('Upload error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          error: error.error,
+          message: error.message,
+          url: error.url
+        });
         throw error;
       })
     );

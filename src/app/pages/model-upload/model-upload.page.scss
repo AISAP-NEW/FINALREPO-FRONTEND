@@ -119,6 +119,91 @@ ion-spinner {
   --color: white;
 }
 
+/* Thumbnail upload styles */
+.thumbnail-upload {
+  width: 100%;
+  min-height: 180px;
+  border: 2px dashed var(--ion-color-medium);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  margin-top: 8px;
+  background-color: var(--ion-color-light);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--ion-color-primary);
+    background-color: rgba(var(--ion-color-primary-rgb), 0.05);
+  }
+
+  .thumbnail-preview {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumbnail-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      
+      ion-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+    }
+
+    &:hover .thumbnail-overlay {
+      opacity: 1;
+    }
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    text-align: center;
+    
+    ion-icon {
+      font-size: 2.5rem;
+      color: var(--ion-color-medium);
+      margin-bottom: 0.5rem;
+    }
+    
+    span {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--ion-color-medium);
+      font-weight: 500;
+    }
+    
+    small {
+      color: var(--ion-color-medium-shade);
+      font-size: 0.8rem;
+    }
+  }
+}
+
 /* Responsive adjustments */
 @media (min-width: 768px) {
   ion-content {

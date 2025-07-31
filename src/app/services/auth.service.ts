@@ -252,11 +252,11 @@ export class AuthService {
   /**
    * Start session monitoring after successful login
    */
-  startSessionMonitoring(): void {
-    // This will be called by the main layout component
-    // We can't inject SessionTimeoutService here due to circular dependency
+ startSessionMonitoring(): void {
+  //   // This will be called by the main layout component
+  //   // We can't inject SessionTimeoutService here due to circular dependency
     console.log('Session monitoring should be started by main layout');
-  }
+   }
 
   getCurrentUser(): User | null {
     const user = this.currentUserSubject.value;
@@ -279,3 +279,4 @@ export class AuthService {
     return user.userId || user.UserId || 0;
   }
 } 
+

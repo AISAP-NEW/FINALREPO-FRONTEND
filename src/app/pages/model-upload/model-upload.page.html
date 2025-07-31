@@ -16,36 +16,89 @@
       <ion-card-content>
         <ion-item>
           <ion-label position="stacked">Model Name <ion-text color="danger">*</ion-text></ion-label>
-          <ion-input formControlName="name" type="text" placeholder="Enter model name"></ion-input>
-          <ion-note slot="error" *ngIf="uploadForm.get('name')?.touched && uploadForm.get('name')?.errors?.['required']">
+          <ion-input formControlName="modelName" type="text" placeholder="Enter model name"></ion-input>
+          <ion-note slot="error" *ngIf="uploadForm.get('modelName')?.touched && uploadForm.get('modelName')?.errors?.['required']">
             Model name is required
           </ion-note>
-          <ion-note slot="error" *ngIf="uploadForm.get('name')?.touched && uploadForm.get('name')?.errors?.['minlength']">
+          <ion-note slot="error" *ngIf="uploadForm.get('modelName')?.touched && uploadForm.get('modelName')?.errors?.['minlength']">
             Model name must be at least 3 characters
           </ion-note>
         </ion-item>
 
         <ion-item>
-          <ion-label position="stacked">Description <ion-text color="danger">*</ion-text></ion-label>
-          <ion-textarea formControlName="description" rows="3" placeholder="Describe your model"></ion-textarea>
-          <ion-note slot="error" *ngIf="uploadForm.get('description')?.touched && uploadForm.get('description')?.errors?.['required']">
-            Description is required
+          <ion-label position="stacked">Description</ion-label>
+          <ion-textarea formControlName="description" rows="2" placeholder="Describe your model (optional)"></ion-textarea>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Category <ion-text color="danger">*</ion-text></ion-label>
+          <ion-select formControlName="categoryId" placeholder="Select a category" [compareWith]="compareWithCategory">
+            <ion-select-option *ngFor="let category of categories" [value]="category.Category_ID">
+              {{ category.CategoryName }}
+            </ion-select-option>
+          </ion-select>
+          <ion-spinner *ngIf="isCategoriesLoading" slot="end" name="crescent"></ion-spinner>
+          <ion-note slot="error" *ngIf="uploadForm.get('categoryId')?.touched && uploadForm.get('categoryId')?.errors?.['required']">
+            Please select a category
           </ion-note>
-          <ion-note slot="error" *ngIf="uploadForm.get('description')?.touched && uploadForm.get('description')?.errors?.['minlength']">
-            Description must be at least 10 characters
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Topic <ion-text color="danger">*</ion-text></ion-label>
+          <ion-select formControlName="topicId" placeholder="Select a topic" [disabled]="!uploadForm.get('categoryId')?.value" [compareWith]="compareWithTopic">
+            <ion-select-option *ngFor="let topic of topics" [value]="topic.Topic_ID">
+              {{ topic.TopicName }}
+            </ion-select-option>
+          </ion-select>
+          <ion-spinner *ngIf="isTopicsLoading" slot="end" name="crescent"></ion-spinner>
+          <ion-note slot="error" *ngIf="uploadForm.get('topicId')?.touched && uploadForm.get('topicId')?.errors?.['required']">
+            Please select a topic
           </ion-note>
+        </ion-item>
+
+        <ion-item *ngIf="selectedTopicDescription" lines="none">
+          <ion-label class="ion-text-wrap">
+            <h3>Topic Description:</h3>
+            <p>{{ selectedTopicDescription }}</p>
+          </ion-label>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Thumbnail (Optional)</ion-label>
+          <input 
+            #thumbnailInput
+            type="file" 
+            style="display: none" 
+            accept="image/*"
+            (change)="onThumbnailSelected($event)"
+          >
+          <div class="thumbnail-upload" (click)="thumbnailInput.click()">
+            <div class="thumbnail-preview" *ngIf="thumbnailPreview">
+              <img [src]="thumbnailPreview" alt="Thumbnail preview">
+              <div class="thumbnail-overlay">
+                <ion-icon name="camera"></ion-icon>
+                <span>Change</span>
+              </div>
+            </div>
+            <div class="upload-placeholder" *ngIf="!thumbnailPreview">
+              <ion-icon name="image-outline"></ion-icon>
+              <span>Click to upload a thumbnail</span>
+              <small>Recommended size: 800x450px</small>
+            </div>
+          </div>
         </ion-item>
       </ion-card-content>
     </ion-card>
 
     <ion-card>
       <ion-card-header>
-        <ion-card-title>Model File</ion-card-title>
+        <ion-card-title>Model File <ion-text color="danger">*</ion-text></ion-card-title>
       </ion-card-header>
       <ion-card-content>
         <div 
-          class="drop-zone" 
+          class="drop-zone ion-padding" 
           [class.dragging]="isDragging"
+          [class.has-file]="!!selectedFile"
           (dragover)="onDragOver($event)"
           (dragleave)="onDragLeave($event)"
           (drop)="onDrop($event)"
@@ -56,15 +109,15 @@
             type="file" 
             style="display: none" 
             (change)="onFileSelected($event)"
-            accept=".h5,.pb,.pt,.pth,.onnx,.pkl,.joblib,.pkl,.model"
+            accept=".h5,.pb,.pt,.pth,.onnx,.pkl,.joblib,.model,.py"
           >
           
-          <ion-icon [name]="selectedFile ? 'cloud-upload-outline' : 'cloud-upload-outline'" size="large"></ion-icon>
+          <ion-icon [name]="selectedFile ? 'document-outline' : 'cloud-upload-outline'" size="large"></ion-icon>
           
           <div class="upload-text">
-            <h3>{{ selectedFile ? 'File selected: ' + selectedFile.name : 'Drag & drop your model file here' }}</h3>
-            <p>or click to browse files</p>
-            <p class="file-types">Supported formats: .h5, .pb, .pt, .pth, .onnx, .pkl,.py, .joblib, .model</p>
+            <h3>{{ selectedFile ? selectedFile.name : 'Drag & drop your model file here' }}</h3>
+            <p>{{ selectedFile ? (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB' : 'or click to browse files' }}</p>
+            <p class="file-types">Supported formats: .h5, .pb, .pt, .pth, .onnx, .pkl, .joblib, .model, .py </p>
             <p class="file-types">Maximum file size: 500MB</p>
           </div>
           
@@ -72,18 +125,37 @@
             <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
           </ion-button>
         </div>
+        
+        <ion-note *ngIf="!selectedFile && uploadForm.get('topicId')?.touched" color="danger">
+          Please select a model file to upload
+        </ion-note>
       </ion-card-content>
     </ion-card>
 
     <div class="ion-padding">
+      <!-- Debug Info (can be removed later) -->
+      <div *ngIf="false" class="debug-info" style="font-size: 0.8em; color: #666; margin-bottom: 1em;">
+        <div>Form valid: {{uploadForm.valid}}</div>
+        <div>File selected: {{!!selectedFile}}</div>
+        <div>Is loading: {{isLoading}}</div>
+        <div>Model name valid: {{uploadForm.get('modelName')?.valid}}</div>
+        <div>Category selected: {{!!uploadForm.get('categoryId')?.value}}</div>
+        <div>Topic selected: {{!!uploadForm.get('topicId')?.value}}</div>
+      </div>
+
       <ion-button 
         expand="block" 
         type="submit" 
-        [disabled]="uploadForm.invalid || !selectedFile || isLoading"
+        [disabled]="!isFormValid()"
         class="ion-margin-top"
+        [class.ion-activatable]="!isLoading"
+        [color]="isFormValid() ? 'primary' : 'medium'"
       >
         <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
-        <span *ngIf="!isLoading">Upload Model</span>
+        <ion-ripple-effect *ngIf="!isLoading"></ion-ripple-effect>
+        <span *ngIf="!isLoading">
+          {{ isFormValid() ? 'Upload Model' : 'Complete all required fields' }}
+        </span>
       </ion-button>
     </div>
   </form>

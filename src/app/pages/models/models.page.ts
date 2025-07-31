@@ -29,6 +29,7 @@ import {
 import { ModelService } from '../../services/model.service';
 import { DatasetService } from '../../services/dataset.service';
 import { finalize } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 import { addIcons } from 'ionicons';
 import {
   cubeOutline,
@@ -94,6 +95,19 @@ export class ModelsPage implements OnInit {
   error: string | null = null;
   selectedModel: any = null;
   fileContent: string | null = null;
+  
+  // Get full URL for a thumbnail
+  getThumbnailUrl(thumbnailPath: string | null): string | null {
+    if (!thumbnailPath) return null;
+    return `${environment.apiUrl}/uploads/thumbnails/${thumbnailPath}`;
+  }
+  
+  // Handle image loading errors
+  handleImageError(event: any) {
+    console.error('Error loading thumbnail:', event);
+    // Hide the image on error
+    event.target.style.display = 'none';
+  }
 
   constructor(
     private modelService: ModelService,
