@@ -1,0 +1,504 @@
+.model-testing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+// Header Section
+.header-section {
+  margin-bottom: 24px;
+  
+  ion-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    
+    ion-card-header {
+      padding: 24px 24px 16px;
+      
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        
+        ion-icon {
+          font-size: 1.8rem;
+        }
+      }
+    }
+    
+    ion-card-content {
+      padding: 0 24px 24px;
+      
+      p {
+        color: #7f8c8d;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+      }
+    }
+  }
+}
+
+// Loading Overlay
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  
+  .loading-content {
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    
+    ion-spinner {
+      --color: #667eea;
+    }
+    
+    span {
+      color: #2c3e50;
+      font-weight: 500;
+    }
+  }
+}
+
+// Main Content
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// Selection Section
+.selection-section {
+  ion-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    
+    ion-card-header {
+      padding: 24px 24px 16px;
+      
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        
+        ion-icon {
+          font-size: 1.5rem;
+        }
+      }
+    }
+    
+    ion-card-content {
+      padding: 0 24px 24px;
+      
+      .form-group {
+        margin-bottom: 20px;
+        
+        ion-label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 600;
+          color: #2c3e50;
+        }
+        
+        ion-select {
+          --background: white;
+          --border-radius: 8px;
+          --border-color: #e0e0e0;
+          --border-width: 1px;
+          --padding-start: 12px;
+          --padding-end: 12px;
+          --padding-top: 12px;
+          --padding-bottom: 12px;
+          margin-bottom: 12px;
+        }
+        
+        .model-info, .dataset-info {
+          background: #f8f9fa;
+          padding: 12px;
+          border-radius: 8px;
+          margin-top: 8px;
+          
+          ion-badge {
+            margin-bottom: 8px;
+          }
+          
+          p {
+            margin: 8px 0 4px;
+            color: #2c3e50;
+            font-size: 0.9rem;
+          }
+          
+          small {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+          }
+        }
+      }
+      
+      .search-section {
+        margin: 20px 0;
+        
+        ion-item {
+          --background: white;
+          --border-radius: 8px;
+          --border-color: #e0e0e0;
+          --border-width: 1px;
+          --padding-start: 12px;
+          --padding-end: 12px;
+          --padding-top: 8px;
+          --padding-bottom: 8px;
+          
+          ion-icon {
+            color: #7f8c8d;
+          }
+          
+          ion-input {
+            --placeholder-color: #bdc3c7;
+          }
+        }
+      }
+      
+      .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 20px;
+        
+        ion-button {
+          --border-radius: 8px;
+          --padding-start: 16px;
+          --padding-end: 16px;
+          --padding-top: 12px;
+          --padding-bottom: 12px;
+          font-weight: 500;
+          
+          ion-icon {
+            margin-right: 8px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Validation Section
+.validation-section {
+  ion-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    
+    ion-card-header {
+      padding: 24px 24px 16px;
+      
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        
+        ion-icon {
+          font-size: 1.5rem;
+        }
+      }
+    }
+    
+    ion-card-content {
+      padding: 0 24px 24px;
+      
+      .validation-result {
+        text-align: center;
+        
+        ion-badge {
+          font-size: 1rem;
+          padding: 8px 16px;
+          margin-bottom: 16px;
+        }
+        
+        p {
+          color: #2c3e50;
+          line-height: 1.6;
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+// Progress Section
+.progress-section {
+  ion-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    
+    ion-card-header {
+      padding: 24px 24px 16px;
+      
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        
+        ion-icon {
+          font-size: 1.5rem;
+        }
+      }
+    }
+    
+    ion-card-content {
+      padding: 0 24px 24px;
+      
+      .progress-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        
+        ion-spinner {
+          --color: #667eea;
+        }
+        
+        span {
+          color: #2c3e50;
+          font-weight: 500;
+        }
+        
+        ion-progress-bar {
+          width: 100%;
+          --progress-background: #667eea;
+        }
+      }
+    }
+  }
+}
+
+// Results Section
+.results-section {
+  ion-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    
+    ion-card-header {
+      padding: 24px 24px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        
+        ion-icon {
+          font-size: 1.5rem;
+        }
+      }
+      
+      ion-button {
+        --border-radius: 8px;
+        font-weight: 500;
+        
+        ion-icon {
+          margin-right: 8px;
+        }
+      }
+    }
+    
+    ion-card-content {
+      padding: 0 24px 24px;
+      
+      .result-header {
+        margin-bottom: 24px;
+        
+        ion-badge {
+          font-size: 1rem;
+          padding: 8px 16px;
+          margin-bottom: 16px;
+        }
+        
+        .test-info {
+          p {
+            margin: 8px 0;
+            color: #2c3e50;
+            
+            strong {
+              color: #34495e;
+            }
+          }
+        }
+      }
+      
+      .metrics-section {
+        margin-bottom: 24px;
+        
+        h4 {
+          color: #2c3e50;
+          font-weight: 600;
+          margin-bottom: 16px;
+        }
+        
+        .metric-card {
+          background: #f8f9fa;
+          padding: 16px;
+          border-radius: 8px;
+          text-align: center;
+          
+          .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 4px;
+          }
+          
+          .metric-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: 500;
+          }
+        }
+      }
+      
+      .confusion-matrix, .test-output {
+        margin-bottom: 24px;
+        
+        h4 {
+          color: #2c3e50;
+          font-weight: 600;
+          margin-bottom: 16px;
+        }
+        
+        .matrix-container, .output-container {
+          background: #f8f9fa;
+          border-radius: 8px;
+          padding: 16px;
+          overflow-x: auto;
+          
+          pre {
+            margin: 0;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Reset Section
+.reset-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  
+  ion-button {
+    --border-radius: 8px;
+    --padding-start: 20px;
+    --padding-end: 20px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-weight: 500;
+    
+    ion-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .model-testing-container {
+    padding: 16px;
+  }
+  
+  .selection-section ion-card-content .action-buttons {
+    flex-direction: column;
+    
+    ion-button {
+      width: 100%;
+    }
+  }
+  
+  .results-section ion-card-content .metrics-section ion-grid ion-row {
+    ion-col {
+      margin-bottom: 16px;
+    }
+  }
+}
+
+// Dark Mode Support
+@media (prefers-color-scheme: dark) {
+  .model-testing-container {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  }
+  
+  .header-section ion-card,
+  .selection-section ion-card,
+  .validation-section ion-card,
+  .progress-section ion-card,
+  .results-section ion-card {
+    background: rgba(44, 62, 80, 0.95);
+    
+    ion-card-title {
+      color: #ecf0f1;
+    }
+    
+    ion-card-content {
+      color: #bdc3c7;
+    }
+  }
+  
+  .loading-content {
+    background: #2c3e50;
+    
+    span {
+      color: #ecf0f1;
+    }
+  }
+} 

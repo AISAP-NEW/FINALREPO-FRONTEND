@@ -1,0 +1,234 @@
+<div class="model-duplication-container">
+  <!-- Header -->
+  <div class="header-section">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="copy" color="primary"></ion-icon>
+          Model Duplication
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Create copies of existing models with new names and versions. This allows you to experiment with model variations while preserving the original.</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Error Toast -->
+  <ion-toast
+    [isOpen]="showErrorToast"
+    message="{{ errorMessage }}"
+    duration="5000"
+    position="top"
+    color="danger"
+    (didDismiss)="dismissError()">
+  </ion-toast>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-content">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Loading...</span>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading" class="main-content">
+    <!-- Model Selection -->
+    <div class="selection-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="settings" color="secondary"></ion-icon>
+            Select Model to Duplicate
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <!-- Search -->
+          <div class="search-section">
+            <ion-item>
+              <ion-icon name="search" slot="start"></ion-icon>
+              <ion-input 
+                [(ngModel)]="searchTerm" 
+                placeholder="Search models..."
+                clearInput="true">
+              </ion-input>
+            </ion-item>
+          </div>
+
+          <!-- Model Selection -->
+          <div class="form-group">
+            <ion-label>Select Model</ion-label>
+            <ion-select 
+              [(ngModel)]="selectedModel" 
+              placeholder="Choose a model to duplicate..."
+              interface="popover"
+              (ionChange)="onModelSelectionChange()">
+              <ion-select-option 
+                *ngFor="let model of filteredModels" 
+                [value]="model">
+                {{ model.ModelName }} (v{{ model.VersionNumber }})
+              </ion-select-option>
+            </ion-select>
+            
+            <div *ngIf="selectedModel" class="model-info">
+              <ion-badge [color]="getStatusColor(selectedModel.Status)">
+                {{ selectedModel.Status }}
+              </ion-badge>
+              <p>{{ selectedModel.Description }}</p>
+              <small>Created: {{ selectedModel.CreatedDate | date:'medium' }}</small>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Duplication Configuration -->
+    <div *ngIf="selectedModel" class="configuration-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="options" color="tertiary"></ion-icon>
+            Duplication Configuration
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-grid>
+            <ion-row>
+              <!-- New Model Name -->
+              <ion-col size="12" size-md="8">
+                <div class="form-group">
+                  <ion-label>New Model Name</ion-label>
+                  <div class="name-input-group">
+                    <ion-input 
+                      [(ngModel)]="newModelName" 
+                      placeholder="Enter new model name"
+                      (ionInput)="onNameInputChange()"
+                      [class.valid]="isNameAvailable && newModelName"
+                      [class.invalid]="newModelName && !isNameAvailable">
+                    </ion-input>
+                    
+                    <ion-button 
+                      (click)="suggestName()" 
+                      [disabled]="!selectedModel"
+                      color="secondary" 
+                      fill="outline"
+                      size="small">
+                      <ion-icon slot="start" name="bulb"></ion-icon>
+                      Suggest
+                    </ion-button>
+                  </div>
+                  
+                  <!-- Name Validation -->
+                  <div *ngIf="nameValidationMessage" class="name-validation">
+                    <ion-text [color]="nameValidationColor">
+                      {{ nameValidationMessage }}
+                    </ion-text>
+                    <ion-spinner 
+                      *ngIf="isCheckingName" 
+                      name="crescent" 
+                      size="small">
+                    </ion-spinner>
+                  </div>
+                </div>
+              </ion-col>
+
+              <!-- Duplication Options -->
+              <ion-col size="12" size-md="4">
+                <div class="form-group">
+                  <ion-label>Duplication Options</ion-label>
+                  <div class="options-group">
+                    <ion-item>
+                      <ion-checkbox 
+                        [(ngModel)]="copyVersions" 
+                        slot="start">
+                      </ion-checkbox>
+                      <ion-label>Copy model versions</ion-label>
+                    </ion-item>
+                    
+                    <ion-item>
+                      <ion-checkbox 
+                        [(ngModel)]="copyFiles" 
+                        slot="start">
+                      </ion-checkbox>
+                      <ion-label>Copy model files</ion-label>
+                    </ion-item>
+                  </div>
+                </div>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <ion-button 
+              (click)="duplicateModel()" 
+              [disabled]="!selectedModel || !newModelName || !isNameAvailable || isDuplicating"
+              color="primary">
+              <ion-icon slot="start" name="copy"></ion-icon>
+              {{ isDuplicating ? 'Duplicating...' : 'Duplicate Model' }}
+            </ion-button>
+            
+            <ion-button 
+              (click)="resetForm()" 
+              fill="outline" 
+              color="medium">
+              <ion-icon slot="start" name="refresh"></ion-icon>
+              Reset Form
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Available Models List -->
+    <div class="models-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="list" color="success"></ion-icon>
+            Available Models
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="models-list">
+            <div *ngFor="let model of filteredModels" class="model-item">
+              <div class="model-header">
+                <div class="model-title">
+                  <h3>{{ model.ModelName }}</h3>
+                  <ion-badge [color]="getStatusColor(model.Status)">
+                    {{ model.Status }}
+                  </ion-badge>
+                </div>
+                <div class="model-version">
+                  <ion-text color="medium">v{{ model.VersionNumber }}</ion-text>
+                </div>
+              </div>
+              
+              <div class="model-details">
+                <p>{{ model.Description }}</p>
+                <small>Created: {{ model.CreatedDate | date:'medium' }}</small>
+              </div>
+              
+              <div class="model-actions">
+                <ion-button 
+                  (click)="selectedModel = model; onModelSelectionChange()"
+                  size="small" 
+                  fill="outline" 
+                  color="primary">
+                  <ion-icon slot="start" name="copy"></ion-icon>
+                  Select for Duplication
+                </ion-button>
+              </div>
+            </div>
+            
+            <div *ngIf="filteredModels.length === 0" class="no-models">
+              <ion-icon name="cube-outline" color="medium"></ion-icon>
+              <p>No models found matching your search criteria.</p>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</div> 

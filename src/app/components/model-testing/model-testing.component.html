@@ -1,0 +1,292 @@
+<div class="model-testing-container">
+  <!-- Header -->
+  <div class="header-section">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="flask" color="primary"></ion-icon>
+          Model Testing
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Test your trained models against validation datasets to evaluate performance and accuracy.</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Error Toast -->
+  <ion-toast
+    [isOpen]="showErrorToast"
+    message="{{ errorMessage }}"
+    duration="5000"
+    position="top"
+    color="danger"
+    (didDismiss)="dismissError()">
+  </ion-toast>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-content">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Loading...</span>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading" class="main-content">
+    <!-- Model and Dataset Selection -->
+    <div class="selection-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="settings" color="secondary"></ion-icon>
+            Test Configuration
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-grid>
+            <ion-row>
+              <!-- Model Selection -->
+              <ion-col size="12" size-md="6">
+                <div class="form-group">
+                  <ion-label>Select Model</ion-label>
+                  <ion-select 
+                    [(ngModel)]="selectedModel" 
+                    placeholder="Choose a model..."
+                    interface="popover">
+                    <ion-select-option 
+                      *ngFor="let model of filteredModels" 
+                      [value]="model">
+                      {{ model.ModelName }} (v{{ model.VersionNumber }})
+                    </ion-select-option>
+                  </ion-select>
+                  
+                  <div *ngIf="selectedModel" class="model-info">
+                    <ion-badge [color]="getStatusColor(selectedModel.Status)">
+                      {{ selectedModel.Status }}
+                    </ion-badge>
+                    <p>{{ selectedModel.Description }}</p>
+                    <small>Created: {{ selectedModel.CreatedDate | date:'medium' }}</small>
+                  </div>
+                </div>
+              </ion-col>
+
+              <!-- Dataset Selection -->
+              <ion-col size="12" size-md="6">
+                <div class="form-group">
+                  <ion-label>Select Test Dataset</ion-label>
+                  <ion-select 
+                    [(ngModel)]="selectedDataset" 
+                    placeholder="Choose a dataset..."
+                    interface="popover">
+                    <ion-select-option 
+                      *ngFor="let dataset of filteredDatasets" 
+                      [value]="dataset">
+                      {{ dataset.DatasetName }}
+                    </ion-select-option>
+                  </ion-select>
+                  
+                  <div *ngIf="selectedDataset" class="dataset-info">
+                    <p>{{ dataset.Description }}</p>
+                    <small *ngIf="dataset.RecordCount">
+                      Records: {{ dataset.RecordCount | number }}
+                    </small>
+                    <small *ngIf="dataset.CreatedDate">
+                      Created: {{ dataset.CreatedDate | date:'medium' }}
+                    </small>
+                  </div>
+                </div>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+          <!-- Search and Filter -->
+          <div class="search-section">
+            <ion-item>
+              <ion-icon name="search" slot="start"></ion-icon>
+              <ion-input 
+                [(ngModel)]="searchTerm" 
+                placeholder="Search models and datasets..."
+                clearInput="true">
+              </ion-input>
+            </ion-item>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <ion-button 
+              (click)="validateDataset()" 
+              [disabled]="!selectedModel || !selectedDataset || isValidationRunning"
+              color="secondary" 
+              fill="outline">
+              <ion-icon slot="start" name="checkmark-circle"></ion-icon>
+              {{ isValidationRunning ? 'Validating...' : 'Validate Compatibility' }}
+            </ion-button>
+            
+            <ion-button 
+              (click)="runTest()" 
+              [disabled]="!selectedModel || !selectedDataset || isTestRunning"
+              color="primary">
+              <ion-icon slot="start" name="play"></ion-icon>
+              {{ isTestRunning ? 'Running Test...' : 'Run Test' }}
+            </ion-button>
+            
+            <ion-button 
+              (click)="cancelTest()" 
+              [disabled]="!isTestRunning"
+              color="danger" 
+              fill="outline">
+              <ion-icon slot="start" name="stop"></ion-icon>
+              Cancel Test
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Validation Result -->
+    <div *ngIf="validationResult !== null" class="validation-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon 
+              [name]="validationResult ? 'checkmark-circle' : 'close-circle'"
+              [color]="validationResult ? 'success' : 'danger'">
+            </ion-icon>
+            Validation Result
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="validation-result">
+            <ion-badge [color]="validationResult ? 'success' : 'danger'">
+              {{ validationResult ? 'Compatible' : 'Not Compatible' }}
+            </ion-badge>
+            <p>
+              {{ validationResult 
+                ? 'The selected dataset is compatible with the model and can be used for testing.' 
+                : 'The selected dataset may not be compatible with this model. Consider using a different dataset.' }}
+            </p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Test Progress -->
+    <div *ngIf="isTestRunning" class="progress-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="time" color="primary"></ion-icon>
+            Test Progress
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="progress-content">
+            <ion-spinner name="crescent" size="small"></ion-spinner>
+            <span>Test is running...</span>
+            <ion-progress-bar type="indeterminate"></ion-progress-bar>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Test Results -->
+    <div *ngIf="testResults" class="results-section">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="analytics" color="success"></ion-icon>
+            Test Results
+          </ion-card-title>
+          <ion-button 
+            slot="end"
+            size="small" 
+            fill="clear" 
+            (click)="exportResults()"
+            color="primary">
+            <ion-icon slot="start" name="download"></ion-icon>
+            Export
+          </ion-button>
+        </ion-card-header>
+        <ion-card-content>
+          <!-- Status and Basic Info -->
+          <div class="result-header">
+            <ion-badge [color]="getStatusColor(testResults.status)">
+              {{ testResults.status }}
+            </ion-badge>
+            <div class="test-info">
+              <p><strong>Test Name:</strong> {{ testResults.testName }}</p>
+              <p><strong>Started:</strong> {{ testResults.startTime | date:'medium' }}</p>
+              <p *ngIf="testResults.endTime">
+                <strong>Completed:</strong> {{ testResults.endTime | date:'medium' }}
+              </p>
+              <p *ngIf="testResults.errorMessage">
+                <strong>Error:</strong> {{ testResults.errorMessage }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Performance Metrics -->
+          <div *ngIf="testResults.accuracy !== undefined" class="metrics-section">
+            <h4>Performance Metrics</h4>
+            <ion-grid>
+              <ion-row>
+                <ion-col size="6" size-md="3">
+                  <div class="metric-card">
+                    <div class="metric-value">{{ testResults.accuracy | percent:'1.2-2' }}</div>
+                    <div class="metric-label">Accuracy</div>
+                  </div>
+                </ion-col>
+                <ion-col size="6" size-md="3">
+                  <div class="metric-card">
+                    <div class="metric-value">{{ testResults.precision | percent:'1.2-2' }}</div>
+                    <div class="metric-label">Precision</div>
+                  </div>
+                </ion-col>
+                <ion-col size="6" size-md="3">
+                  <div class="metric-card">
+                    <div class="metric-value">{{ testResults.recall | percent:'1.2-2' }}</div>
+                    <div class="metric-label">Recall</div>
+                  </div>
+                </ion-col>
+                <ion-col size="6" size-md="3">
+                  <div class="metric-card">
+                    <div class="metric-value">{{ testResults.f1Score | percent:'1.2-2' }}</div>
+                    <div class="metric-label">F1 Score</div>
+                  </div>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </div>
+
+          <!-- Confusion Matrix -->
+          <div *ngIf="testResults.confusionMatrix" class="confusion-matrix">
+            <h4>Confusion Matrix</h4>
+            <div class="matrix-container">
+              <pre>{{ testResults.confusionMatrix }}</pre>
+            </div>
+          </div>
+
+          <!-- Test Output -->
+          <div *ngIf="testResults.testOutput" class="test-output">
+            <h4>Test Output</h4>
+            <div class="output-container">
+              <pre>{{ testResults.testOutput }}</pre>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Reset Button -->
+    <div class="reset-section">
+      <ion-button 
+        (click)="resetForm()" 
+        fill="outline" 
+        color="medium">
+        <ion-icon slot="start" name="refresh"></ion-icon>
+        Reset Form
+      </ion-button>
+    </div>
+  </div>
+</div> 

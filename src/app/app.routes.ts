@@ -161,6 +161,16 @@ export const routes: Routes = [
         path: 'experiments',
         loadComponent: () => import('./pages/experiments/experiments.page')
           .then(m => m.ExperimentsPage)
+      },
+      {
+        path: 'model-testing',
+        loadComponent: () => import('./components/model-testing/model-testing.component')
+          .then(m => m.ModelTestingComponent)
+      },
+      {
+        path: 'model-duplication',
+        loadComponent: () => import('./components/model-duplication/model-duplication.component')
+          .then(m => m.ModelDuplicationComponent)
       }
     ]
   },
