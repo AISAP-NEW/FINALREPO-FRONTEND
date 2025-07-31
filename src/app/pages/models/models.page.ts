@@ -50,6 +50,7 @@ import { UpdateModelModalComponent } from '../../components/update-model-modal/u
 import { ToastService } from '../../services/toast.service';
 import { HttpClient } from '@angular/common/http';
 import { LoadingController } from '@ionic/angular';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-models',
@@ -101,7 +102,8 @@ export class ModelsPage implements OnInit {
     private datasetService: DatasetService,
     private toastService: ToastService,
     private http: HttpClient,
-    private loadingCtrl: LoadingController
+    private loadingCtrl: LoadingController,
+    private router: Router
   ) {
     addIcons({
       cubeOutline,
@@ -213,45 +215,79 @@ export class ModelsPage implements OnInit {
   }
 
   async startTraining(model: any, version: any) {
-    // Only allow validated datasets for training (DatasetValidationId must be valid)
-    const modal = await this.modalController.create({
-      component: TrainingConfigModalComponent,
-      componentProps: {
-        modelId: model.modelId,
-        modelVersionId: version.versionId
-      }
-    });
-
-    await modal.present();
-    const { data } = await modal.onWillDismiss();
-
-    if (data) {
-      // Map modal data to backend API field names
-      const config: any = {
-        ModelId: model.modelId,
-        ModelVersionId: version.versionId,
-        LearningRate: parseFloat(data.learningRate),
-        Epochs: parseInt(data.epochs, 10),
-        BatchSize: parseInt(data.batchSize, 10),
-        DatasetValidationId: data.datasetValidationId,
-        TrainingParameters: data.trainingParameters || '',
-        Notes: data.notes || ''
-      };
-      this.isLoading = true;
-      this.trainingService.startTraining(config).pipe(finalize(() => this.isLoading = false)).subscribe({
-        next: (res: any) => {
-          if (res && res.trainSessionId) {
-            // Redirect to dashboard with trainSessionId
-            window.location.href = `/dashboard/${res.trainSessionId}`;
-          } else {
-            alert('Training started, but no session ID returned.');
-          }
-        },
-        error: (err) => {
-          alert('Failed to start training session.');
-          console.error('[startTraining] Error:', err);
+    try {
+      // Only allow validated datasets for training (DatasetValidationId must be valid)
+      const modal = await this.modalController.create({
+        component: TrainingConfigModalComponent,
+        componentProps: {
+          modelId: model.modelId,
+          modelVersionId: version.versionId
         }
       });
+
+      await modal.present();
+      const { data } = await modal.onWillDismiss();
+
+      if (data) {
+        // Show loading indicator
+        const loading = await this.loadingCtrl.create({
+          message: 'Starting training session...',
+          spinner: 'crescent'
+        });
+        await loading.present();
+
+        // Map modal data to backend API field names (matching StartTrainingDTO)
+        const config = {
+          ModelId: model.modelId,
+          ModelVersionId: version.versionId,
+          LearningRate: parseFloat(data.learningRate),
+          Epochs: parseInt(data.epochs, 10),
+          BatchSize: parseInt(data.batchSize, 10),
+          DatasetValidationId: data.datasetValidationId,
+          TrainingParameters: data.trainingParameters || '',
+          Notes: data.notes || ''
+        };
+
+        this.trainingService.startTraining(config).subscribe({
+          next: (res: any) => {
+            loading.dismiss();
+            
+            if (res && res.trainSessionId) {
+              // Show success message
+              this.toastService.presentToast('success', 'Training session started successfully!');
+              
+              // Navigate to training dashboard with trainSessionId
+              this.router.navigate(['/training-dashboard', res.trainSessionId]);
+            } else {
+              this.toastService.presentToast('error', 'Training started, but no session ID returned.');
+            }
+          },
+          error: (err) => {
+            loading.dismiss();
+            
+            // Enhanced error handling with VM-specific messages
+            let errorMessage = 'Failed to start training session.';
+            
+            if (err.message) {
+              if (err.message.includes('virtual machine') || err.message.includes('VM')) {
+                errorMessage = err.message;
+              } else if (err.message.includes('execution service')) {
+                errorMessage = 'Training process could not start: Execution service unavailable. Please try again later.';
+              } else if (err.message.includes('dataset')) {
+                errorMessage = `Training configuration error: ${err.message}`;
+              } else {
+                errorMessage = err.message;
+              }
+            }
+            
+            this.toastService.presentToast('error', errorMessage);
+            console.error('[startTraining] Error:', err);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('[startTraining] Unexpected error:', error);
+      this.toastService.presentToast('error', 'An unexpected error occurred while starting training.');
     }
   }
 

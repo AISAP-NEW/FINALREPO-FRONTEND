@@ -16,11 +16,21 @@ import {
   IonSelectOption,
   IonInput,
   IonNote,
-  ModalController
+  ModalController,
+  IonCard,
+  IonCardContent
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { closeOutline } from 'ionicons/icons';
 import { DatasetService, Dataset } from '../../services/dataset.service';
+
+export interface ValidatedDataset {
+  datasetId: string;
+  datasetName: string;
+  validationId: string; // This is the DatasetValidationId that the backend expects
+  description: string;
+  validationStatus: string;
+}
 
 @Component({
   selector: 'app-training-config-modal',
@@ -43,7 +53,9 @@ import { DatasetService, Dataset } from '../../services/dataset.service';
     IonSelect,
     IonSelectOption,
     IonInput,
-    IonNote
+    IonNote,
+    IonCard,
+    IonCardContent
   ],
   providers: [DatasetService]
 })
@@ -51,9 +63,10 @@ export class TrainingConfigModalComponent implements OnInit {
   @Input() modelId!: number;
   @Input() modelVersionId!: number;
   
-  allDatasets: Dataset[] = [];
+  validatedDatasets: ValidatedDataset[] = [];
   trainingForm: FormGroup;
   isLoading = false;
+  error: string = '';
 
   // Default values
   batchSizes = [16, 32, 64];
@@ -77,40 +90,84 @@ export class TrainingConfigModalComponent implements OnInit {
 
   ngOnInit() {
     console.log('Training config modal initialized');
-    this.loadAllDatasets();
+    this.loadValidatedDatasets();
   }
 
-  loadAllDatasets() {
+  /**
+   * Load validated datasets that can be used for training
+   * Only datasets with validation status 'Passed' should be available
+   */
+  loadValidatedDatasets() {
     console.log('Loading validated datasets...');
     this.isLoading = true;
+    this.error = '';
+    
     this.datasetService.getValidatedDatasets().subscribe({
-      next: (datasets) => {
+      next: (datasets: Dataset[]) => {
         console.log('Received validated datasets:', datasets);
-        this.allDatasets = datasets;
+        
+        // Filter and map datasets to include validation ID
+        this.validatedDatasets = datasets
+          .filter(dataset => 
+            dataset.validationStatus === 'Passed' && 
+            !dataset.hasErrors &&
+            dataset.isValidated
+          )
+          .map(dataset => ({
+            datasetId: dataset.datasetId,
+            datasetName: dataset.datasetName,
+            validationId: dataset.datasetId, // For now, use datasetId as validationId
+            description: dataset.description,
+            validationStatus: dataset.validationStatus
+          }));
+        
+        console.log('Filtered validated datasets:', this.validatedDatasets);
         this.isLoading = false;
+        
+        if (this.validatedDatasets.length === 0) {
+          this.error = 'No validated datasets available. Please validate a dataset before starting training.';
+        }
       },
       error: (error) => {
         console.error('Error loading validated datasets:', error);
+        this.error = 'Failed to load validated datasets. Please try again.';
         this.isLoading = false;
       }
     });
   }
 
+  /**
+   * Submit training configuration
+   * Maps to backend StartTrainingDTO interface
+   */
   onSubmit() {
     if (this.trainingForm.valid) {
       this.isLoading = true;
+      
+      // Get the selected dataset
+      const selectedValidationId = this.trainingForm.value.datasetValidationId;
+      const selectedDataset = this.validatedDatasets.find(ds => ds.validationId === selectedValidationId);
+      
+      if (!selectedDataset) {
+        this.error = 'Please select a valid dataset for training.';
+        this.isLoading = false;
+        return;
+      }
+      
       const config = {
         modelId: this.modelId,
         modelVersionId: this.modelVersionId,
         learningRate: parseFloat(this.trainingForm.value.learningRate),
         epochs: parseInt(this.trainingForm.value.epochs, 10),
         batchSize: parseInt(this.trainingForm.value.batchSize, 10),
-        datasetValidationId: this.trainingForm.value.datasetValidationId,
-        notes: this.trainingForm.value.notes
+        datasetValidationId: selectedDataset.validationId, // This maps to DatasetValidationId in backend
+        notes: this.trainingForm.value.notes || ''
       };
 
+      console.log('Submitting training configuration:', config);
       this.modalController.dismiss(config);
     } else {
+      // Mark all invalid fields as touched to show validation errors
       Object.keys(this.trainingForm.controls).forEach(key => {
         const control = this.trainingForm.get(key);
         if (control?.invalid) {
@@ -122,5 +179,13 @@ export class TrainingConfigModalComponent implements OnInit {
 
   onDismiss() {
     this.modalController.dismiss();
+  }
+
+  /**
+   * Retry loading datasets
+   */
+  retryLoadDatasets() {
+    this.error = '';
+    this.loadValidatedDatasets();
   }
 }

@@ -3,46 +3,176 @@
 }
 
 .dashboard-container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  font-family: 'Segoe UI', Arial, sans-serif;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
 
   h2 {
     margin: 0;
-    font-size: 2rem;
+    color: #333;
+    font-size: 24px;
     font-weight: 600;
   }
+
   .nav-btn {
-    background: #f6f6f6;
+    background: #007bff;
+    color: white;
     border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1.2rem;
-    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 5px;
     cursor: pointer;
-    transition: background 0.2s;
+    font-size: 14px;
+    transition: background-color 0.3s;
+
     &:hover {
-      background: #e2e2e2;
+      background: #0056b3;
     }
   }
 }
 
-.loading-indicator, .error-indicator {
-  margin: 1.5rem 0;
-  text-align: center;
-  font-size: 1.1rem;
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
   color: #666;
+
+  ion-spinner {
+    margin-right: 10px;
+  }
 }
+
+// General Dashboard Styles
+.welcome-section {
+  margin-bottom: 30px;
+
+  ion-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+
+    ion-card-title {
+      color: white;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+
+      ion-button {
+        --background: rgba(255, 255, 255, 0.2);
+        --color: white;
+        --border-color: rgba(255, 255, 255, 0.3);
+        --border-width: 1px;
+        --border-style: solid;
+
+        &:hover {
+          --background: rgba(255, 255, 255, 0.3);
+        }
+      }
+    }
+  }
+}
+
+.system-resources {
+  margin-bottom: 30px;
+
+  ion-card {
+    background: white;
+    border: 1px solid #e9ecef;
+
+    ion-card-title {
+      color: #333;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    ion-list {
+      padding: 0;
+
+      ion-item {
+        --padding-start: 0;
+        --padding-end: 0;
+        --border-color: #f0f0f0;
+
+        ion-label {
+          h3 {
+            color: #333;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+            font-size: 16px;
+          }
+
+          p {
+            color: #666;
+            margin: 0;
+            font-size: 14px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.quick-actions {
+  margin-bottom: 30px;
+
+  ion-card {
+    background: white;
+    border: 1px solid #e9ecef;
+
+    ion-card-title {
+      color: #333;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    ion-list {
+      padding: 0;
+
+      ion-item {
+        --padding-start: 0;
+        --padding-end: 0;
+        --border-color: #f0f0f0;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+          --background: #f8f9fa;
+        }
+
+        ion-icon {
+          color: #007bff;
+          font-size: 20px;
+        }
+
+        ion-label {
+          color: #333;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
 .error-indicator {
   color: #c0392b;
 }
@@ -158,4 +288,275 @@
   background: #f6f8fa;
   padding: 1rem;
   border-radius: 4px;
+}
+
+// Status Cards
+.status-card, .details-card, .logs-card, .metrics-card, .debug-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 20px;
+
+  h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.status-running {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  &.status-completed {
+    background: #d1ecf1;
+    color: #0c5460;
+  }
+
+  &.status-paused {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  &.status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  &.status-error {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  &.status-pending {
+    background: #e2e3e5;
+    color: #383d41;
+  }
+}
+
+.vm-status {
+  font-size: 14px;
+  color: #666;
+  padding: 5px 0;
+}
+
+.running-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #28a745;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+// Details Grid
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+
+  .detail-item {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border-left: 4px solid #007bff;
+
+    &.error {
+      border-left-color: #dc3545;
+      background: #f8d7da;
+    }
+
+    strong {
+      color: #333;
+    }
+  }
+}
+
+// Logs Section
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.logs-content {
+  .logs-box {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .no-logs {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+  }
+}
+
+// Metrics Grid
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+
+  .metric-item {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    text-align: center;
+
+    strong {
+      display: block;
+      color: #333;
+      margin-bottom: 5px;
+    }
+  }
+}
+
+// Debug Actions
+.debug-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+// Error State
+.error-state {
+  text-align: center;
+  padding: 40px;
+  color: #721c24;
+
+  ion-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+  }
+
+  h3 {
+    margin: 15px 0;
+    color: #721c24;
+  }
+
+  p {
+    margin-bottom: 20px;
+    color: #666;
+  }
+}
+
+// Error Message in Modal
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8d7da;
+  color: #721c24;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+
+  ion-icon {
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+}
+
+// Training Info Card
+.training-info {
+  margin: 20px 0;
+
+  ion-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+
+    ion-card-content {
+      h4 {
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      p {
+        margin: 8px 0;
+        color: #666;
+
+        strong {
+          color: #333;
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 15px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+
+    .nav-btn {
+      align-self: flex-start;
+    }
+  }
+
+  .control-buttons {
+    flex-direction: column;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .debug-buttons {
+    flex-direction: column;
+  }
+
+  .welcome-section .action-buttons {
+    flex-direction: column;
+  }
 }

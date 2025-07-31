@@ -1,10 +1,11 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
-import { TrainingService } from '../../services/training.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TrainingService, TrainingStatus, TrainingLogs } from '../../services/training.service';
 import { interval, Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
-import { IonButton } from '@ionic/angular/standalone';
+import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonList, IonItem, IonLabel, IonIcon, IonSpinner } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-training-dashboard',
@@ -12,56 +13,325 @@ import { IonButton } from '@ionic/angular/standalone';
   styleUrls: ['./training-dashboard.component.scss'],
   standalone: true,
   imports: [
-    CommonModule,IonButton]
+    CommonModule,
+    IonButton,
+    IonToast,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
+    IonList,
+    IonItem,
+    IonLabel,
+    IonIcon,
+    IonSpinner
+  ]
 })
-export class TrainingDashboardComponent implements OnInit {
-  trainSessionId!: number;
+export class TrainingDashboardComponent implements OnInit, OnDestroy {
+  trainSessionId?: number;
   status: string = '';
+  vmStatus: string = '';
+  isRunning: boolean = false;
   logs: string = '';
   metrics: any = {};
   isLoading = false;
   pollSub?: Subscription;
   error: string = '';
+  showErrorToast = false;
+  errorMessage = '';
+
+  // Training session details
+  startedAt?: string;
+  completedAt?: string;
+  pausedAt?: string;
+  errorDetails?: string;
+
+  // General dashboard properties
+  isGeneralDashboard = false;
+  activeTrainingSessions: any[] = [];
+  systemResources: any = null;
+
+  // Make Object available in template
+  protected readonly Object = Object;
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private trainingService: TrainingService
   ) {}
 
   ngOnInit() {
     this.trainSessionId = Number(this.route.snapshot.paramMap.get('trainSessionId'));
-    this.pollTrainingStatus();
-    this.pollSub = interval(5000).subscribe(() => this.pollTrainingStatus());
+    
+    if (!this.trainSessionId) {
+      // General training dashboard view
+      this.isGeneralDashboard = true;
+      this.loadGeneralDashboard();
+    } else {
+      // Specific training session view
+      this.isGeneralDashboard = false;
+      this.pollTrainingStatus();
+      // Poll every 5 seconds for status updates
+      this.pollSub = interval(5000).subscribe(() => this.pollTrainingStatus());
+    }
   }
 
-  pollTrainingStatus() {
-    if (!this.trainSessionId) return;
+  ngOnDestroy() {
+    this.pollSub?.unsubscribe();
+  }
+
+  /**
+   * Load general training dashboard
+   */
+  loadGeneralDashboard() {
     this.isLoading = true;
-    this.trainingService.getStatus(this.trainSessionId).subscribe({
-      next: (res: any) => {
-        this.status = res.status || '';
-        this.logs = res.logs || '';
-        this.metrics = res.metrics || {};
+    this.error = '';
+    
+    // Load system resources
+    this.trainingService.getSystemResources().subscribe({
+      next: (resources) => {
+        this.systemResources = resources;
         this.isLoading = false;
       },
-      error: err => {
-        this.error = 'Failed to fetch training status.';
+      error: (err) => {
+        console.error('Failed to load system resources:', err);
         this.isLoading = false;
       }
     });
   }
 
+  /**
+   * Navigate to a specific training session
+   */
+  navigateToSession(sessionId: number) {
+    this.router.navigate(['/dashboard', sessionId]);
+  }
+
+  /**
+   * Start a new training session
+   */
+  startNewTraining() {
+    this.router.navigate(['/models']);
+  }
+
+  /**
+   * Poll training status from backend
+   * Maps to: GET /api/Training/status/{trainSessionId}
+   */
+  pollTrainingStatus() {
+    if (!this.trainSessionId) return;
+    
+    this.isLoading = true;
+    this.error = '';
+    
+    this.trainingService.getStatus(this.trainSessionId).subscribe({
+      next: (response: TrainingStatus) => {
+        this.status = response.status || '';
+        this.vmStatus = response.vmStatus || '';
+        this.isRunning = response.isRunning || false;
+        this.startedAt = response.startedAt;
+        this.completedAt = response.completedAt;
+        this.pausedAt = response.pausedAt;
+        this.errorDetails = response.errorMessage;
+        
+        // If there's an error message, show it
+        if (response.errorMessage) {
+          this.showError(response.errorMessage);
+        }
+        
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to fetch training status.';
+        this.isLoading = false;
+        this.showError(this.error);
+      }
+    });
+  }
+
+  /**
+   * Fetch training logs
+   * Maps to: GET /api/Training/logs/{trainSessionId}
+   */
+  fetchLogs() {
+    if (!this.trainSessionId) return;
+    
+    this.trainingService.getLogs(this.trainSessionId).subscribe({
+      next: (response: TrainingLogs) => {
+        this.logs = response.logs || '';
+      },
+      error: (err) => {
+        console.error('Failed to fetch logs:', err);
+        this.logs = 'Failed to load training logs.';
+      }
+    });
+  }
+
+  /**
+   * Pause training session
+   * Maps to: POST /api/Training/pause/{trainSessionId}
+   */
   pauseTraining() {
     if (!this.trainSessionId) return;
-    this.trainingService.pause(this.trainSessionId).subscribe(() => this.pollTrainingStatus());
+    
+    this.isLoading = true;
+    this.trainingService.pause(this.trainSessionId).subscribe({
+      next: () => {
+        this.showSuccess('Training paused successfully');
+        this.pollTrainingStatus(); // Refresh status
+      },
+      error: (err) => {
+        this.showError(err.message || 'Failed to pause training');
+        this.isLoading = false;
+      }
+    });
   }
 
+  /**
+   * Resume training session
+   * Maps to: POST /api/Training/resume/{trainSessionId}
+   */
   resumeTraining() {
     if (!this.trainSessionId) return;
-    this.trainingService.resume(this.trainSessionId).subscribe(() => this.pollTrainingStatus());
+    
+    this.isLoading = true;
+    this.trainingService.resume(this.trainSessionId).subscribe({
+      next: () => {
+        this.showSuccess('Training resumed successfully');
+        this.pollTrainingStatus(); // Refresh status
+      },
+      error: (err) => {
+        this.showError(err.message || 'Failed to resume training');
+        this.isLoading = false;
+      }
+    });
   }
 
-  ngOnDestroy() {
-    this.pollSub?.unsubscribe();
+  /**
+   * Cancel training session
+   * Maps to: POST /api/Training/cancel/{trainSessionId}
+   */
+  cancelTraining() {
+    if (!this.trainSessionId) return;
+    
+    if (!confirm('Are you sure you want to cancel this training session? This action cannot be undone.')) {
+      return;
+    }
+    
+    this.isLoading = true;
+    this.trainingService.cancel(this.trainSessionId).subscribe({
+      next: () => {
+        this.showSuccess('Training cancelled successfully');
+        this.pollTrainingStatus(); // Refresh status
+      },
+      error: (err) => {
+        this.showError(err.message || 'Failed to cancel training');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Test VM logs for debugging
+   */
+  testVMLogs() {
+    // This would need the instanceId, but we don't have it in this component
+    // You might want to pass it as a parameter or get it from the training status
+    console.log('Testing VM logs...');
+  }
+
+  /**
+   * Get system resources
+   */
+  getSystemResources() {
+    this.trainingService.getSystemResources().subscribe({
+      next: (resources) => {
+        console.log('System resources:', resources);
+        this.showSuccess(`CPU: ${resources.cpuUsage}, Memory: ${resources.memoryUsage}`);
+      },
+      error: (err) => {
+        this.showError('Failed to get system resources');
+      }
+    });
+  }
+
+  /**
+   * Navigate back to models page
+   */
+  goBack() {
+    this.router.navigate(['/models']);
+  }
+
+  /**
+   * Show error toast
+   */
+  private showError(message: string) {
+    this.errorMessage = message;
+    this.showErrorToast = true;
+  }
+
+  /**
+   * Show success toast
+   */
+  private showSuccess(message: string) {
+    // You can implement a success toast here
+    console.log('Success:', message);
+  }
+
+  /**
+   * Dismiss error toast
+   */
+  dismissError() {
+    this.showErrorToast = false;
+  }
+
+  /**
+   * Get status badge class for styling
+   */
+  getStatusClass(): string {
+    switch (this.status.toLowerCase()) {
+      case 'running':
+      case 'inprogress':
+        return 'status-running';
+      case 'completed':
+      case 'finished':
+        return 'status-completed';
+      case 'paused':
+        return 'status-paused';
+      case 'cancelled':
+      case 'stopped':
+        return 'status-cancelled';
+      case 'failed':
+      case 'error':
+        return 'status-error';
+      default:
+        return 'status-pending';
+    }
+  }
+
+  /**
+   * Check if training is active (running or paused)
+   */
+  isTrainingActive(): boolean {
+    return this.status.toLowerCase() === 'running' || 
+           this.status.toLowerCase() === 'inprogress' || 
+           this.status.toLowerCase() === 'paused';
+  }
+
+  /**
+   * Check if training is completed
+   */
+  isTrainingCompleted(): boolean {
+    return this.status.toLowerCase() === 'completed' || 
+           this.status.toLowerCase() === 'finished';
+  }
+
+  /**
+   * Check if training failed
+   */
+  isTrainingFailed(): boolean {
+    return this.status.toLowerCase() === 'failed' || 
+           this.status.toLowerCase() === 'error' || 
+           this.status.toLowerCase() === 'cancelled';
   }
 }
