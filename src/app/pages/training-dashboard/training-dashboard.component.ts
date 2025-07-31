@@ -6,7 +6,7 @@ import { SignalRService, TrainingStatusUpdate } from '../../services/signalr.ser
 import { interval, Subscription, combineLatest } from 'rxjs';
 import { finalize, filter } from 'rxjs/operators';
 
-import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonList, IonItem, IonLabel, IonIcon, IonSpinner, IonBadge } from '@ionic/angular/standalone';
+import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonItem, IonLabel, IonIcon, IonSpinner, IonBadge } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-training-dashboard',
@@ -21,7 +21,6 @@ import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardConte
     IonCardHeader,
     IonCardTitle,
     IonCardContent,
-    IonList,
     IonItem,
     IonLabel,
     IonIcon,

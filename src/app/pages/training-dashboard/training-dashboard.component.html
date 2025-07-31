@@ -160,10 +160,10 @@
             <div *ngIf="realTimeUpdates?.progress !== undefined" class="progress-section">
               <div class="progress-header">
                 <span class="progress-label">Training Progress</span>
-                <span class="progress-percentage">{{ realTimeUpdates.progress }}%</span>
+                <span class="progress-percentage">{{ realTimeUpdates?.progress }}%</span>
               </div>
               <div class="progress-bar-container">
-                <div class="progress-bar" [style.width.%]="realTimeUpdates.progress"></div>
+                <div class="progress-bar" [style.width.%]="realTimeUpdates?.progress"></div>
               </div>
             </div>
           </div>
