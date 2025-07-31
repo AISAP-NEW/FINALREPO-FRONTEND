@@ -8,7 +8,8 @@ import { AuthService } from './auth.service';
   providedIn: 'root'
 })
 export class SessionTimeoutService {
-  private readonly TIMEOUT_DURATION = 90000; // 30 seconds in milliseconds
+  // Disabled timeout - set to a very large value (24 hours)
+  private readonly TIMEOUT_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   private readonly WARNING_DURATION = 10000; // Show warning 10 seconds before timeout
   
   private timeoutTimer?: Subscription;
@@ -37,7 +38,7 @@ export class SessionTimeoutService {
     private router: Router,
     private ngZone: NgZone
   ) {
-    console.log('SessionTimeoutService initialized');
+    console.log('SessionTimeoutService initialized - TIMEOUT DISABLED');
   }
 
   /**
@@ -49,8 +50,8 @@ export class SessionTimeoutService {
       return;
     }
 
-    console.log('Starting session timeout monitoring...');
-    this.resetTimeout();
+    console.log('Starting session timeout monitoring... (TIMEOUT DISABLED)');
+    // Don't actually start timers since timeout is disabled
     this.setupActivityListeners();
   }
 
@@ -72,20 +73,9 @@ export class SessionTimeoutService {
     this.clearTimers();
     this.isWarningShown.next(false);
     
-    console.log(`Setting timeout for ${this.TIMEOUT_DURATION / 1000} seconds`);
+    console.log(`Session timeout disabled - no timeout will occur`);
     
-    // Start warning timer (shows warning before actual timeout)
-    const warningTime = this.TIMEOUT_DURATION - this.WARNING_DURATION;
-    if (warningTime > 0) {
-      this.warningTimer = timer(warningTime).subscribe(() => {
-        this.showTimeoutWarning();
-      });
-    }
-    
-    // Start main timeout timer
-    this.timeoutTimer = timer(this.TIMEOUT_DURATION).subscribe(() => {
-      this.handleTimeout();
-    });
+    // Don't start any timers since timeout is disabled
   }
 
   /**
@@ -103,10 +93,11 @@ export class SessionTimeoutService {
     this.activitySubscription = merge(...activityObservables)
       .pipe(
         debounceTime(1000), // Wait 1 second after last activity
-        tap(() => console.log('User activity detected'))
+        tap(() => console.log('User activity detected (timeout disabled)'))
       )
       .subscribe(() => {
-        this.resetTimeout();
+        // Don't reset timeout since it's disabled
+        console.log('Activity detected but timeout is disabled');
       });
   }
 
@@ -114,79 +105,24 @@ export class SessionTimeoutService {
    * Show timeout warning to user
    */
   private showTimeoutWarning(): void {
-    console.log('Showing timeout warning');
-    this.isWarningShown.next(true);
-    
-    // Start countdown timer for remaining time
-    const remainingTime = this.WARNING_DURATION / 1000;
-    this.timeRemaining.next(remainingTime);
-    
-    // Update countdown every second
-    timer(0, 1000)
-      .pipe(
-        takeUntil(timer(this.WARNING_DURATION))
-      )
-      .subscribe(tick => {
-        const remaining = remainingTime - tick;
-        this.timeRemaining.next(Math.max(0, remaining));
-      });
+    console.log('Timeout warning disabled');
+    // Don't show warning since timeout is disabled
   }
 
   /**
    * Handle session timeout - log user out
    */
   private handleTimeout(): void {
-    console.log('Session timeout - logging user out');
-    
-    this.ngZone.run(() => {
-      // Force close any warning modal first
-      this.isWarningShown.next(false);
-      this.stopMonitoring();
-      
-      // Clear any existing authentication state first
-      localStorage.removeItem('currentUser');
-      
-      // Show timeout message (non-blocking)
-      this.showTimeoutMessage();
-      
-      // Force logout immediately - no delay needed
-      this.authService.logout();
-    });
+    console.log('Session timeout disabled - no logout will occur');
+    // Don't handle timeout since it's disabled
   }
 
   /**
    * Show timeout message to user (non-blocking)
    */
   private showTimeoutMessage(): void {
-    console.log('Session expired due to inactivity - redirecting to login');
-    
-    // Create a non-blocking notification
-    if (typeof document !== 'undefined') {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #f04141;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        max-width: 300px;
-      `;
-      notification.textContent = 'Session expired - redirecting to login...';
-      document.body.appendChild(notification);
-      
-      // Remove notification after 3 seconds
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 3000);
-    }
+    console.log('Session timeout disabled - no timeout message');
+    // Don't show timeout message since timeout is disabled
   }
 
   /**
@@ -218,8 +154,8 @@ export class SessionTimeoutService {
    * Extend session (called when user clicks "Stay logged in" on warning)
    */
   extendSession(): void {
-    console.log('Session extended by user');
-    this.resetTimeout();
+    console.log('Session extended by user (timeout disabled)');
+    // Don't reset timeout since it's disabled
   }
 
   /**
@@ -233,6 +169,6 @@ export class SessionTimeoutService {
    * Check if session is currently active
    */
   isSessionActive(): boolean {
-    return this.authService.isAuthenticated() && (this.timeoutTimer !== undefined);
+    return this.authService.isAuthenticated();
   }
 }
