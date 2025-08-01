@@ -34,6 +34,16 @@
         <div class="nav-section-title">ML Operations</div>
         <ion-list>
           <ion-menu-toggle auto-hide="false">
+            <ion-item routerLink="/models" routerDirection="root" routerLinkActive="selected">
+              <ion-icon slot="start" name="cube-outline"></ion-icon>
+              <ion-label>Models</ion-label>
+            </ion-item>
+
+            <ion-item routerLink="/training-dashboard" routerDirection="root" routerLinkActive="selected">
+              <ion-icon slot="start" name="fitness-outline"></ion-icon>
+              <ion-label>Training Dashboard</ion-label>
+            </ion-item>
+
             <ion-item routerLink="/experiments" routerDirection="root" routerLinkActive="selected">
               <ion-icon slot="start" name="flask-outline"></ion-icon>
               <ion-label>Experiments</ion-label>

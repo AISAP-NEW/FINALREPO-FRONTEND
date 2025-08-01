@@ -66,7 +66,7 @@ export interface TrainingSessionDTO {
   canCancel?: boolean;
 }
 
-export interface TrainingSessionsResponse {
+export interface TrainingSessionsResponseDTO {
   success: boolean;
   sessions: TrainingSessionDTO[];
   totalCount: number;
@@ -214,7 +214,7 @@ export class TrainingService {
     modelId?: number;
     startDate?: Date;
     endDate?: Date;
-  }): Observable<TrainingSessionsResponse> {
+  }): Observable<TrainingSessionsResponseDTO> {
     let params = new HttpParams();
     
     if (filters) {
@@ -224,7 +224,7 @@ export class TrainingService {
       if (filters.endDate) params = params.set('endDate', filters.endDate.toISOString());
     }
     
-    return this.http.get<TrainingSessionsResponse>(`${this.API_URL}/sessions`, { params }).pipe(
+    return this.http.get<TrainingSessionsResponseDTO>(`${this.API_URL}/sessions`, { params }).pipe(
       catchError(this.handleTrainingError.bind(this))
     );
   }

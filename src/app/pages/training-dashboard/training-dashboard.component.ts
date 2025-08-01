@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TrainingService, TrainingStatus, TrainingLogs, TrainingSessionDTO, TrainingSessionsResponse } from '../../services/training.service';
+import { TrainingService, TrainingStatus, TrainingLogs, TrainingSessionDTO, TrainingSessionsResponseDTO } from '../../services/training.service';
 import { interval, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
@@ -111,14 +111,18 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
    * Load all training sessions
    */
   loadAllTrainingSessions() {
+    console.log('Loading all training sessions...');
     this.isLoading = true;
     this.trainingService.getAllTrainingSessions().subscribe({
-      next: (response: TrainingSessionsResponse) => {
+      next: (response: TrainingSessionsResponseDTO) => {
+        console.log('Training sessions response:', response);
         this.activeTrainingSessions = response.sessions || [];
+        console.log('Active training sessions:', this.activeTrainingSessions);
         this.isLoading = false;
       },
       error: (err) => {
         console.error('Failed to load training sessions:', err);
+        this.error = err.message || 'Failed to load training sessions';
         this.isLoading = false;
       }
     });

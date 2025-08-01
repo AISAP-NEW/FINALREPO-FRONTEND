@@ -1,18 +1,26 @@
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <h2>Training Dashboard</h2>
-    <div class="header-buttons">
-      <ion-button color="primary" (click)="startNewTraining()">
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Training Dashboard</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="startNewTraining()" color="light">
         <ion-icon slot="start" name="add"></ion-icon>
         Start Training
       </ion-button>
-      <ion-button color="secondary" fill="outline" (click)="goBack()">
+      <ion-button (click)="goBack()" fill="outline" color="light">
         <ion-icon slot="start" name="arrow-back"></ion-icon>
         Back to Models
       </ion-button>
-    </div>
-  </div>
+      <ion-button (click)="refreshTrainingSessions()">
+        <ion-icon slot="icon-only" name="refresh"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 
+<ion-content [fullscreen]="true" class="ion-padding">
   <!-- Error Toast -->
   <ion-toast
     [isOpen]="showErrorToast"
@@ -31,29 +39,6 @@
 
   <!-- General Training Dashboard View -->
   <div *ngIf="isGeneralDashboard && !isLoading">
-    <div class="welcome-section">
-      <ion-card>
-        <ion-card-header>
-          <ion-card-title>Training Dashboard</ion-card-title>
-        </ion-card-header>
-        <ion-card-content>
-          <p>Welcome to the Training Dashboard. Here you can monitor and manage your model training sessions.</p>
-          
-          <div class="action-buttons">
-            <ion-button color="primary" (click)="startNewTraining()">
-              <ion-icon slot="start" name="add"></ion-icon>
-              Start New Training
-            </ion-button>
-            
-            <ion-button color="secondary" (click)="getSystemResources()">
-              <ion-icon slot="start" name="hardware-chip"></ion-icon>
-              Check System Resources
-            </ion-button>
-          </div>
-        </ion-card-content>
-      </ion-card>
-    </div>
-
     <!-- System Resources -->
     <div *ngIf="systemResources" class="system-resources">
       <ion-card>
@@ -85,44 +70,15 @@
       </ion-card>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <ion-card>
-        <ion-card-header>
-          <ion-card-title>Quick Actions</ion-card-title>
-        </ion-card-header>
-        <ion-card-content>
-          <ion-list>
-            <ion-item button (click)="startNewTraining()">
-              <ion-icon slot="start" name="add-circle"></ion-icon>
-              <ion-label>Start New Training Session</ion-label>
-            </ion-item>
-            <ion-item button (click)="getSystemResources()">
-              <ion-icon slot="start" name="hardware-chip"></ion-icon>
-              <ion-label>Check VM Resources</ion-label>
-            </ion-item>
-            <ion-item button routerLink="/models">
-              <ion-icon slot="start" name="cube"></ion-icon>
-              <ion-label>View Models</ion-label>
-            </ion-item>
-            <ion-item button routerLink="/datasets">
-              <ion-icon slot="start" name="layers"></ion-icon>
-              <ion-label>View Datasets</ion-label>
-            </ion-item>
-          </ion-list>
-        </ion-card-content>
-      </ion-card>
-    </div>
-
     <!-- Training Sessions List -->
     <div class="training-sessions">
       <ion-card>
         <ion-card-header>
           <div class="sessions-header">
-            <ion-card-title>Training Sessions</ion-card-title>
-            <ion-button size="small" fill="clear" (click)="refreshTrainingSessions()">
-              <ion-icon slot="start" name="refresh"></ion-icon>
-              Refresh
+            <ion-card-title>Active Training Sessions</ion-card-title>
+            <ion-button size="small" fill="clear" (click)="getSystemResources()">
+              <ion-icon slot="start" name="hardware-chip"></ion-icon>
+              System Info
             </ion-button>
           </div>
         </ion-card-header>
@@ -337,4 +293,4 @@
       Retry
     </ion-button>
   </div>
-</div>
+</ion-content>
