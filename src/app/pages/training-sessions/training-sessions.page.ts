@@ -6,6 +6,7 @@ import { TrainingService, TrainingSessionDTO, TrainingSessionsResponseDTO } from
 import { ToastService } from '../../services/toast.service';
 import { Subscription, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 interface TrainingSession {
   id: number;
@@ -74,11 +75,43 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
   async testBackendConnection() {
     try {
       console.log('🧪 Testing backend connection...');
+      console.log('🌐 API URL:', environment.apiUrl);
+      console.log('🎯 Target endpoint:', `${environment.apiUrl}/api/Training/sessions`);
+      
+      // First test basic connectivity
+      const response = await fetch(`${environment.apiUrl}/api/Training/sessions`);
+      console.log('📡 Fetch response status:', response.status);
+      console.log('📄 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Direct fetch successful:', data);
+        console.log('🎯 Success flag from direct fetch:', data.success);
+      } else {
+        console.error('❌ Direct fetch failed:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('📝 Error response body:', errorText);
+      }
+      
+      // Also test the service method
       await this.trainingService.testConnection().toPromise();
       console.log('✅ Backend connection successful');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Backend connection failed:', error);
-      this.toastService.presentToast('error', 'Cannot connect to backend. Please ensure the backend is running.');
+      console.error('🔍 Connection error details:', {
+        status: error.status,
+        statusText: error.statusText,
+        message: error.message,
+        url: error.url
+      });
+      
+      if (error.status === 0) {
+        this.toastService.presentToast('error', '🌐 Cannot connect to backend. Is it running on http://localhost:5183?');
+      } else if (error.status === 404) {
+        this.toastService.presentToast('error', '🔍 Training API endpoint not found. Check backend routes.');
+      } else {
+        this.toastService.presentToast('error', `Backend error: ${error.status} - ${error.message}`);
+      }
     }
   }
 
@@ -140,6 +173,7 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
       console.log('🎯 Success flag:', response?.success);
       console.log('📈 Sessions array:', response?.sessions);
       console.log('🔢 Sessions count:', response?.sessions?.length);
+      console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
       
       if (response && response.success) {
         console.log('✅ Successfully loaded sessions:', response.sessions.length);
