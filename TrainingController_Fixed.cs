@@ -419,11 +419,8 @@ namespace ProjectManagement.Controllers
                         ModelId = ts.ModelInstance != null ? (int?)ts.ModelInstance.Model_ID : null,
                         ModelName = ts.ModelInstance != null && ts.ModelInstance.Model != null ? ts.ModelInstance.Model.model_name : null,
                         ModelInstanceName = ts.ModelInstance != null ? ts.ModelInstance.Name : null,
-                        DatasetName = ts.DatasetMetadata != null ? ts.DatasetMetadata.DatasetName : null,
-                        // *** THIS IS THE FIX - ADDED COMPUTED CONTROL PROPERTIES ***
-                        CanPause = ts.Status == TrainingStatus.InProgress,
-                        CanResume = ts.Status == TrainingStatus.Paused,
-                        CanCancel = ts.Status == TrainingStatus.InProgress || ts.Status == TrainingStatus.Paused
+                        DatasetName = ts.DatasetMetadata != null ? ts.DatasetMetadata.DatasetName : null
+                        // NOTE: CanPause, CanResume, CanCancel are computed properties in the DTO based on Status
                     })
                     .ToListAsync();
 
@@ -431,7 +428,7 @@ namespace ProjectManagement.Controllers
                 {
                     Success = true,
                     Sessions = trainingSessionDtos,
-                    TotalCount = trainingSessionDtos.Count,
+                    TotalCount = trainingSessionDtos.Count(),
                     Filters = new
                     {
                         status,
