@@ -62,6 +62,16 @@ export const routes: Routes = [
           .then(m => m.ExperimentsPage)
       },
       {
+        path: 'training-dashboard',
+        loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
+          .then(m => m.TrainingDashboardComponent)
+      },
+      {
+        path: 'training-dashboard/:trainSessionId',
+        loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
+          .then(m => m.TrainingDashboardComponent)
+      },
+      {
         path: 'datasets/new',
         loadComponent: () => import('./pages/dataset-form/dataset-form.page')
           .then(m => m.DatasetFormPage)
@@ -153,17 +163,6 @@ export const routes: Routes = [
           .then(m => m.ExperimentsPage)
       }
     ]
-  },
-  // Training Dashboard Routes (outside main layout to prevent glitch)
-  {
-    path: 'training-dashboard',
-    loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
-      .then(m => m.TrainingDashboardComponent)
-  },
-  {
-    path: 'dashboard/:trainSessionId',
-    loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
-      .then(m => m.TrainingDashboardComponent)
   },
   {
     path: '**',

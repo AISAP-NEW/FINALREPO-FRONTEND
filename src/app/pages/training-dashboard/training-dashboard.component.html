@@ -1,320 +1,319 @@
-<div class="main-container">
-  <div class="content-area">
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Training Dashboard</ion-title>
-        <ion-buttons slot="end">
-          <ion-button (click)="startNewTraining()" color="primary">
-            <ion-icon slot="start" name="add"></ion-icon>
-            Start Training
-          </ion-button>
-          <ion-button (click)="goBack()" fill="outline" color="secondary">
-            <ion-icon slot="start" name="arrow-back"></ion-icon>
-            Back to Models
-          </ion-button>
-          <ion-button (click)="refreshTrainingSessions()">
-            <ion-icon slot="icon-only" name="refresh"></ion-icon>
-          </ion-button>
-          <ion-button (click)="testApiConnection()" color="tertiary">
-            <ion-icon slot="icon-only" name="bug"></ion-icon>
-          </ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Training Dashboard</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="startNewTraining()" color="primary">
+        <ion-icon slot="start" name="add"></ion-icon>
+        Start Training
+      </ion-button>
+      <ion-button (click)="goBack()" fill="outline" color="secondary">
+        <ion-icon slot="start" name="arrow-back"></ion-icon>
+        Back to Models
+      </ion-button>
+      <ion-button (click)="refreshTrainingSessions()">
+        <ion-icon slot="icon-only" name="refresh"></ion-icon>
+      </ion-button>
+      <ion-button (click)="testApiConnection()" color="tertiary">
+        <ion-icon slot="icon-only" name="bug"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 
-    <div class="page-content">
-      <!-- Error Toast -->
-      <ion-toast
-        [isOpen]="showErrorToast"
-        message="{{ errorMessage }}"
-        duration="5000"
-        position="top"
-        color="danger"
-        (didDismiss)="dismissError()">
-      </ion-toast>
+<ion-content class="training-dashboard-page">
+  <!-- Error Toast -->
+  <ion-toast
+    [isOpen]="showErrorToast"
+    message="{{ errorMessage }}"
+    duration="5000"
+    position="top"
+    color="danger"
+    (didDismiss)="dismissError()">
+  </ion-toast>
 
-      <!-- Loading Indicator -->
-      <div *ngIf="isLoading" class="loading-indicator">
-        <ion-spinner name="crescent"></ion-spinner>
-        <span>Loading training sessions...</span>
-      </div>
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="loading-indicator">
+    <ion-spinner name="crescent"></ion-spinner>
+    <span>Loading training sessions...</span>
+  </div>
 
-      <!-- Error Display -->
-      <div *ngIf="error && !isLoading" class="error-display">
-        <ion-card color="danger">
-          <ion-card-header>
-            <ion-card-title>Error Loading Training Sessions</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <p>{{ error }}</p>
-            <ion-button (click)="loadAllTrainingSessions()" color="light">
-              <ion-icon slot="start" name="refresh"></ion-icon>
-              Retry
-            </ion-button>
-            <ion-button (click)="testApiConnection()" color="light" fill="outline">
-              <ion-icon slot="start" name="bug"></ion-icon>
-              Test API
-            </ion-button>
-          </ion-card-content>
-        </ion-card>
-      </div>
+  <!-- Error Display -->
+  <div *ngIf="error && !isLoading" class="error-display">
+    <ion-card color="danger">
+      <ion-card-header>
+        <ion-card-title>Error Loading Training Sessions</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>{{ error }}</p>
+        <ion-button (click)="loadAllTrainingSessions()" color="light">
+          <ion-icon slot="start" name="refresh"></ion-icon>
+          Retry
+        </ion-button>
+        <ion-button (click)="testApiConnection()" color="light" fill="outline">
+          <ion-icon slot="start" name="bug"></ion-icon>
+          Test API
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
 
-      <!-- General Training Dashboard View -->
-      <div *ngIf="isGeneralDashboard && !isLoading">
-        <!-- System Resources -->
-        <div *ngIf="systemResources" class="system-resources">
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title>System Resources</ion-card-title>
-            </ion-card-header>
-            <ion-card-content>
-              <ion-list>
-                <ion-item>
-                  <ion-label>
-                    <h3>CPU Usage</h3>
-                    <p>{{ systemResources.cpuUsage }}</p>
-                  </ion-label>
-                </ion-item>
-                <ion-item>
-                  <ion-label>
-                    <h3>Memory Usage</h3>
-                    <p>{{ systemResources.memoryUsage }}</p>
-                  </ion-label>
-                </ion-item>
-                <ion-item>
-                  <ion-label>
-                    <h3>Thread Count</h3>
-                    <p>{{ systemResources.threadCount }}</p>
-                  </ion-label>
-                </ion-item>
-              </ion-list>
-            </ion-card-content>
-          </ion-card>
-        </div>
+  <!-- General Training Dashboard View -->
+  <div *ngIf="isGeneralDashboard && !isLoading" class="dashboard-content">
+    <!-- System Resources -->
+    <div *ngIf="systemResources" class="system-resources">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>System Resources</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-list>
+            <ion-item>
+              <ion-label>
+                <h3>CPU Usage</h3>
+                <p>{{ systemResources.cpuUsage }}</p>
+              </ion-label>
+            </ion-item>
+            <ion-item>
+              <ion-label>
+                <h3>Memory Usage</h3>
+                <p>{{ systemResources.memoryUsage }}</p>
+              </ion-label>
+            </ion-item>
+            <ion-item>
+              <ion-label>
+                <h3>Thread Count</h3>
+                <p>{{ systemResources.threadCount }}</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+    </div>
 
-        <!-- Training Sessions List -->
-        <div class="training-sessions">
-          <ion-card>
-            <ion-card-header>
-              <div class="sessions-header">
-                <ion-card-title>Active Training Sessions</ion-card-title>
-                <ion-button size="small" fill="clear" (click)="getSystemResources()">
-                  <ion-icon slot="start" name="hardware-chip"></ion-icon>
-                  System Info
-                </ion-button>
-              </div>
-            </ion-card-header>
-            <ion-card-content>
-              <div *ngIf="activeTrainingSessions.length === 0 && !isLoading" class="no-sessions">
-                <p>No training sessions found.</p>
-                <ion-button color="primary" (click)="startNewTraining()">
-                  <ion-icon slot="start" name="add"></ion-icon>
-                  Start Your First Training
-                </ion-button>
-              </div>
-              
-              <ion-list *ngIf="activeTrainingSessions.length > 0">
-                <ion-item *ngFor="let session of activeTrainingSessions" button (click)="navigateToSession(session.id)">
-                  <ion-icon slot="start" [name]="getSessionIcon(session.status)" [color]="getSessionColor(session.status)"></ion-icon>
-                  <ion-label>
-                    <h3>{{ session.modelName || 'Model ' + session.modelId }}</h3>
-                    <p><strong>Status:</strong> {{ session.status }}</p>
-                    <p><strong>Started:</strong> {{ session.startedAt | date:'short' }}</p>
-                    <p *ngIf="session.completedAt"><strong>Completed:</strong> {{ session.completedAt | date:'short' }}</p>
-                    <p *ngIf="session.pausedAt"><strong>Paused:</strong> {{ session.pausedAt | date:'short' }}</p>
-                    <p *ngIf="session.datasetName"><strong>Dataset:</strong> {{ session.datasetName }}</p>
-                    <p *ngIf="session.learningRate"><strong>Learning Rate:</strong> {{ session.learningRate }}</p>
-                  </ion-label>
-                  
-                  <!-- Session Controls -->
-                  <div slot="end" class="session-controls">
-                    <!-- Pause Button -->
-                    <ion-button 
-                      *ngIf="canPauseSession(session)"
-                      size="small" 
-                      fill="clear" 
-                      color="warning"
-                      (click)="pauseSession(session, $event)"
-                      title="Pause Training">
-                      <ion-icon name="pause"></ion-icon>
-                    </ion-button>
-                    
-                    <!-- Resume Button -->
-                    <ion-button 
-                      *ngIf="canResumeSession(session)"
-                      size="small" 
-                      fill="clear" 
-                      color="success"
-                      (click)="resumeSession(session, $event)"
-                      title="Resume Training">
-                      <ion-icon name="play"></ion-icon>
-                    </ion-button>
-                    
-                    <!-- Cancel Button -->
-                    <ion-button 
-                      *ngIf="canCancelSession(session)"
-                      size="small" 
-                      fill="clear" 
-                      color="danger"
-                      (click)="cancelSession(session, $event)"
-                      title="Cancel Training">
-                      <ion-icon name="stop"></ion-icon>
-                    </ion-button>
-                    
-                    <!-- View Details Button -->
-                    <ion-button size="small" fill="clear" title="View Details">
-                      <ion-icon name="chevron-forward"></ion-icon>
-                    </ion-button>
-                  </div>
-                </ion-item>
-              </ion-list>
-            </ion-card-content>
-          </ion-card>
-        </div>
-      </div>
-
-      <!-- Specific Training Session View -->
-      <div *ngIf="!isGeneralDashboard && !isLoading && !error">
-        <!-- Training Status Card -->
-        <div class="status-card">
-          <h3>Training Status</h3>
-          <div class="status-info">
-            <div class="status-badge" [ngClass]="getStatusClass()">
-              {{ status || 'Unknown' }}
-            </div>
-            
-            <!-- VM Status -->
-            <div *ngIf="vmStatus" class="vm-status">
-              <strong>VM Status:</strong> {{ vmStatus }}
-            </div>
-            
-            <!-- Running Indicator -->
-            <div *ngIf="isRunning" class="running-indicator">
-              <ion-spinner name="crescent" size="small"></ion-spinner>
-              <span>Training is running on VM</span>
-            </div>
-          </div>
-
-          <!-- Control Buttons -->
-          <div class="control-buttons">
-            <ion-button 
-              *ngIf="isTrainingActive() && status.toLowerCase() !== 'paused'"
-              color="warning" 
-              size="small" 
-              (click)="pauseTraining()"
-              [disabled]="isLoading">
-              <ion-icon slot="start" name="pause"></ion-icon>
-              Pause Training
-            </ion-button>
-            
-            <ion-button 
-              *ngIf="status.toLowerCase() === 'paused'"
-              color="success" 
-              size="small" 
-              (click)="resumeTraining()"
-              [disabled]="isLoading">
-              <ion-icon slot="start" name="play"></ion-icon>
-              Resume Training
-            </ion-button>
-            
-            <ion-button 
-              *ngIf="isTrainingActive()"
-              color="danger" 
-              size="small" 
-              (click)="cancelTraining()"
-              [disabled]="isLoading">
-              <ion-icon slot="start" name="stop"></ion-icon>
-              Cancel Training
+    <!-- Training Sessions List -->
+    <div class="training-sessions">
+      <ion-card>
+        <ion-card-header>
+          <div class="sessions-header">
+            <ion-card-title>Active Training Sessions</ion-card-title>
+            <ion-button size="small" fill="clear" (click)="getSystemResources()">
+              <ion-icon slot="start" name="hardware-chip"></ion-icon>
+              System Info
             </ion-button>
           </div>
-        </div>
-
-        <!-- Training Details -->
-        <div class="details-card" *ngIf="startedAt || completedAt || pausedAt">
-          <h3>Training Details</h3>
-          <div class="details-grid">
-            <div *ngIf="startedAt" class="detail-item">
-              <strong>Started:</strong> {{ startedAt | date:'medium' }}
-            </div>
-            <div *ngIf="pausedAt" class="detail-item">
-              <strong>Paused:</strong> {{ pausedAt | date:'medium' }}
-            </div>
-            <div *ngIf="completedAt" class="detail-item">
-              <strong>Completed:</strong> {{ completedAt | date:'medium' }}
-            </div>
-            <div *ngIf="errorDetails" class="detail-item error">
-              <strong>Error:</strong> {{ errorDetails }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Training Logs -->
-        <div class="logs-card">
-          <div class="logs-header">
-            <h3>Training Logs</h3>
-            <ion-button 
-              size="small" 
-              fill="clear" 
-              (click)="fetchLogs()"
-              [disabled]="isLoading">
-              <ion-icon slot="start" name="refresh"></ion-icon>
-              Refresh Logs
+        </ion-card-header>
+        <ion-card-content>
+          <div *ngIf="activeTrainingSessions.length === 0 && !isLoading" class="no-sessions">
+            <p>No training sessions found.</p>
+            <ion-button color="primary" (click)="startNewTraining()">
+              <ion-icon slot="start" name="add"></ion-icon>
+              Start Your First Training
             </ion-button>
           </div>
           
-          <div class="logs-content">
-            <pre *ngIf="logs" class="logs-box">{{ logs }}</pre>
-            <div *ngIf="!logs" class="no-logs">
-              No logs available. Click "Refresh Logs" to load training logs.
-            </div>
-          </div>
-        </div>
+          <ion-list *ngIf="activeTrainingSessions.length > 0">
+            <ion-item *ngFor="let session of activeTrainingSessions" button (click)="navigateToSession(session.id)">
+              <ion-icon slot="start" [name]="getSessionIcon(session.status)" [color]="getSessionColor(session.status)"></ion-icon>
+              <ion-label>
+                <h3>{{ session.modelName || 'Model ' + session.modelId }}</h3>
+                <p><strong>Status:</strong> {{ session.status }}</p>
+                <p><strong>Started:</strong> {{ session.startedAt | date:'short' }}</p>
+                <p *ngIf="session.completedAt"><strong>Completed:</strong> {{ session.completedAt | date:'short' }}</p>
+                <p *ngIf="session.pausedAt"><strong>Paused:</strong> {{ session.pausedAt | date:'short' }}</p>
+                <p *ngIf="session.datasetName"><strong>Dataset:</strong> {{ session.datasetName }}</p>
+                <p *ngIf="session.learningRate"><strong>Learning Rate:</strong> {{ session.learningRate }}</p>
+              </ion-label>
+              
+              <!-- Session Controls -->
+              <div slot="end" class="session-controls">
+                <!-- Pause Button -->
+                <ion-button 
+                  *ngIf="canPauseSession(session)"
+                  size="small" 
+                  fill="clear" 
+                  color="warning"
+                  (click)="pauseSession(session, $event)"
+                  title="Pause Training">
+                  <ion-icon name="pause"></ion-icon>
+                </ion-button>
+                
+                <!-- Resume Button -->
+                <ion-button 
+                  *ngIf="canResumeSession(session)"
+                  size="small" 
+                  fill="clear" 
+                  color="success"
+                  (click)="resumeSession(session, $event)"
+                  title="Resume Training">
+                  <ion-icon name="play"></ion-icon>
+                </ion-button>
+                
+                <!-- Cancel Button -->
+                <ion-button 
+                  *ngIf="canCancelSession(session)"
+                  size="small" 
+                  fill="clear" 
+                  color="danger"
+                  (click)="cancelSession(session, $event)"
+                  title="Cancel Training">
+                  <ion-icon name="stop"></ion-icon>
+                </ion-button>
+                
+                <!-- View Details Button -->
+                <ion-button size="small" fill="clear" title="View Details">
+                  <ion-icon name="chevron-forward"></ion-icon>
+                </ion-button>
+              </div>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
 
-        <!-- Metrics -->
-        <div class="metrics-card" *ngIf="metrics && Object.keys(metrics).length > 0">
-          <h3>Training Metrics</h3>
-          <div class="metrics-grid">
-            <div *ngFor="let key of metrics | keyvalue" class="metric-item">
-              <strong>{{ key.key }}:</strong> {{ key.value }}
-            </div>
-          </div>
+  <!-- Specific Training Session View -->
+  <div *ngIf="!isGeneralDashboard && !isLoading && !error" class="session-details">
+    <!-- Training Status Card -->
+    <div class="status-card">
+      <h3>Training Status</h3>
+      <div class="status-info">
+        <div class="status-badge" [ngClass]="getStatusClass()">
+          {{ status || 'Unknown' }}
         </div>
-
-        <!-- Debug Actions -->
-        <div class="debug-card">
-          <h3>Debug Actions</h3>
-          <div class="debug-buttons">
-            <ion-button 
-              size="small" 
-              fill="outline" 
-              (click)="getSystemResources()"
-              [disabled]="isLoading">
-              <ion-icon slot="start" name="hardware-chip"></ion-icon>
-              System Resources
-            </ion-button>
-            
-            <ion-button 
-              size="small" 
-              fill="outline" 
-              (click)="testVMLogs()"
-              [disabled]="isLoading">
-              <ion-icon slot="start" name="bug"></ion-icon>
-              Test VM Logs
-            </ion-button>
-          </div>
+        
+        <!-- VM Status -->
+        <div *ngIf="vmStatus" class="vm-status">
+          <strong>VM Status:</strong> {{ vmStatus }}
+        </div>
+        
+        <!-- Running Indicator -->
+        <div *ngIf="isRunning" class="running-indicator">
+          <ion-spinner name="crescent" size="small"></ion-spinner>
+          <span>Training is running on VM</span>
         </div>
       </div>
 
-      <!-- Error State -->
-      <div *ngIf="error && !isLoading" class="error-state">
-        <ion-icon name="alert-circle" color="danger"></ion-icon>
-        <h3>Error Loading Training Status</h3>
-        <p>{{ error }}</p>
-        <ion-button (click)="pollTrainingStatus()" color="primary">
+      <!-- Control Buttons -->
+      <div class="control-buttons">
+        <ion-button 
+          *ngIf="isTrainingActive() && status.toLowerCase() !== 'paused'"
+          color="warning" 
+          size="small" 
+          (click)="pauseTraining()"
+          [disabled]="isLoading">
+          <ion-icon slot="start" name="pause"></ion-icon>
+          Pause Training
+        </ion-button>
+        
+        <ion-button 
+          *ngIf="status.toLowerCase() === 'paused'"
+          color="success" 
+          size="small" 
+          (click)="resumeTraining()"
+          [disabled]="isLoading">
+          <ion-icon slot="start" name="play"></ion-icon>
+          Resume Training
+        </ion-button>
+        
+        <ion-button 
+          *ngIf="isTrainingActive()"
+          color="danger" 
+          size="small" 
+          (click)="cancelTraining()"
+          [disabled]="isLoading">
+          <ion-icon slot="start" name="stop"></ion-icon>
+          Cancel Training
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Training Details -->
+    <div class="details-card" *ngIf="startedAt || completedAt || pausedAt">
+      <h3>Training Details</h3>
+      <div class="details-grid">
+        <div *ngIf="startedAt" class="detail-item">
+          <strong>Started:</strong> {{ startedAt | date:'medium' }}
+        </div>
+        <div *ngIf="pausedAt" class="detail-item">
+          <strong>Paused:</strong> {{ pausedAt | date:'medium' }}
+        </div>
+        <div *ngIf="completedAt" class="detail-item">
+          <strong>Completed:</strong> {{ completedAt | date:'medium' }}
+        </div>
+        <div *ngIf="errorDetails" class="detail-item error">
+          <strong>Error:</strong> {{ errorDetails }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Training Logs -->
+    <div class="logs-card">
+      <div class="logs-header">
+        <h3>Training Logs</h3>
+        <ion-button 
+          size="small" 
+          fill="clear" 
+          (click)="fetchLogs()"
+          [disabled]="isLoading">
           <ion-icon slot="start" name="refresh"></ion-icon>
-          Retry
+          Refresh Logs
+        </ion-button>
+      </div>
+      
+      <div class="logs-content">
+        <pre *ngIf="logs" class="logs-box">{{ logs }}</pre>
+        <div *ngIf="!logs" class="no-logs">
+          No logs available. Click "Refresh Logs" to load training logs.
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-card" *ngIf="metrics && Object.keys(metrics).length > 0">
+      <h3>Training Metrics</h3>
+      <div class="metrics-grid">
+        <div *ngFor="let key of metrics | keyvalue" class="metric-item">
+          <strong>{{ key.key }}:</strong> {{ key.value }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Debug Actions -->
+    <div class="debug-card">
+      <h3>Debug Actions</h3>
+      <div class="debug-buttons">
+        <ion-button 
+          size="small" 
+          fill="outline" 
+          (click)="getSystemResources()"
+          [disabled]="isLoading">
+          <ion-icon slot="start" name="hardware-chip"></ion-icon>
+          System Resources
+        </ion-button>
+        
+        <ion-button 
+          size="small" 
+          fill="outline" 
+          (click)="testVMLogs()"
+          [disabled]="isLoading">
+          <ion-icon slot="start" name="bug"></ion-icon>
+          Test VM Logs
         </ion-button>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-state">
+    <ion-icon name="alert-circle" color="danger"></ion-icon>
+    <h3>Error Loading Training Status</h3>
+    <p>{{ error }}</p>
+    <ion-button (click)="pollTrainingStatus()" color="primary">
+      <ion-icon slot="start" name="refresh"></ion-icon>
+      Retry
+    </ion-button>
+  </div>
+</ion-content>
