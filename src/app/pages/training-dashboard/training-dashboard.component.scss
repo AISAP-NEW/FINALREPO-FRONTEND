@@ -19,6 +19,12 @@
     color: #333;
   }
   
+  .header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
   .nav-btn {
     background: #007bff;
     color: white;
@@ -557,6 +563,62 @@
 
 .training-sessions {
   margin-bottom: 30px;
+  
+  .sessions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    ion-card-title {
+      margin: 0;
+    }
+  }
+  
+  .session-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    
+    ion-button {
+      --padding-start: 8px;
+      --padding-end: 8px;
+      --padding-top: 8px;
+      --padding-bottom: 8px;
+      min-width: 40px;
+      min-height: 40px;
+      
+      ion-icon {
+        font-size: 18px;
+      }
+    }
+  }
+  
+  ion-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+    
+    &:hover {
+      --background: #f8f9fa;
+    }
+    
+    ion-label {
+      h3 {
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+      
+      p {
+        color: #666;
+        margin: 2px 0;
+        font-size: 14px;
+        
+        strong {
+          color: #333;
+        }
+      }
+    }
+  }
   
   .no-sessions {
     text-align: center;

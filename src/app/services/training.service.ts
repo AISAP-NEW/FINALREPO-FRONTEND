@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -39,6 +39,40 @@ export interface ExecutionResult {
   error: string;
   executionTime?: number;
   memoryUsed?: number;
+}
+
+// Add new interfaces for training sessions
+export interface TrainingSessionDTO {
+  id: number;
+  modelInstanceId: number;
+  datasetId?: string;
+  trainingConfig?: string;
+  metrics?: string;
+  status: string;
+  startedAt?: string;
+  completedAt?: string;
+  pausedAt?: string;
+  logsPath?: string;
+  errorMessage?: string;
+  trainingParameters?: string;
+  learningRate: number;
+  modelId?: number;
+  modelName?: string;
+  modelInstanceName?: string;
+  datasetName?: string;
+  duration?: string;
+  canPause?: boolean;
+  canResume?: boolean;
+  canCancel?: boolean;
+}
+
+export interface TrainingSessionsResponse {
+  success: boolean;
+  sessions: TrainingSessionDTO[];
+  totalCount: number;
+  filters?: any;
+  error?: string;
+  details?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -169,6 +203,54 @@ export class TrainingService {
     return this.http.get(`${this.API_URL}/test-logs/${instanceId}`).pipe(
       catchError(this.handleTrainingError.bind(this))
     );
+  }
+
+  /**
+   * Get all training sessions with optional filters
+   * Maps to: GET /api/Training/sessions
+   */
+  getAllTrainingSessions(filters?: {
+    status?: string;
+    modelId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Observable<TrainingSessionsResponse> {
+    let params = new HttpParams();
+    
+    if (filters) {
+      if (filters.status) params = params.set('status', filters.status);
+      if (filters.modelId) params = params.set('modelId', filters.modelId.toString());
+      if (filters.startDate) params = params.set('startDate', filters.startDate.toISOString());
+      if (filters.endDate) params = params.set('endDate', filters.endDate.toISOString());
+    }
+    
+    return this.http.get<TrainingSessionsResponse>(`${this.API_URL}/sessions`, { params }).pipe(
+      catchError(this.handleTrainingError.bind(this))
+    );
+  }
+
+  /**
+   * Pause training session by session ID
+   * Maps to: POST /api/Training/pause/{trainSessionId}
+   */
+  pauseTrainingSession(sessionId: number): Observable<any> {
+    return this.pause(sessionId);
+  }
+
+  /**
+   * Resume training session by session ID
+   * Maps to: POST /api/Training/resume/{trainSessionId}
+   */
+  resumeTrainingSession(sessionId: number): Observable<any> {
+    return this.resume(sessionId);
+  }
+
+  /**
+   * Cancel training session by session ID
+   * Maps to: POST /api/Training/cancel/{trainSessionId}
+   */
+  cancelTrainingSession(sessionId: number): Observable<any> {
+    return this.cancel(sessionId);
   }
 
   /**

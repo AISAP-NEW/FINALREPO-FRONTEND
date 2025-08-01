@@ -1,7 +1,16 @@
 <div class="dashboard-container">
   <div class="dashboard-header">
     <h2>Training Dashboard</h2>
-    <button class="nav-btn" (click)="goBack()">&#8592; Back to Models</button>
+    <div class="header-buttons">
+      <ion-button color="primary" (click)="startNewTraining()">
+        <ion-icon slot="start" name="add"></ion-icon>
+        Start Training
+      </ion-button>
+      <ion-button color="secondary" fill="outline" (click)="goBack()">
+        <ion-icon slot="start" name="arrow-back"></ion-icon>
+        Back to Models
+      </ion-button>
+    </div>
   </div>
 
   <!-- Error Toast -->
@@ -109,10 +118,16 @@
     <div class="training-sessions">
       <ion-card>
         <ion-card-header>
-          <ion-card-title>Training Sessions</ion-card-title>
+          <div class="sessions-header">
+            <ion-card-title>Training Sessions</ion-card-title>
+            <ion-button size="small" fill="clear" (click)="refreshTrainingSessions()">
+              <ion-icon slot="start" name="refresh"></ion-icon>
+              Refresh
+            </ion-button>
+          </div>
         </ion-card-header>
         <ion-card-content>
-          <div *ngIf="activeTrainingSessions.length === 0" class="no-sessions">
+          <div *ngIf="activeTrainingSessions.length === 0 && !isLoading" class="no-sessions">
             <p>No training sessions found.</p>
             <ion-button color="primary" (click)="startNewTraining()">
               <ion-icon slot="start" name="add"></ion-icon>
@@ -124,16 +139,55 @@
             <ion-item *ngFor="let session of activeTrainingSessions" button (click)="navigateToSession(session.id)">
               <ion-icon slot="start" [name]="getSessionIcon(session.status)" [color]="getSessionColor(session.status)"></ion-icon>
               <ion-label>
-                <h3>{{ session.modelName }}</h3>
-                <p>Status: {{ session.status }}</p>
-                <p>Started: {{ session.startedAt | date:'short' }}</p>
-                <div *ngIf="session.progress" class="progress-bar">
-                  <div class="progress-fill" [style.width.%]="session.progress"></div>
-                </div>
+                <h3>{{ session.modelName || 'Model ' + session.modelId }}</h3>
+                <p><strong>Status:</strong> {{ session.status }}</p>
+                <p><strong>Started:</strong> {{ session.startedAt | date:'short' }}</p>
+                <p *ngIf="session.completedAt"><strong>Completed:</strong> {{ session.completedAt | date:'short' }}</p>
+                <p *ngIf="session.pausedAt"><strong>Paused:</strong> {{ session.pausedAt | date:'short' }}</p>
+                <p *ngIf="session.datasetName"><strong>Dataset:</strong> {{ session.datasetName }}</p>
+                <p *ngIf="session.learningRate"><strong>Learning Rate:</strong> {{ session.learningRate }}</p>
               </ion-label>
-              <ion-button slot="end" fill="clear" size="small">
-                <ion-icon name="chevron-forward"></ion-icon>
-              </ion-button>
+              
+              <!-- Session Controls -->
+              <div slot="end" class="session-controls">
+                <!-- Pause Button -->
+                <ion-button 
+                  *ngIf="session.status === 'InProgress'"
+                  size="small" 
+                  fill="clear" 
+                  color="warning"
+                  (click)="pauseSession(session, $event)"
+                  title="Pause Training">
+                  <ion-icon name="pause"></ion-icon>
+                </ion-button>
+                
+                <!-- Resume Button -->
+                <ion-button 
+                  *ngIf="session.status === 'Paused'"
+                  size="small" 
+                  fill="clear" 
+                  color="success"
+                  (click)="resumeSession(session, $event)"
+                  title="Resume Training">
+                  <ion-icon name="play"></ion-icon>
+                </ion-button>
+                
+                <!-- Cancel Button -->
+                <ion-button 
+                  *ngIf="session.status === 'InProgress' || session.status === 'Paused'"
+                  size="small" 
+                  fill="clear" 
+                  color="danger"
+                  (click)="cancelSession(session, $event)"
+                  title="Cancel Training">
+                  <ion-icon name="stop"></ion-icon>
+                </ion-button>
+                
+                <!-- View Details Button -->
+                <ion-button size="small" fill="clear" title="View Details">
+                  <ion-icon name="chevron-forward"></ion-icon>
+                </ion-button>
+              </div>
             </ion-item>
           </ion-list>
         </ion-card-content>

@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TrainingService, TrainingStatus, TrainingLogs } from '../../services/training.service';
+import { TrainingService, TrainingStatus, TrainingLogs, TrainingSessionDTO, TrainingSessionsResponse } from '../../services/training.service';
 import { interval, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
@@ -48,8 +48,9 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
 
   // General dashboard properties
   isGeneralDashboard = false;
-  activeTrainingSessions: any[] = [];
+  activeTrainingSessions: TrainingSessionDTO[] = [];
   systemResources: any = null;
+  allSessionsPollSub?: Subscription;
 
   // Make Object available in template
   protected readonly Object = Object;
@@ -67,6 +68,8 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
       // General training dashboard view
       this.isGeneralDashboard = true;
       this.loadGeneralDashboard();
+      // Poll every 10 seconds for session updates
+      this.allSessionsPollSub = interval(10000).subscribe(() => this.loadAllTrainingSessions());
     } else {
       // Specific training session view
       this.isGeneralDashboard = false;
@@ -78,6 +81,7 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.pollSub?.unsubscribe();
+    this.allSessionsPollSub?.unsubscribe();
   }
 
   /**
@@ -107,32 +111,17 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
    * Load all training sessions
    */
   loadAllTrainingSessions() {
-    // For now, we'll create a mock list of training sessions
-    // In a real implementation, you would have an API endpoint to get all sessions
-    this.activeTrainingSessions = [
-      {
-        id: 1,
-        modelName: 'Sample Model 1',
-        status: 'InProgress',
-        startedAt: new Date().toISOString(),
-        progress: 65
+    this.isLoading = true;
+    this.trainingService.getAllTrainingSessions().subscribe({
+      next: (response: TrainingSessionsResponse) => {
+        this.activeTrainingSessions = response.sessions || [];
+        this.isLoading = false;
       },
-      {
-        id: 2,
-        modelName: 'Sample Model 2',
-        status: 'Paused',
-        startedAt: new Date(Date.now() - 3600000).toISOString(),
-        progress: 30
-      },
-      {
-        id: 3,
-        modelName: 'Sample Model 3',
-        status: 'Completed',
-        startedAt: new Date(Date.now() - 7200000).toISOString(),
-        completedAt: new Date().toISOString(),
-        progress: 100
+      error: (err) => {
+        console.error('Failed to load training sessions:', err);
+        this.isLoading = false;
       }
-    ];
+    });
   }
 
   /**
@@ -146,7 +135,62 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
    * Navigate to a specific training session
    */
   navigateToSession(sessionId: number) {
-    this.router.navigate(['/dashboard', sessionId]);
+    this.router.navigate(['/training-dashboard', sessionId]);
+  }
+
+  /**
+   * Pause a training session from the list
+   */
+  pauseSession(session: TrainingSessionDTO, event: Event) {
+    event.stopPropagation(); // Prevent navigation
+    
+    this.trainingService.pauseTrainingSession(session.id).subscribe({
+      next: () => {
+        this.showSuccess(`Training session for ${session.modelName} paused successfully`);
+        this.refreshTrainingSessions();
+      },
+      error: (err) => {
+        this.showError(err.message || 'Failed to pause training session');
+      }
+    });
+  }
+
+  /**
+   * Resume a training session from the list
+   */
+  resumeSession(session: TrainingSessionDTO, event: Event) {
+    event.stopPropagation(); // Prevent navigation
+    
+    this.trainingService.resumeTrainingSession(session.id).subscribe({
+      next: () => {
+        this.showSuccess(`Training session for ${session.modelName} resumed successfully`);
+        this.refreshTrainingSessions();
+      },
+      error: (err) => {
+        this.showError(err.message || 'Failed to resume training session');
+      }
+    });
+  }
+
+  /**
+   * Cancel a training session from the list
+   */
+  cancelSession(session: TrainingSessionDTO, event: Event) {
+    event.stopPropagation(); // Prevent navigation
+    
+    if (!confirm(`Are you sure you want to cancel the training session for ${session.modelName}? This action cannot be undone.`)) {
+      return;
+    }
+    
+    this.trainingService.cancelTrainingSession(session.id).subscribe({
+      next: () => {
+        this.showSuccess(`Training session for ${session.modelName} cancelled successfully`);
+        this.refreshTrainingSessions();
+      },
+      error: (err) => {
+        this.showError(err.message || 'Failed to cancel training session');
+      }
+    });
   }
 
   /**
@@ -318,6 +362,8 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
   private showSuccess(message: string) {
     // You can implement a success toast here
     console.log('Success:', message);
+    // For now, we'll show an alert - you can replace this with a proper toast
+    alert(message);
   }
 
   /**
