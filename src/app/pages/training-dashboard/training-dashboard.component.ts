@@ -4,8 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TrainingService, TrainingStatus, TrainingLogs, TrainingSessionDTO, TrainingSessionsResponseDTO } from '../../services/training.service';
 import { interval, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-
-import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonList, IonItem, IonLabel, IonIcon, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons, IonMenuButton, IonContent } from '@ionic/angular/standalone';
+import { IonicModule } from '@ionic/angular';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-training-dashboard',
@@ -14,23 +14,7 @@ import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardConte
   standalone: true,
   imports: [
     CommonModule,
-    IonButton,
-    IonToast,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardContent,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonIcon,
-    IonSpinner,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonButtons,
-    IonMenuButton,
-    IonContent
+    IonicModule
   ]
 })
 export class TrainingDashboardComponent implements OnInit, OnDestroy {
@@ -118,18 +102,45 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
    */
   loadAllTrainingSessions() {
     console.log('Loading all training sessions...');
+    console.log('API URL:', `${environment.apiUrl}/api/Training/sessions`);
     this.isLoading = true;
+    this.error = ''; // Clear previous errors
+    
     this.trainingService.getAllTrainingSessions().subscribe({
       next: (response: TrainingSessionsResponseDTO) => {
         console.log('Training sessions response:', response);
-        this.activeTrainingSessions = response.sessions || [];
-        console.log('Active training sessions:', this.activeTrainingSessions);
+        if (response && response.success) {
+          this.activeTrainingSessions = response.sessions || [];
+          console.log('Active training sessions:', this.activeTrainingSessions);
+        } else {
+          console.error('API returned unsuccessful response:', response);
+          this.error = response.error || 'Failed to load training sessions';
+          this.activeTrainingSessions = [];
+        }
         this.isLoading = false;
       },
       error: (err) => {
         console.error('Failed to load training sessions:', err);
         this.error = err.message || 'Failed to load training sessions';
+        this.activeTrainingSessions = [];
         this.isLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Test API connectivity
+   */
+  testApiConnection() {
+    console.log('Testing API connection...');
+    this.trainingService.getSystemResources().subscribe({
+      next: (response) => {
+        console.log('API connection successful:', response);
+        alert('API connection successful!');
+      },
+      error: (err) => {
+        console.error('API connection failed:', err);
+        alert('API connection failed: ' + err.message);
       }
     });
   }
@@ -479,5 +490,26 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
     return this.status.toLowerCase() === 'failed' || 
            this.status.toLowerCase() === 'error' || 
            this.status.toLowerCase() === 'cancelled';
+  }
+
+  /**
+   * Check if session can be paused
+   */
+  canPauseSession(session: TrainingSessionDTO): boolean {
+    return session.status === 'InProgress';
+  }
+
+  /**
+   * Check if session can be resumed
+   */
+  canResumeSession(session: TrainingSessionDTO): boolean {
+    return session.status === 'Paused';
+  }
+
+  /**
+   * Check if session can be cancelled
+   */
+  canCancelSession(session: TrainingSessionDTO): boolean {
+    return session.status === 'InProgress' || session.status === 'Paused';
   }
 }

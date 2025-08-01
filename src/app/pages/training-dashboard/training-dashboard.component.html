@@ -16,6 +16,9 @@
       <ion-button (click)="refreshTrainingSessions()">
         <ion-icon slot="icon-only" name="refresh"></ion-icon>
       </ion-button>
+      <ion-button (click)="testApiConnection()" color="tertiary">
+        <ion-icon slot="icon-only" name="bug"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -34,7 +37,27 @@
   <!-- Loading Indicator -->
   <div *ngIf="isLoading" class="loading-indicator">
     <ion-spinner name="crescent"></ion-spinner>
-    <span>Loading...</span>
+    <span>Loading training sessions...</span>
+  </div>
+
+  <!-- Error Display -->
+  <div *ngIf="error && !isLoading" class="error-display">
+    <ion-card color="danger">
+      <ion-card-header>
+        <ion-card-title>Error Loading Training Sessions</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>{{ error }}</p>
+        <ion-button (click)="loadAllTrainingSessions()" color="light">
+          <ion-icon slot="start" name="refresh"></ion-icon>
+          Retry
+        </ion-button>
+        <ion-button (click)="testApiConnection()" color="light" fill="outline">
+          <ion-icon slot="start" name="bug"></ion-icon>
+          Test API
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
   </div>
 
   <!-- General Training Dashboard View -->
@@ -108,7 +131,7 @@
               <div slot="end" class="session-controls">
                 <!-- Pause Button -->
                 <ion-button 
-                  *ngIf="session.status === 'InProgress'"
+                  *ngIf="canPauseSession(session)"
                   size="small" 
                   fill="clear" 
                   color="warning"
@@ -119,7 +142,7 @@
                 
                 <!-- Resume Button -->
                 <ion-button 
-                  *ngIf="session.status === 'Paused'"
+                  *ngIf="canResumeSession(session)"
                   size="small" 
                   fill="clear" 
                   color="success"
@@ -130,7 +153,7 @@
                 
                 <!-- Cancel Button -->
                 <ion-button 
-                  *ngIf="session.status === 'InProgress' || session.status === 'Paused'"
+                  *ngIf="canCancelSession(session)"
                   size="small" 
                   fill="clear" 
                   color="danger"

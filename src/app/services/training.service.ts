@@ -45,11 +45,11 @@ export interface ExecutionResult {
 export interface TrainingSessionDTO {
   id: number;
   modelInstanceId: number;
-  datasetId?: string;
+  datasetId?: string; // Guid? in backend becomes string in JSON
   trainingConfig?: string;
   metrics?: string;
   status: string;
-  startedAt?: string;
+  startedAt?: string; // DateTime? becomes string in JSON
   completedAt?: string;
   pausedAt?: string;
   logsPath?: string;
@@ -60,10 +60,6 @@ export interface TrainingSessionDTO {
   modelName?: string;
   modelInstanceName?: string;
   datasetName?: string;
-  duration?: string;
-  canPause?: boolean;
-  canResume?: boolean;
-  canCancel?: boolean;
 }
 
 export interface TrainingSessionsResponseDTO {
