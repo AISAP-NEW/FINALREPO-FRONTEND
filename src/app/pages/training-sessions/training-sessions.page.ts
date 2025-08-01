@@ -87,6 +87,16 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
         const data = await response.json();
         console.log('✅ Direct fetch successful:', data);
         console.log('🎯 Success flag from direct fetch:', data.success);
+        console.log('📊 Direct fetch sessions:', data.sessions);
+        console.log('🔢 Direct fetch session count:', data.sessions?.length);
+        
+        // Check if backend is returning success=false
+        if (data.success === false) {
+          console.error('🚨 BACKEND IS RETURNING SUCCESS=FALSE!');
+          console.error('🔍 Backend error:', data.error);
+          console.error('📝 Backend details:', data.details);
+          console.error('💡 This suggests a backend issue, not a frontend issue');
+        }
       } else {
         console.error('❌ Direct fetch failed:', response.status, response.statusText);
         const errorText = await response.text();
@@ -174,6 +184,13 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
       console.log('📈 Sessions array:', response?.sessions);
       console.log('🔢 Sessions count:', response?.sessions?.length);
       console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
+      
+      // Check if this is our mock error response
+      if (response?.error && response?.details) {
+        console.error('🚨 This appears to be a mock error response from the service');
+        console.error('🔍 Error:', response.error);
+        console.error('📝 Details:', response.details);
+      }
       
       if (response && response.success) {
         console.log('✅ Successfully loaded sessions:', response.sessions.length);

@@ -243,16 +243,8 @@ export class TrainingService {
         console.error('📝 Error message:', error.message);
         console.error('🌐 Error URL:', error.url);
         
-        // Return a mock response with error info for debugging
-        const errorResponse: TrainingSessionsResponseDTO = {
-          success: false,
-          sessions: [],
-          totalCount: 0,
-          error: `API Error: ${error.status} - ${error.message}`,
-          details: `Failed to connect to ${error.url || url}`
-        };
-        
-        return throwError(() => errorResponse);
+        // Just throw the original error - don't create mock responses
+        return throwError(() => error);
       })
     );
   }
