@@ -22,7 +22,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { closeOutline } from 'ionicons/icons';
-import { DatasetService, Dataset } from '../../services/dataset.service';
+import { DatasetService, Dataset, ValidatedDatasetForTraining } from '../../services/dataset.service';
 
 export interface ValidatedDataset {
   datasetId: string;
@@ -102,30 +102,34 @@ export class TrainingConfigModalComponent implements OnInit {
     this.isLoading = true;
     this.error = '';
     
-    this.datasetService.getValidatedDatasets().subscribe({
-      next: (datasets: Dataset[]) => {
-        console.log('Received validated datasets:', datasets);
+    // Use the method that generates validation IDs for training
+    this.datasetService.getValidatedDatasetsForTraining().subscribe({
+      next: (datasets: ValidatedDatasetForTraining[]) => {
+        console.log('Received validated datasets for training:', datasets);
         
-        // Filter and map datasets to include validation ID
+        // Map to the interface expected by the component
         this.validatedDatasets = datasets
-          .filter(dataset => 
-            dataset.validationStatus === 'Passed' && 
-            !dataset.hasErrors &&
-            dataset.isValidated
-          )
+          .filter(dataset => dataset.validationStatus === 'Passed')
           .map(dataset => ({
             datasetId: dataset.datasetId,
             datasetName: dataset.datasetName,
-            validationId: dataset.datasetId, // For now, use datasetId as validationId
+            validationId: dataset.validationId, // This is the generated GUID
             description: dataset.description,
             validationStatus: dataset.validationStatus
           }));
         
         console.log('Filtered validated datasets:', this.validatedDatasets);
+        console.log('Validation IDs generated:', this.validatedDatasets.map(ds => ({ name: ds.datasetName, validationId: ds.validationId })));
+        
+        // Test GUID generation for the first dataset
+        if (this.validatedDatasets.length > 0) {
+          this.datasetService.testGuidGeneration(this.validatedDatasets[0].datasetId);
+        }
+        
         this.isLoading = false;
         
         if (this.validatedDatasets.length === 0) {
-          this.error = 'No validated datasets available. Please validate a dataset before starting training.';
+          this.error = 'No validated datasets available. Please validate a dataset before starting training. You can validate datasets from the Datasets page.';
         }
       },
       error: (error) => {
@@ -164,7 +168,12 @@ export class TrainingConfigModalComponent implements OnInit {
         notes: this.trainingForm.value.notes || ''
       };
 
-      console.log('Submitting training configuration:', config);
+      console.log('Training config modal - submitting configuration:', config);
+      console.log('Selected dataset:', selectedDataset);
+      console.log('DatasetValidationId being sent:', selectedDataset.validationId);
+      console.log('DatasetValidationId type:', typeof selectedDataset.validationId);
+      console.log('DatasetValidationId length:', selectedDataset.validationId?.length);
+      
       this.modalController.dismiss(config);
     } else {
       // Mark all invalid fields as touched to show validation errors

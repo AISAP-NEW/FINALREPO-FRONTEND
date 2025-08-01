@@ -248,6 +248,10 @@ export class ModelsPage implements OnInit {
           Notes: data.notes || ''
         };
 
+        console.log('Models page - final training config being sent:', config);
+        console.log('DatasetValidationId type:', typeof config.DatasetValidationId);
+        console.log('DatasetValidationId value:', config.DatasetValidationId);
+
         this.trainingService.startTraining(config).subscribe({
           next: (res: any) => {
             loading.dismiss();

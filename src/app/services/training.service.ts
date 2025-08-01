@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface StartTrainingDTO {
@@ -10,7 +10,7 @@ export interface StartTrainingDTO {
   LearningRate: number;
   Epochs: number;
   BatchSize: number;
-  DatasetValidationId: string;
+  DatasetValidationId: string; // This should be a GUID string that gets converted
   TrainingParameters?: string;
   Notes?: string;
 }
@@ -52,7 +52,24 @@ export class TrainingService {
    * Maps to: POST /api/Training/start
    */
   startTraining(config: StartTrainingDTO): Observable<any> {
-    return this.http.post(`${this.API_URL}/start`, config).pipe(
+    console.log('Starting training with config:', config);
+    console.log('DatasetValidationId type:', typeof config.DatasetValidationId);
+    console.log('DatasetValidationId value:', config.DatasetValidationId);
+    console.log('DatasetValidationId length:', config.DatasetValidationId?.length);
+    console.log('Is DatasetValidationId a valid GUID format?', this.isValidGuid(config.DatasetValidationId));
+    
+    // Convert the config to match backend expectations
+    const backendConfig = {
+      ...config,
+      DatasetValidationId: config.DatasetValidationId // Keep as string, backend will parse it
+    };
+    
+    console.log('Final backend config being sent:', backendConfig);
+    
+    return this.http.post(`${this.API_URL}/start`, backendConfig).pipe(
+      tap(response => {
+        console.log('Training start response:', response);
+      }),
       catchError(this.handleTrainingError.bind(this))
     );
   }
@@ -155,6 +172,18 @@ export class TrainingService {
   }
 
   /**
+   * Test connection to training API
+   */
+  testConnection(): Observable<any> {
+    return this.http.get(`${this.API_URL}/status/test`).pipe(
+      catchError(error => {
+        console.error('Training API connection test failed:', error);
+        return throwError(() => new Error('Training API connection failed'));
+      })
+    );
+  }
+
+  /**
    * Enhanced error handling with VM-specific error messages
    */
   private handleTrainingError(error: HttpErrorResponse): Observable<never> {
@@ -180,7 +209,13 @@ export class TrainingService {
       errorMessage = 'Training session not found. The session may have been deleted or expired.';
     } else if (error.status === 400) {
       if (error.error?.message) {
-        errorMessage = `Training configuration error: ${error.error.message}`;
+        if (error.error.message.includes('DatasetValidationId')) {
+          errorMessage = 'Invalid dataset validation ID. Please ensure the dataset has been validated before training.';
+        } else if (error.error.message.includes('dataset')) {
+          errorMessage = `Training configuration error: ${error.error.message}`;
+        } else {
+          errorMessage = `Training configuration error: ${error.error.message}`;
+        }
       } else {
         errorMessage = 'Invalid training configuration. Please check your parameters and try again.';
       }
@@ -190,5 +225,13 @@ export class TrainingService {
 
     console.error('Training service error:', error);
     return throwError(() => new Error(errorMessage));
+  }
+
+  /**
+   * Check if a string is a valid GUID format
+   */
+  private isValidGuid(guid: string): boolean {
+    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return guidRegex.test(guid);
   }
 }

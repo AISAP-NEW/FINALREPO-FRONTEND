@@ -30,7 +30,7 @@ import {
   IonBackButton
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { cloudUploadOutline, trashOutline } from 'ionicons/icons';
+import { cloudUploadOutline, trashOutline, folderOpenOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-model-upload',
@@ -52,7 +52,8 @@ import { cloudUploadOutline, trashOutline } from 'ionicons/icons';
     IonLabel,
     IonInput,
     IonTextarea,
-
+    IonSelect,
+    IonSelectOption,
     IonButton,
     IonSpinner,
     IonIcon,
@@ -78,7 +79,7 @@ export class ModelUploadPage implements OnInit {
     private router: Router,
     private toastService: ToastService
   ) {
-    addIcons({ cloudUploadOutline, trashOutline });
+    addIcons({ cloudUploadOutline, trashOutline, folderOpenOutline });
 
     this.uploadForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -149,14 +150,17 @@ export class ModelUploadPage implements OnInit {
       return;
     }
 
-    // Check file type if needed
-    const allowedTypes = ['.h5', '.pb', '.pt', '.pth', '.onnx', '.pkl', '.joblib', '.model'];
+    // Check file type - expanded to include script files
+    const allowedTypes = ['.h5', '.pb', '.pt', '.pth', '.onnx', '.pkl', '.joblib', '.model', '.py', '.js', '.ts', '.ipynb'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
     if (!allowedTypes.includes(fileExtension)) {
-      this.toastService.presentToast('warning' as any, 'Warning: Unrecognized model file type. Please ensure this is a valid model file.');
+      this.toastService.presentToast('warning' as any, 
+        `Warning: Unrecognized file type (${fileExtension}). Supported types: ${allowedTypes.join(', ')}`);
     }
 
     this.selectedFile = file;
+    console.log('File accepted:', file.name, 'Type:', fileExtension);
   }
 
   removeFile() {

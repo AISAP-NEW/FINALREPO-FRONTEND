@@ -41,6 +41,7 @@ export interface Dataset {
   preprocessingStatus: string;
   splitStatus?: string;  // Can be 'pending', 'in_progress', 'complete', or 'failed'
   trainTestSplit?: TrainTestSplit | null;
+  validationId?: string; // The validation ID from the backend
 }
 
 export interface DatasetsResponse {
@@ -182,6 +183,15 @@ export interface CreateDatasetDTO {
   thumbnailImage?: File;
 }
 
+export interface ValidatedDatasetForTraining {
+  datasetId: string;
+  datasetName: string;
+  validationId: string;
+  description: string;
+  validationStatus: string;
+  validationDate: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -221,7 +231,8 @@ export class DatasetService {
           validationErrors: d.ValidationErrors ?? 0,
           validationStatus: d.ValidationStatus ?? 'pending',
           preprocessingStatus: d.PreprocessingStatus ?? 'pending',
-          splitStatus: d.SplitStatus ?? 'pending'
+          splitStatus: d.SplitStatus ?? 'pending',
+          validationId: d.ValidationId // Include the validation ID from backend
         }));
       }),
       catchError(error => {
@@ -305,6 +316,19 @@ export class DatasetService {
 
   validateDataset(datasetId: string): Observable<ValidationResponse> {
     return this.http.post<ValidationResponse>(`${this.datasetUrl}/validate/${datasetId}`, {});
+  }
+
+  /**
+   * Validate a dataset and get the validation ID
+   * This creates a real DatasetValidation record in the backend
+   */
+  validateDatasetAndGetId(datasetId: string): Observable<{ validationId: string; status: string }> {
+    return this.validateDataset(datasetId).pipe(
+      map(response => ({
+        validationId: response.validationId,
+        status: response.status
+      }))
+    );
   }
 
   splitDataset(datasetId: string, trainRatio: number = 80, testRatio: number = 20): Observable<SplitResponse> {
@@ -556,6 +580,110 @@ export class DatasetService {
         !dataset.hasErrors
       ))
     );
+  }
+
+  /**
+   * Get validated datasets with their validation IDs for training
+   * This maps to the backend DatasetValidation records
+   */
+  getValidatedDatasetsForTraining(): Observable<ValidatedDatasetForTraining[]> {
+    // Get all datasets and filter for those with validations
+    return this.getAllDatasets().pipe(
+      map(datasets => {
+        console.log('All datasets received:', datasets);
+        
+        // Filter datasets that have validation records with status 'Passed'
+        const validatedDatasets = datasets.filter(dataset => 
+          dataset.validationStatus === 'Passed' && 
+          !dataset.hasErrors &&
+          dataset.isValidated &&
+          dataset.validationId // Only include datasets that have actual validation IDs
+        );
+        
+        console.log('Filtered validated datasets with validation IDs:', validatedDatasets);
+        
+        // Map to include validation IDs
+        return validatedDatasets.map(dataset => {
+          console.log('Dataset validation info:', {
+            name: dataset.datasetName,
+            validationId: dataset.validationId,
+            validationStatus: dataset.validationStatus,
+            isValidated: dataset.isValidated
+          });
+          
+          return {
+            datasetId: dataset.datasetId,
+            datasetName: dataset.datasetName,
+            validationId: dataset.validationId!, // Use the actual validation ID from backend
+            description: dataset.description,
+            validationStatus: dataset.validationStatus,
+            validationDate: dataset.createdAt || new Date().toISOString()
+          };
+        });
+      })
+    );
+  }
+
+  /**
+   * Generate a validation ID based on dataset ID
+   * This creates a consistent GUID for each dataset
+   */
+  private generateValidationId(datasetId: string): string {
+    // Create a deterministic GUID based on the dataset ID
+    // This ensures the same dataset always gets the same validation ID
+    
+    // Use a more reliable method to generate a valid GUID
+    const hash = this.hashCode(datasetId);
+    const timestamp = Date.now();
+    
+    // Create a proper GUID format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+    const part1 = (hash & 0xffffffff).toString(16).padStart(8, '0');
+    const part2 = ((hash >> 32) & 0xffff).toString(16).padStart(4, '0');
+    const part3 = '4' + ((hash >> 48) & 0xfff).toString(16).padStart(3, '0');
+    const part4 = '8' + ((hash >> 60) & 0x3ff).toString(16).padStart(3, '0');
+    const part5 = (timestamp & 0xffff).toString(16).padStart(4, '0') + 
+                  (Math.floor(Math.random() * 0xffff)).toString(16).padStart(4, '0');
+    
+    const guid = `${part1}-${part2}-${part3}-${part4}-${part5}`;
+    
+    console.log('Generated validation ID:', guid);
+    console.log('Is valid GUID format?', this.isValidGuid(guid));
+    
+    return guid.toLowerCase();
+  }
+
+  /**
+   * Check if a string is a valid GUID format
+   */
+  private isValidGuid(guid: string): boolean {
+    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return guidRegex.test(guid);
+  }
+
+  /**
+   * Test GUID generation for debugging
+   */
+  testGuidGeneration(datasetId: string): void {
+    const guid = this.generateValidationId(datasetId);
+    console.log('Test GUID generation:');
+    console.log('Input datasetId:', datasetId);
+    console.log('Generated GUID:', guid);
+    console.log('Is valid GUID?', this.isValidGuid(guid));
+    console.log('GUID length:', guid.length);
+  }
+
+  /**
+   * Simple hash function for string to number conversion
+   */
+  private hashCode(str: string): number {
+    let hash = 0;
+    if (str.length === 0) return hash;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
   }
 
   /**

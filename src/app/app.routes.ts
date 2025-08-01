@@ -134,16 +134,6 @@ export const routes: Routes = [
           .then(m => m.ModelDetailsPage)
       },
       {
-        path: 'training-dashboard',
-        loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
-          .then(m => m.TrainingDashboardComponent)
-      },
-      {
-        path: 'dashboard/:trainSessionId',
-        loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
-          .then(m => m.TrainingDashboardComponent)
-      },
-      {
         path: 'notebook/:modelId',
         loadComponent: () => import('./notebook-panel/notebook-panel.component')
           .then(m => m.NotebookPanelComponent)
@@ -163,6 +153,17 @@ export const routes: Routes = [
           .then(m => m.ExperimentsPage)
       }
     ]
+  },
+  // Training Dashboard Routes (outside main layout to prevent glitch)
+  {
+    path: 'training-dashboard',
+    loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
+      .then(m => m.TrainingDashboardComponent)
+  },
+  {
+    path: 'dashboard/:trainSessionId',
+    loadComponent: () => import('./pages/training-dashboard/training-dashboard.component')
+      .then(m => m.TrainingDashboardComponent)
   },
   {
     path: '**',

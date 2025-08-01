@@ -104,6 +104,41 @@
         </ion-card-content>
       </ion-card>
     </div>
+
+    <!-- Training Sessions List -->
+    <div class="training-sessions">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Training Sessions</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div *ngIf="activeTrainingSessions.length === 0" class="no-sessions">
+            <p>No training sessions found.</p>
+            <ion-button color="primary" (click)="startNewTraining()">
+              <ion-icon slot="start" name="add"></ion-icon>
+              Start Your First Training
+            </ion-button>
+          </div>
+          
+          <ion-list *ngIf="activeTrainingSessions.length > 0">
+            <ion-item *ngFor="let session of activeTrainingSessions" button (click)="navigateToSession(session.id)">
+              <ion-icon slot="start" [name]="getSessionIcon(session.status)" [color]="getSessionColor(session.status)"></ion-icon>
+              <ion-label>
+                <h3>{{ session.modelName }}</h3>
+                <p>Status: {{ session.status }}</p>
+                <p>Started: {{ session.startedAt | date:'short' }}</p>
+                <div *ngIf="session.progress" class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="session.progress"></div>
+                </div>
+              </ion-label>
+              <ion-button slot="end" fill="clear" size="small">
+                <ion-icon name="chevron-forward"></ion-icon>
+              </ion-button>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+    </div>
   </div>
 
   <!-- Specific Training Session View -->

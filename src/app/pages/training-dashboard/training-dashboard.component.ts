@@ -98,6 +98,48 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+
+    // Load all training sessions
+    this.loadAllTrainingSessions();
+  }
+
+  /**
+   * Load all training sessions
+   */
+  loadAllTrainingSessions() {
+    // For now, we'll create a mock list of training sessions
+    // In a real implementation, you would have an API endpoint to get all sessions
+    this.activeTrainingSessions = [
+      {
+        id: 1,
+        modelName: 'Sample Model 1',
+        status: 'InProgress',
+        startedAt: new Date().toISOString(),
+        progress: 65
+      },
+      {
+        id: 2,
+        modelName: 'Sample Model 2',
+        status: 'Paused',
+        startedAt: new Date(Date.now() - 3600000).toISOString(),
+        progress: 30
+      },
+      {
+        id: 3,
+        modelName: 'Sample Model 3',
+        status: 'Completed',
+        startedAt: new Date(Date.now() - 7200000).toISOString(),
+        completedAt: new Date().toISOString(),
+        progress: 100
+      }
+    ];
+  }
+
+  /**
+   * Refresh training sessions list
+   */
+  refreshTrainingSessions() {
+    this.loadAllTrainingSessions();
   }
 
   /**
@@ -306,6 +348,54 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
         return 'status-error';
       default:
         return 'status-pending';
+    }
+  }
+
+  /**
+   * Get session icon based on status
+   */
+  getSessionIcon(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'running':
+      case 'inprogress':
+        return 'play-circle';
+      case 'completed':
+      case 'finished':
+        return 'checkmark-circle';
+      case 'paused':
+        return 'pause-circle';
+      case 'cancelled':
+      case 'stopped':
+        return 'stop-circle';
+      case 'failed':
+      case 'error':
+        return 'close-circle';
+      default:
+        return 'time';
+    }
+  }
+
+  /**
+   * Get session color based on status
+   */
+  getSessionColor(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'running':
+      case 'inprogress':
+        return 'success';
+      case 'completed':
+      case 'finished':
+        return 'primary';
+      case 'paused':
+        return 'warning';
+      case 'cancelled':
+      case 'stopped':
+        return 'medium';
+      case 'failed':
+      case 'error':
+        return 'danger';
+      default:
+        return 'medium';
     }
   }
 
