@@ -2,7 +2,10 @@
   <ion-toolbar>
     <ion-title>Training Sessions</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="refreshSessions()" fill="clear">
+      <ion-button (click)="createMockSessions()" fill="clear" title="Load Mock Sessions for Testing">
+        <ion-icon name="flask-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="refreshSessions()" fill="clear" title="Refresh Sessions">
         <ion-icon name="refresh-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -176,6 +179,16 @@
               size="small">
               <ion-icon name="stop" slot="start"></ion-icon>
               Cancel
+            </ion-button>
+
+            <!-- Debug Button -->
+            <ion-button 
+              (click)="debugSessionControls(session)" 
+              fill="clear" 
+              color="medium"
+              size="small">
+              <ion-icon name="bug-outline" slot="start"></ion-icon>
+              Debug
             </ion-button>
           </div>
         </ion-card-content>

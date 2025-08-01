@@ -60,10 +60,12 @@ export interface TrainingSessionDTO {
   modelName?: string; // From ModelInstance.Model.model_name
   modelInstanceName?: string; // From ModelInstance.Name
   datasetName?: string; // From DatasetMetadata.DatasetName
-  // Computed properties from backend
+  // Computed properties from backend - these should be calculated server-side
   canPause?: boolean;
   canResume?: boolean;
   canCancel?: boolean;
+  // Additional computed property
+  duration?: string;
 }
 
 export interface TrainingSessionsResponseDTO {
