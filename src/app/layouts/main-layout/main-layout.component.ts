@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import {
   IonApp,
   IonSplitPane,
@@ -36,7 +36,12 @@ import {
   flaskOutline,
   analyticsOutline,
   documentsOutline,
-  speedometerOutline
+  speedometerOutline,
+  trendingUpOutline,
+  checkmarkCircleOutline,
+  barChartOutline,
+  chevronUp,
+  chevronDown
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -114,12 +119,50 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
                 </ion-item>
               </ion-menu-toggle>
 
-              <ion-menu-toggle auto-hide="false">
-                <ion-item routerLink="/reports" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
-                  <ion-icon slot="start" name="document-text-outline"></ion-icon>
-                  <ion-label>Reports</ion-label>
+              <!-- Reports Dropdown Section -->
+              <ion-item button (click)="toggleReportsDropdown()" lines="none" detail="false" [class.selected]="isReportsDropdownOpen">
+                <ion-icon slot="start" name="document-text-outline"></ion-icon>
+                <ion-label>Reports</ion-label>
+                <ion-icon slot="end" [name]="isReportsDropdownOpen ? 'chevron-up' : 'chevron-down'"></ion-icon>
+              </ion-item>
+              
+              <!-- Reports Dropdown Items -->
+              <div class="reports-dropdown" [class.open]="isReportsDropdownOpen">
+                <ion-item (click)="navigateToReport('users')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="people-outline"></ion-icon>
+                  <ion-label>Registered Users Report</ion-label>
                 </ion-item>
-              </ion-menu-toggle>
+                
+                <ion-item (click)="navigateToReport('clients-projects')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="business-outline"></ion-icon>
+                  <ion-label>Clients and Projects Report</ion-label>
+                </ion-item>
+                
+                <ion-item (click)="navigateToReport('training-sessions')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="trending-up-outline"></ion-icon>
+                  <ion-label>Model Training Sessions Report</ion-label>
+                </ion-item>
+                
+                <ion-item (click)="navigateToReport('model-deployments')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+                  <ion-label>Model Deployment Status Report</ion-label>
+                </ion-item>
+                
+                <ion-item (click)="navigateToReport('dataset-transactions')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="analytics-outline"></ion-icon>
+                  <ion-label>Dataset Transaction Summary Report</ion-label>
+                </ion-item>
+                
+                <ion-item (click)="navigateToReport('dataset-status')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
+                  <ion-label>Dataset Status Report</ion-label>
+                </ion-item>
+                
+                <ion-item (click)="navigateToReport('dataset-trends')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
+                  <ion-label>Management Dataset Trends Report</ion-label>
+                </ion-item>
+              </div>
 
               <ion-menu-toggle auto-hide="false">
                 <ion-item routerLink="/deployments" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
@@ -300,6 +343,48 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
       width: 20px;
       height: 20px;
     }
+
+    /* Reports Dropdown Styles */
+    .reports-dropdown {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out;
+      background: var(--ion-color-light);
+      margin-left: 16px;
+      border-radius: 4px;
+    }
+
+    .reports-dropdown.open {
+      max-height: 400px;
+    }
+
+    .dropdown-item {
+      --padding-start: 20px;
+      --padding-end: 10px;
+      --min-height: 40px;
+      font-size: 14px;
+      margin: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .dropdown-item:hover {
+      --background: rgba(var(--ion-color-primary-rgb), 0.1);
+    }
+
+    .dropdown-item.selected {
+      --background: rgba(var(--ion-color-primary-rgb), 0.14);
+      --color: var(--ion-color-primary);
+    }
+
+    ion-item.selected {
+      --color: var(--ion-color-primary);
+    }
+
+    /* Chevron animation */
+    ion-item ion-icon[name="chevron-up"],
+    ion-item ion-icon[name="chevron-down"] {
+      transition: transform 0.3s ease;
+    }
   `],
   standalone: true,
   imports: [
@@ -328,6 +413,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   unreadCount = 0;
   isLoadingNotifications = false;
   hasNewNotifications = false;
+  isReportsDropdownOpen = false;
   private destroy$ = new Subject<void>();
   private notificationUpdate$ = new BehaviorSubject<void>(undefined);
   private readonly POLLING_INTERVAL = 10000; // Poll every 10 seconds
@@ -338,7 +424,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private notificationService: NotificationService,
     private sessionTimeoutService: SessionTimeoutService,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private router: Router
   ) {
     addIcons({
       homeOutline,
@@ -357,7 +444,12 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       flaskOutline,
       analyticsOutline,
       documentsOutline,
-      speedometerOutline
+      speedometerOutline,
+      trendingUpOutline,
+      checkmarkCircleOutline,
+      barChartOutline,
+      chevronUp,
+      chevronDown
     });
   }
 
@@ -478,5 +570,14 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     // Stop session monitoring before logout
     this.sessionTimeoutService.stopMonitoring();
     this.authService.logout();
+  }
+
+  toggleReportsDropdown() {
+    this.isReportsDropdownOpen = !this.isReportsDropdownOpen;
+  }
+
+  navigateToReport(reportType: string) {
+    this.isReportsDropdownOpen = false;
+    this.router.navigate(['/reports'], { queryParams: { type: reportType } });
   }
 } 

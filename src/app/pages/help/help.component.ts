@@ -578,7 +578,7 @@ interface MatchInfo {
             <ul>
               <li>Role-based permissions</li>
               <li>Project-specific access</li>
-              <li>Secure authentication with session timeout</li>
+              <li>Secure authentication (session timeout disabled for development)</li>
             </ul>
           </div>
         </ion-accordion>
@@ -611,7 +611,7 @@ interface MatchInfo {
           </ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <p><strong>Session Timeout:</strong> For security, your session will automatically expire after 30 seconds of inactivity. You'll receive a warning 10 seconds before timeout.</p>
+          <p><strong>Session Timeout:</strong> Session timeout has been disabled for development purposes. Your session will remain active indefinitely.</p>
           <p><strong>Data Security:</strong> All data is encrypted and securely stored. Access is controlled through role-based permissions.</p>
         </ion-card-content>
       </ion-card>
