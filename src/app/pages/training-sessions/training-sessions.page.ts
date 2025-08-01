@@ -165,10 +165,10 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
               startedAt: session.startedAt ? new Date(session.startedAt) : new Date(),
               completedAt: session.completedAt ? new Date(session.completedAt) : undefined
             }),
-            // Use backend computed properties if available, otherwise compute them based on status
-            canPause: session.canPause !== undefined ? session.canPause : (session.status === 'InProgress'),
-            canResume: session.canResume !== undefined ? session.canResume : (session.status === 'Paused'),
-            canCancel: session.canCancel !== undefined ? session.canCancel : (session.status === 'InProgress' || session.status === 'Paused')
+            // Use backend computed properties - these should always be provided by the backend
+            canPause: session.canPause || false,
+            canResume: session.canResume || false,
+            canCancel: session.canCancel || false
           };
           
           console.log('✅ Processed session controls - canPause:', processedSession.canPause, 'canResume:', processedSession.canResume, 'canCancel:', processedSession.canCancel);
@@ -399,100 +399,5 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
     }
   }
 
-  // Debug method to check session controls
-  debugSessionControls(session: TrainingSession) {
-    console.log('🔍 Session Debug Info:', {
-      id: session.id,
-      status: session.status,
-      canPause: session.canPause,
-      canResume: session.canResume,
-      canCancel: session.canCancel,
-      startedAt: session.startedAt,
-      completedAt: session.completedAt,
-      pausedAt: session.pausedAt
-    });
-    
-    this.toastService.presentToast('info', `Session ${session.id}: Status=${session.status}, Pause=${session.canPause}, Resume=${session.canResume}, Cancel=${session.canCancel}`);
-  }
 
-  // Create mock sessions for testing UI
-  createMockSessions() {
-    console.log('🎭 Creating mock training sessions for testing...');
-    
-    const mockSessions: TrainingSession[] = [
-      {
-        id: 1,
-        modelInstanceId: 101,
-        datasetId: 'mock-dataset-guid',
-        trainingConfig: '{"epochs": 100, "batchSize": 32}',
-        metrics: '{"accuracy": 0.85, "loss": 0.15}',
-        status: 'InProgress',
-        startedAt: new Date(Date.now() - 3600000), // 1 hour ago
-        completedAt: undefined,
-        pausedAt: undefined,
-        logsPath: '/logs/train_1.log',
-        errorMessage: '',
-        trainingParameters: '{"optimizer": "adam"}',
-        learningRate: 0.001,
-        modelId: 1,
-        modelName: 'Test CNN Model',
-        modelInstanceName: 'CNN Instance v1.0',
-        datasetName: 'CIFAR-10 Test Dataset',
-        duration: '1h 0m',
-        canPause: true,
-        canResume: false,
-        canCancel: true
-      },
-      {
-        id: 2,
-        modelInstanceId: 102,
-        datasetId: 'mock-dataset-guid-2',
-        trainingConfig: '{"epochs": 50, "batchSize": 16}',
-        metrics: '{"accuracy": 0.92, "loss": 0.08}',
-        status: 'Paused',
-        startedAt: new Date(Date.now() - 7200000), // 2 hours ago
-        completedAt: undefined,
-        pausedAt: new Date(Date.now() - 1800000), // 30 min ago
-        logsPath: '/logs/train_2.log',
-        errorMessage: '',
-        trainingParameters: '{"optimizer": "sgd"}',
-        learningRate: 0.01,
-        modelId: 2,
-        modelName: 'RNN Model',
-        modelInstanceName: 'RNN Instance v2.0',
-        datasetName: 'Text Classification Dataset',
-        duration: '2h 0m (paused)',
-        canPause: false,
-        canResume: true,
-        canCancel: true
-      },
-      {
-        id: 3,
-        modelInstanceId: 103,
-        datasetId: 'mock-dataset-guid-3',
-        trainingConfig: '{"epochs": 200, "batchSize": 64}',
-        metrics: '{"accuracy": 0.96, "loss": 0.04}',
-        status: 'Completed',
-        startedAt: new Date(Date.now() - 10800000), // 3 hours ago
-        completedAt: new Date(Date.now() - 1800000), // 30 min ago
-        pausedAt: undefined,
-        logsPath: '/logs/train_3.log',
-        errorMessage: '',
-        trainingParameters: '{"optimizer": "adam"}',
-        learningRate: 0.0005,
-        modelId: 3,
-        modelName: 'Transformer Model',
-        modelInstanceName: 'Transformer Instance v1.5',
-        datasetName: 'Large Language Dataset',
-        duration: '2h 30m',
-        canPause: false,
-        canResume: false,
-        canCancel: false
-      }
-    ];
-
-    this.sessions = mockSessions;
-    this.applyFilters();
-    this.toastService.presentToast('info', `Created ${mockSessions.length} mock training sessions for testing`);
-  }
 }
