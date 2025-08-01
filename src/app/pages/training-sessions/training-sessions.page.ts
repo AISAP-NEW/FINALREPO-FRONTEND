@@ -81,7 +81,7 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
       // First test basic connectivity
       const response = await fetch(`${environment.apiUrl}/api/Training/sessions`);
       console.log('📡 Fetch response status:', response.status);
-      console.log('📄 Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('📄 Response content-type:', response.headers.get('content-type'));
       
       if (response.ok) {
         const data = await response.json();
