@@ -5,7 +5,7 @@ import { TrainingService, TrainingStatus, TrainingLogs, TrainingSessionDTO, Trai
 import { interval, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
-import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonList, IonItem, IonLabel, IonIcon, IonSpinner } from '@ionic/angular/standalone';
+import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonList, IonItem, IonLabel, IonIcon, IonSpinner, IonHeader, IonToolbar, IonTitle, IonButtons, IonMenuButton, IonContent } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-training-dashboard',
@@ -24,7 +24,13 @@ import { IonButton, IonToast, IonCard, IonCardHeader, IonCardTitle, IonCardConte
     IonItem,
     IonLabel,
     IonIcon,
-    IonSpinner
+    IonSpinner,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonMenuButton,
+    IonContent
   ]
 })
 export class TrainingDashboardComponent implements OnInit, OnDestroy {
