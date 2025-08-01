@@ -5,7 +5,7 @@ import { TrainingService, TrainingStatus, TrainingLogs, TrainingSessionDTO, Trai
 import { interval, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { IonicModule } from '@ionic/angular';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-training-dashboard',
