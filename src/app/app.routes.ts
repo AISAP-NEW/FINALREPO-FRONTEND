@@ -154,6 +154,11 @@ export const routes: Routes = [
           .then(m => m.DeploymentsPage)
       },
       {
+        path: 'training-sessions',
+        loadComponent: () => import('./pages/training-sessions/training-sessions.page')
+          .then(m => m.TrainingSessionsPage)
+      },
+      {
         path: 'calendar-models',
         loadComponent: () => import('./pages/calendar-models/calendar-models.page').then(m => m.CalendarModelsPage)
       },

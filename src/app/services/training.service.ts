@@ -41,25 +41,29 @@ export interface ExecutionResult {
   memoryUsed?: number;
 }
 
-// Add new interfaces for training sessions
+// Updated interfaces to match backend DTOs exactly
 export interface TrainingSessionDTO {
-  id: number;
-  modelInstanceId: number;
-  datasetId?: string; // Guid? in backend becomes string in JSON
+  id: number; // Maps to Train_Session_ID
+  modelInstanceId: number; // Maps to Model_Instance_ID
+  datasetId?: string; // Maps to Dataset_ID (Guid? becomes string)
   trainingConfig?: string;
   metrics?: string;
-  status: string;
-  startedAt?: string; // DateTime? becomes string in JSON
-  completedAt?: string;
-  pausedAt?: string;
+  status: string; // Maps to Status enum as string
+  startedAt?: string; // Maps to StartedAt (DateTime? becomes string)
+  completedAt?: string; // Maps to CompletedAt
+  pausedAt?: string; // Maps to PausedAt
   logsPath?: string;
   errorMessage?: string;
   trainingParameters?: string;
-  learningRate: number;
-  modelId?: number;
-  modelName?: string;
-  modelInstanceName?: string;
-  datasetName?: string;
+  learningRate: number; // Maps to LearningRate (float)
+  modelId?: number; // From ModelInstance.Model_ID
+  modelName?: string; // From ModelInstance.Model.model_name
+  modelInstanceName?: string; // From ModelInstance.Name
+  datasetName?: string; // From DatasetMetadata.DatasetName
+  // Computed properties from backend
+  canPause?: boolean;
+  canResume?: boolean;
+  canCancel?: boolean;
 }
 
 export interface TrainingSessionsResponseDTO {
@@ -220,8 +224,34 @@ export class TrainingService {
       if (filters.endDate) params = params.set('endDate', filters.endDate.toISOString());
     }
     
-    return this.http.get<TrainingSessionsResponseDTO>(`${this.API_URL}/sessions`, { params }).pipe(
-      catchError(this.handleTrainingError.bind(this))
+    const url = `${this.API_URL}/sessions`;
+    console.log('🔍 Making API call to:', url);
+    console.log('📊 With params:', params.toString());
+    console.log('🌐 Full URL:', params.toString() ? `${url}?${params.toString()}` : url);
+    
+    return this.http.get<TrainingSessionsResponseDTO>(url, { params }).pipe(
+      tap(response => {
+        console.log('✅ TrainingService API response:', response);
+        console.log('📈 Sessions count:', response?.sessions?.length || 0);
+        console.log('🎯 Success flag:', response?.success);
+      }),
+      catchError(error => {
+        console.error('❌ TrainingService API error:', error);
+        console.error('🔍 Error status:', error.status);
+        console.error('📝 Error message:', error.message);
+        console.error('🌐 Error URL:', error.url);
+        
+        // Return a mock response with error info for debugging
+        const errorResponse: TrainingSessionsResponseDTO = {
+          success: false,
+          sessions: [],
+          totalCount: 0,
+          error: `API Error: ${error.status} - ${error.message}`,
+          details: `Failed to connect to ${error.url || url}`
+        };
+        
+        return throwError(() => errorResponse);
+      })
     );
   }
 
@@ -230,7 +260,11 @@ export class TrainingService {
    * Maps to: POST /api/Training/pause/{trainSessionId}
    */
   pauseTrainingSession(sessionId: number): Observable<any> {
-    return this.pause(sessionId);
+    console.log('⏸️ Pausing training session:', sessionId);
+    return this.http.post(`${this.API_URL}/pause/${sessionId}`, {}).pipe(
+      tap(response => console.log('✅ Pause response:', response)),
+      catchError(this.handleTrainingError.bind(this))
+    );
   }
 
   /**
@@ -238,7 +272,11 @@ export class TrainingService {
    * Maps to: POST /api/Training/resume/{trainSessionId}
    */
   resumeTrainingSession(sessionId: number): Observable<any> {
-    return this.resume(sessionId);
+    console.log('▶️ Resuming training session:', sessionId);
+    return this.http.post(`${this.API_URL}/resume/${sessionId}`, {}).pipe(
+      tap(response => console.log('✅ Resume response:', response)),
+      catchError(this.handleTrainingError.bind(this))
+    );
   }
 
   /**
@@ -246,17 +284,56 @@ export class TrainingService {
    * Maps to: POST /api/Training/cancel/{trainSessionId}
    */
   cancelTrainingSession(sessionId: number): Observable<any> {
-    return this.cancel(sessionId);
+    console.log('🛑 Cancelling training session:', sessionId);
+    return this.http.post(`${this.API_URL}/cancel/${sessionId}`, {}).pipe(
+      tap(response => console.log('✅ Cancel response:', response)),
+      catchError(this.handleTrainingError.bind(this))
+    );
   }
 
   /**
-   * Test connection to training API
+   * Test connection to training API and check if sessions endpoint works
    */
   testConnection(): Observable<any> {
-    return this.http.get(`${this.API_URL}/status/test`).pipe(
+    console.log('🧪 Testing connection to:', `${this.API_URL}/sessions`);
+    return this.http.get(`${this.API_URL}/sessions`).pipe(
+      tap(response => {
+        console.log('✅ Connection test successful:', response);
+      }),
       catchError(error => {
-        console.error('Training API connection test failed:', error);
-        return throwError(() => new Error('Training API connection failed'));
+        console.error('❌ Training API connection test failed:', error);
+        console.error('🔍 Error details:', {
+          status: error.status,
+          message: error.message,
+          url: error.url
+        });
+        return throwError(() => new Error(`Training API connection failed: ${error.status} - ${error.message}`));
+      })
+    );
+  }
+
+  /**
+   * Test if backend is reachable at all
+   */
+  testBackendHealth(): Observable<any> {
+    const healthUrl = `${environment.apiUrl}/api/health`; // Common health check endpoint
+    console.log('🏥 Testing backend health at:', healthUrl);
+    return this.http.get(healthUrl).pipe(
+      tap(response => {
+        console.log('✅ Backend health check successful:', response);
+      }),
+      catchError(error => {
+        console.error('❌ Backend health check failed:', error);
+        // Try a simple GET to the base API URL
+        return this.http.get(`${environment.apiUrl}/api`).pipe(
+          tap(response => {
+            console.log('✅ Base API reachable:', response);
+          }),
+          catchError(baseError => {
+            console.error('❌ Base API also unreachable:', baseError);
+            return throwError(() => new Error(`Backend unreachable: ${baseError.status} - ${baseError.message}`));
+          })
+        );
       })
     );
   }

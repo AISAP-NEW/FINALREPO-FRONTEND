@@ -41,7 +41,8 @@ import {
   checkmarkCircleOutline,
   barChartOutline,
   chevronUp,
-  chevronDown
+  chevronDown,
+  listOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -109,6 +110,13 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
                 <ion-item routerLink="/training-dashboard" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
                   <ion-icon slot="start" name="speedometer-outline"></ion-icon>
                   <ion-label>Training Dashboard</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
+                <ion-item routerLink="/training-sessions" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon slot="start" name="list-outline"></ion-icon>
+                  <ion-label>Training Sessions</ion-label>
                 </ion-item>
               </ion-menu-toggle>
 
@@ -449,7 +457,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       checkmarkCircleOutline,
       barChartOutline,
       chevronUp,
-      chevronDown
+      chevronDown,
+      listOutline
     });
   }
 
