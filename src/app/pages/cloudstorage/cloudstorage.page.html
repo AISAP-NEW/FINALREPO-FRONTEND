@@ -1,77 +1,288 @@
-<ion-header>
+<ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
     <ion-title>Cloud Storage</ion-title>
   </ion-toolbar>
 </ion-header>
-<ion-content class="ion-padding">
-  <ion-list>
-    <ion-item>
-      <ion-label position="stacked">Select Project</ion-label>
-      <ion-select [(ngModel)]="selectedProjectId" (ionChange)="onProjectChange()" [disabled]="loadingProjects">
-        <ion-select-option *ngFor="let p of projects" [value]="p.ProjectId">{{ p.Name }}</ion-select-option>
-      </ion-select>
-      <ion-spinner *ngIf="loadingProjects" slot="end"></ion-spinner>
-    </ion-item>
-  </ion-list>
 
-  <div *ngIf="selectedProjectId">
-    <ion-list>
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Cloud Storage</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Project Selection -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Project Files</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
       <ion-item>
-        <ion-label position="stacked">Upload File</ion-label>
-        <input id="cloud-upload-input" type="file" (change)="onFileChange($event)" [disabled]="uploading" />
-        <ion-button expand="block" (click)="upload()" [disabled]="!uploadFile || uploading" style="margin-top: 8px;">
-          <ion-spinner *ngIf="uploading" name="dots"></ion-spinner>
-          <span *ngIf="!uploading">Upload</span>
-        </ion-button>
+        <ion-label position="stacked">Select Project</ion-label>
+        <ion-select 
+          (ionChange)="onProjectChange($event)" 
+          [disabled]="loading || projects.length === 0"
+          placeholder="Select a project">
+          <ion-select-option *ngFor="let project of projects" [value]="project.projectId">
+            {{project.name}}
+          </ion-select-option>
+        </ion-select>
       </ion-item>
-      <div style="color: var(--ion-color-danger); margin-left: 16px; margin-bottom: 8px;" *ngIf="uploadError">{{ uploadError }}</div>
-    </ion-list>
 
-    <ion-list>
-      <ion-item-divider color="light">Project Files</ion-item-divider>
-      <ion-item *ngIf="loadingFiles">
-        <ion-spinner slot="start"></ion-spinner>
-        <ion-label>Loading files...</ion-label>
-      </ion-item>
-      <ion-item *ngFor="let file of files">
-        <ion-label>
-          <h2>{{ file.FileName }}</h2>
-          <p>Version: {{ file.Version }} | Uploaded: {{ file.UploadDate | date:'short' }} | By: {{ file.UploadedBy }}</p>
-        </ion-label>
-        <ion-button fill="clear" size="small" (click)="showFileVersions(file)">
-          <ion-icon name="list-outline"></ion-icon> Versions
-        </ion-button>
-      </ion-item>
-    </ion-list>
+      <!-- Loading State -->
+      <div class="ion-text-center" *ngIf="loading">
+        <ion-spinner></ion-spinner>
+        <p>Loading files...</p>
+      </div>
 
-    <ion-list *ngIf="selectedFileId">
-      <ion-item-divider color="medium">Versions for {{ selectedFileName }}</ion-item-divider>
-      <ion-item *ngIf="loadingVersions">
-        <ion-spinner slot="start"></ion-spinner>
-        <ion-label>Loading versions...</ion-label>
-      </ion-item>
-      <ion-item *ngFor="let v of versions">
-        <ion-label>Version: {{ v.Version || v.version }} | Uploaded: {{ v.UploadDate || v.uploadDate | date:'short' }}</ion-label>
-        <ion-button fill="clear" size="small" (click)="download(selectedFileId, v.Version || v.version)">
-          <ion-icon name="download-outline"></ion-icon> Download
+      <!-- No Projects Message -->
+      <div class="ion-text-center ion-padding" *ngIf="!loading && projects.length === 0">
+        <ion-text color="medium">No projects found. Please create a project first.</ion-text>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Tabs -->
+  <ion-segment (ionChange)="segmentChanged($event)" [value]="currentSegment">
+    <ion-segment-button value="files">
+      <ion-label>Files</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="datasets">
+      <ion-label>Datasets</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Files Tab -->
+  <div *ngIf="currentSegment === 'files'">
+    <!-- File List -->
+    <ion-card *ngIf="selectedProjectId">
+      <ion-card-header>
+        <ion-card-title>Files</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <!-- Empty State -->
+        <div class="ion-text-center ion-padding" *ngIf="!loading && files.length === 0">
+          <ion-text color="medium">No files found. Upload your first file below.</ion-text>
+        </div>
+
+        <!-- File List -->
+        <ion-list *ngIf="files.length > 0">
+          <ion-item-sliding #slidingItem *ngFor="let file of files">
+            <ion-item (click)="downloadFile(file)">
+              <ion-icon 
+                slot="start" 
+                [name]="getFileIcon(file.type)" 
+                [color]="getFileColor(file.type)">
+              </ion-icon>
+              <ion-label>
+                <h3>{{file.name}}</h3>
+                <p>{{formatFileSize(file.size)}} • {{file.uploadDate | date:'medium'}}</p>
+                <p *ngIf="file.description" class="file-description">{{file.description}}</p>
+              </ion-label>
+            </ion-item>
+            
+            <ion-item-options side="end">
+              <ion-item-option color="danger" (click)="deleteFile(file, slidingItem)">
+                <ion-icon slot="icon-only" name="trash"></ion-icon>
+              </ion-item-option>
+            </ion-item-options>
+          </ion-item-sliding>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Upload Section -->
+    <ion-card *ngIf="selectedProjectId">
+      <ion-card-header>
+        <ion-card-title>Upload File</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">File</ion-label>
+          <input 
+            type="file" 
+            id="fileInput" 
+            (change)="onFileSelected($event)" 
+            style="display: none"
+            #fileInput>
+          <ion-button 
+            expand="block" 
+            fill="outline" 
+            (click)="fileInput.click()">
+            <ion-icon name="cloud-upload" slot="start"></ion-icon>
+            {{ newFile ? newFile.name : 'Choose File' }}
+          </ion-button>
+        </ion-item>
+
+        <ion-item *ngIf="newFile">
+          <ion-label position="stacked">File Name</ion-label>
+          <ion-input 
+            type="text" 
+            [(ngModel)]="fileName" 
+            placeholder="Enter a name for the file">
+          </ion-input>
+        </ion-item>
+
+        <ion-item *ngIf="newFile">
+          <ion-label position="stacked">Description (Optional)</ion-label>
+          <ion-textarea 
+            [(ngModel)]="fileDescription" 
+            placeholder="Add a description for the file">
+          </ion-textarea>
+        </ion-item>
+
+        <ion-button 
+          expand="block" 
+          color="primary" 
+          class="ion-margin-top"
+          [disabled]="!newFile || !fileName"
+          (click)="uploadFile()">
+          <ion-spinner *ngIf="uploadProgress !== null" name="crescent" class="ion-margin-end"></ion-spinner>
+          {{ uploadProgress !== null ? uploadProgress + '%' : 'Upload File' }}
         </ion-button>
-      </ion-item>
-    </ion-list>
+      </ion-card-content>
+    </ion-card>
   </div>
 
-  <div *ngIf="showToast" [style.background]="toastColor === 'danger' ? '#f44336' : '#4caf50'" style="position: fixed; bottom: 24px; left: 0; right: 0; z-index: 1000; text-align: center; color: white; padding: 12px 24px; border-radius: 8px;">
-    {{ toastMessage }}
+  <!-- Datasets Tab -->
+  <div *ngIf="currentSegment === 'datasets' && selectedProjectId">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Project Datasets</ion-card-title>
+        <ion-button fill="clear" (click)="loadDatasets()" size="small">
+          <ion-icon slot="start" name="refresh"></ion-icon>
+          Refresh
+        </ion-button>
+      </ion-card-header>
+      <ion-card-content>
+        <!-- Loading State -->
+        <div class="ion-text-center ion-padding" *ngIf="loadingDatasets">
+          <ion-spinner></ion-spinner>
+          <p>Loading datasets...</p>
+        </div>
+
+        <!-- No Datasets Message -->
+        <div class="ion-text-center ion-padding" *ngIf="!loadingDatasets && datasets.length === 0">
+          <ion-text color="medium">
+            <p>No datasets found for this project.</p>
+            <ion-button (click)="loadDatasets()" fill="clear" size="small">
+              <ion-icon name="refresh" slot="start"></ion-icon>
+              Try Again
+            </ion-button>
+          </ion-text>
+        </div>
+
+        <!-- Datasets List -->
+        <ion-list *ngIf="!loadingDatasets && datasets.length > 0" lines="full">
+          <ion-item *ngFor="let dataset of datasets" class="dataset-item">
+            <ion-icon [name]="getFileIcon(dataset.type)" slot="start" [color]="getFileColor(dataset.type)"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              <h3>{{ dataset.name }}</h3>
+              <p *ngIf="dataset.description">{{ dataset.description }}</p>
+              <p class="file-meta">
+                <ion-text color="medium">
+                  {{ formatFileSize(dataset.size) }} • 
+                  {{ dataset.uploadDate | date:'medium' }} •
+                  {{ dataset.type || 'Unknown type' }}
+                </ion-text>
+              </p>
+            </ion-label>
+            <ion-buttons slot="end">
+              <ion-button (click)="downloadDataset(dataset)" fill="clear">
+                <ion-icon name="download" slot="icon-only"></ion-icon>
+              </ion-button>
+              <ion-button (click)="deleteDataset(dataset)" fill="clear" color="danger">
+                <ion-icon name="trash" slot="icon-only"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
   </div>
 </ion-content>
+
 <style>
-  ion-item h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 2px;
+  .file-upload-section {
+    margin-top: 20px;
   }
-  ion-item p {
-    font-size: 13px;
+  
+  .file-selection {
+    margin: 16px 0;
+    padding: 12px;
+    background: var(--ion-color-light);
+    border-radius: 8px;
+    
+    p {
+      margin: 8px 0;
+      font-size: 0.9em;
+      color: var(--ion-color-medium);
+    }
+  }
+  
+  ion-note[color="danger"] {
+    display: block;
+    margin-top: 8px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
     color: var(--ion-color-medium);
-    margin: 0;
+    
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    h3 {
+      color: var(--ion-color-dark);
+      margin-bottom: 8px;
+    }
   }
-</style> 
+  
+  ion-spinner {
+    --color: var(--ion-color-primary);
+  }
+  
+  .upload-section {
+    background: var(--ion-color-light);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .file-info {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    color: var(--ion-color-medium);
+    font-size: 0.9em;
+  }
+  
+  .dataset-item {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--ion-color-light);
+  }
+  
+  .file-icon {
+    font-size: 2rem;
+    margin-right: 12px;
+  }
+  
+  .required {
+    color: var(--ion-color-danger);
+    margin-left: 4px;
+  }
+  
+  ion-badge {
+    margin-right: 8px;
+    margin-bottom: 4px;
+  }
+</style>

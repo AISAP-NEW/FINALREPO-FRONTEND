@@ -213,18 +213,38 @@ export class ExperimentsPage implements OnInit {
   }
 
   async saveExperiment(event: any) {
+    console.log('saveExperiment called with event:', event);
     const { formData, mode, experiment, onComplete } = event;
     
     try {
-      const url = mode === 'create' 
-        ? `${environment.apiUrl}/api/Experiment` 
-        : `${environment.apiUrl}/api/Experiment/${experiment.ExperimentId}`;
+      // For create, don't include an ID in the URL
+      // For edit, make sure we have a valid experiment ID
+      const isEdit = mode === 'edit';
+      const experimentId = experiment?.experimentId || experiment?.ExperimentId;
+      
+      if (isEdit && !experimentId) {
+        throw new Error('Cannot update experiment: No experiment ID provided');
+      }
+      
+      const url = isEdit 
+        ? `${environment.apiUrl}/api/Experiment/${experimentId}`
+        : `${environment.apiUrl}/api/Experiment`;
       
       console.log(`Saving experiment (${mode}) to:`, url);
       
-      const request = mode === 'create' 
-        ? this.http.post(url, formData) 
-        : this.http.put(url, formData);
+      // Log form data for debugging
+      if (formData instanceof FormData) {
+        console.log('Form data entries:');
+        for (let [key, value] of (formData as any).entries()) {
+          console.log(key, value);
+        }
+      } else {
+        console.log('Form data:', formData);
+      }
+      
+      const request = isEdit 
+        ? this.http.put(url, formData, { withCredentials: true })
+        : this.http.post(url, formData, { withCredentials: true });
       
       request.subscribe({
         next: async (response) => {
@@ -233,7 +253,7 @@ export class ExperimentsPage implements OnInit {
           // Show success message
           const alert = await this.alertCtrl.create({
             header: 'Success',
-            message: `Experiment ${mode === 'create' ? 'created' : 'updated'} successfully`,
+            message: `Experiment ${isEdit ? 'updated' : 'created'} successfully`,
             buttons: ['OK']
           });
           await alert.present();
@@ -248,10 +268,19 @@ export class ExperimentsPage implements OnInit {
         error: async (error) => {
           console.error('Error saving experiment:', error);
           
+          let errorMessage = 'An unknown error occurred';
+          if (error.error) {
+            errorMessage = typeof error.error === 'object' 
+              ? JSON.stringify(error.error) 
+              : error.error;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
           // Show error message
           const alert = await this.alertCtrl.create({
             header: 'Error',
-            message: `Failed to ${mode} experiment: ${error.message || 'Unknown error'}`,
+            message: `Failed to ${mode} experiment: ${errorMessage}`,
             buttons: ['OK']
           });
           await alert.present();
@@ -260,8 +289,15 @@ export class ExperimentsPage implements OnInit {
           if (onComplete) onComplete();
         }
       });
-    } catch (error) {
-      console.error('Unexpected error during save:', error);
+    } catch (error: any) {
+      console.error('Error in saveExperiment:', error);
+      const alert = await this.alertCtrl.create({
+        header: 'Error',
+        message: error.message || 'An error occurred while saving the experiment',
+        buttons: ['OK']
+      });
+      await alert.present();
+      
       if (onComplete) onComplete();
     }
   }
@@ -291,8 +327,6 @@ export class ExperimentsPage implements OnInit {
   private getExperimentId(experiment: any): number {
     return experiment.ExperimentId || experiment.id;
   }
-
-
 
   // Get execution status for display
   getExecutionStatus(experimentId: number): string {

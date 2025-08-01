@@ -154,11 +154,11 @@ export const routes: Routes = [
       {
         path: 'cloudstorage',
         loadComponent: () => import('./pages/cloudstorage/cloudstorage.page').then(m => m.CloudStoragePage)
+      },
+      {
+        path: '**',
+        redirectTo: 'login'
       }
     ]
-  },
-  {
-    path: '**',
-    redirectTo: 'login'
   }
 ];

@@ -1,0 +1,141 @@
+<div class="file-manager">
+  <!-- Error message display -->
+  <div *ngIf="error" class="alert alert-danger">
+    {{ error }}
+    <button type="button" class="close" (click)="error = null">&times;</button>
+  </div>
+
+  <!-- File upload section -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Upload Files</h5>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="btn btn-primary">
+          Select Files
+          <input 
+            type="file" 
+            id="fileInput"
+            multiple 
+            style="display: none;" 
+            (change)="onFileSelect($event)"
+          >
+        </label>
+        <button 
+          class="btn btn-success ms-2" 
+          [disabled]="selectedFiles.length === 0"
+          (click)="uploadFiles()">
+          <i class="bi bi-upload"></i> Upload {{ selectedFiles.length }} Files
+        </button>
+      </div>
+      
+      <!-- Selected files list -->
+      <div *ngIf="selectedFiles.length > 0" class="selected-files">
+        <h6>Selected Files:</h6>
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center" 
+              *ngFor="let file of selectedFiles">
+            {{ file.name }} ({{ formatFileSize(file.size) }})
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload progress -->
+  <div *ngIf="uploads.length > 0" class="mb-4">
+    <h5>Upload Progress</h5>
+    <div class="progress-container">
+      <div *ngFor="let upload of uploads" class="mb-2">
+        <div class="d-flex justify-content-between">
+          <span>{{ upload.fileName }}</span>
+          <span class="badge" 
+                [ngClass]="{
+                  'bg-secondary': upload.status === 'pending',
+                  'bg-primary': upload.status === 'uploading',
+                  'bg-success': upload.status === 'completed',
+                  'bg-danger': upload.status === 'error'
+                }">
+            {{ upload.status }}
+          </span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" 
+               role="progressbar" 
+               [style.width.%]="upload.progress" 
+               [attr.aria-valuenow]="upload.progress" 
+               aria-valuemin="0" 
+               aria-valuemax="100">
+            {{ upload.progress }}%
+          </div>
+        </div>
+        <div *ngIf="upload.error" class="text-danger small">
+          {{ upload.error }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Files list -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Stored Files</h5>
+      <button class="btn btn-sm btn-outline-secondary" (click)="loadFiles()" [disabled]="isLoading">
+        <i class="bi" [ngClass]="{'bi-arrow-clockwise': !isLoading, 'bi-arrow-repeat': isLoading, 'spin': isLoading}"></i>
+        Refresh
+      </button>
+    </div>
+    <div class="card-body">
+      <div *ngIf="isLoading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      
+      <div *ngIf="!isLoading && files.length === 0" class="text-center py-4">
+        <p>No files uploaded yet.</p>
+      </div>
+      
+      <div *ngIf="!isLoading && files.length > 0" class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Size</th>
+              <th>Uploaded</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let file of files">
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-file-earmark me-2" [ngClass]="getFileIcon(file.type)"></i>
+                  <div>
+                    <div class="fw-medium">{{ file.name }}</div>
+                    <small *ngIf="file.description" class="text-muted">{{ file.description }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{{ file.type || 'N/A' }}</td>
+              <td>{{ formatFileSize(file.size) }}</td>
+              <td>{{ file.uploadedAt | date:'medium' }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" (click)="downloadFile(file)" title="Download">
+                    <i class="bi bi-download"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" (click)="deleteFile(file)" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

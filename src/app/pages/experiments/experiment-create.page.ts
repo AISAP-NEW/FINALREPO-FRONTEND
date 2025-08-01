@@ -13,7 +13,13 @@ import { IonButton, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonList,
   templateUrl: './experiment-create.page.html'
 })
 export class ExperimentCreatePage implements OnInit {
-  experiment: any = { Name: '', Description: '', Status: 'Draft', ModelFileType: '' };
+  // Use PascalCase for all properties to match backend DTO
+  experiment: any = { 
+    Name: '', 
+    Description: '', 
+    Status: 'Draft',
+    ModelFileType: '' 
+  };
   modelFile: File | null = null;
   modelFileError = '';
   showToast = false;
@@ -51,7 +57,6 @@ export class ExperimentCreatePage implements OnInit {
       }
       
       this.modelFile = file;
-      // Set the file type based on extension
       this.experiment.ModelFileType = fileExtension.substring(1); // Remove the dot
     }
   }
@@ -64,65 +69,104 @@ export class ExperimentCreatePage implements OnInit {
   }
 
   async onSubmit(form: NgForm) {
-    console.log('onSubmit called', this.experiment);
+    console.log('Form submitted', form);
+    console.log('Experiment object:', this.experiment);
+    console.log('Model file:', this.modelFile);
+    
     this.missingFields = [];
     
     // Validate required fields
-    if (!this.experiment.Name || this.experiment.Name.length > 50) this.missingFields.push('Name');
+    if (!this.experiment.Name || this.experiment.Name.length > 50) {
+      this.missingFields.push('Name');
+    }
     
     if (form.invalid || this.modelFileError || this.missingFields.length) {
-      this.showError('Please fix errors before submitting.' + (this.missingFields.length ? ' Missing or invalid: ' + this.missingFields.join(', ') : ''));
+      const errorMsg = 'Please fix errors before submitting.' + 
+        (this.missingFields.length ? ' Missing or invalid: ' + this.missingFields.join(', ') : '');
+      console.error('Form validation failed:', errorMsg);
+      this.showError(errorMsg);
       return;
     }
     
     this.submitting = true;
 
-    console.log('Submitting form with data:', {
-      Name: this.experiment.Name,
-      Description: this.experiment.Description,
-      Status: this.experiment.Status,
-      ModelFile: this.modelFile ? this.modelFile.name : 'none',
-      ModelFileType: this.experiment.ModelFileType || 'none'
-    });
-
-    // Create form data
-    const formData = new FormData();
-    formData.append('Name', this.experiment.Name);
-    formData.append('Description', this.experiment.Description);
-    formData.append('Status', this.experiment.Status || 'Draft');
-    
-    if (this.modelFile) {
-      formData.append('ModelFile', this.modelFile);
-      formData.append('ModelFileType', this.experiment.ModelFileType || '');
-    }
-
-    // Ensure the URL is correct
-    const url = `${environment.apiUrl}/api/Experiment`;
-    console.log('Sending request to:', url);
-    
-    this.http.post(url, formData, {
-      reportProgress: true,
-      observe: 'response'
-    }).subscribe({
-      next: (response) => {
-        console.log('Full response:', response);
-        console.log('Experiment created successfully:', response.body);
-        this.submitting = false;
-        this.router.navigate(['/experiments']);
-      },
-      error: (error) => {
-        console.error('Error creating experiment:', error);
-        console.error('Error details:', {
-          status: error.status,
-          message: error.message,
-          error: error.error,
-          url: error.url,
-          headers: error.headers
-        });
-        this.showError(error.error?.message || 'Failed to create experiment. Please check the console for details.');
-        this.submitting = false;
+    try {
+      // Create form data
+      const formData = new FormData();
+      
+      // Add required fields - using camelCase to match backend
+      formData.append('Name', this.experiment.Name);
+      formData.append('Description', this.experiment.Description || '');
+      formData.append('Status', this.experiment.Status || 'Draft');
+      
+      // Add file if it exists
+      if (this.modelFile) {
+        console.log('Adding file to form data:', this.modelFile.name);
+        formData.append('modelFile', this.modelFile, this.modelFile.name);
+        
+        // Get file extension and set modelFileType (without dot)
+        const fileExt = this.modelFile.name.split('.').pop()?.toLowerCase() || '';
+        formData.append('ModelFileType', fileExt);
       }
-    });
+
+      // Log form data for debugging
+      console.log('Form data entries:');
+      for (let [key, value] of (formData as any).entries()) {
+        console.log(key, value);
+      }
+
+      const url = `${environment.apiUrl}/api/Experiment`;
+      console.log('Sending POST request to:', url);
+      
+      const response = await this.http.post(url, formData, {
+        withCredentials: true,
+        reportProgress: true,
+        observe: 'response'
+      }).toPromise();
+
+      console.log('Response status:', response?.status);
+      console.log('Response headers:', response?.headers);
+      console.log('Response body:', response?.body);
+      
+      if (response?.status === 201) {
+        console.log('Experiment created successfully');
+        this.router.navigate(['/experiments']);
+      } else {
+        throw new Error(`Unexpected response status: ${response?.status}`);
+      }
+    } catch (error: any) {
+      console.error('Error creating experiment:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        error: error.error,
+        url: error.url,
+        headers: error.headers
+      });
+      
+      let errorMessage = 'Failed to create experiment. ';
+      if (error.status === 400) {
+        errorMessage += 'Bad request. ';
+        if (error.error) {
+          console.error('Error details:', error.error);
+          if (typeof error.error === 'object') {
+            errorMessage += JSON.stringify(error.error);
+          } else {
+            errorMessage += error.error;
+          }
+        }
+      } else if (error.status === 500) {
+        errorMessage += 'Server error. Please try again later.';
+      } else if (error.message) {
+        errorMessage += error.message;
+      }
+      
+      this.showError(errorMessage);
+    } finally {
+      this.submitting = false;
+    }
   }
 
   showError(message: string) {

@@ -540,7 +540,7 @@ export class ExperimentModalComponent implements OnInit {
     }
     
     if (this.mode === 'create' && !this.modelFile) {
-      this.missingFields.push('Model File');
+      this.missingFields.push('ModelFile');
     }
     
     this.isFormValid = this.missingFields.length === 0;
@@ -634,13 +634,18 @@ export class ExperimentModalComponent implements OnInit {
     
     try {
       const formData = new FormData();
+      
+      // Use PascalCase to match backend DTO
       formData.append('Name', this.experiment.Name.trim());
       formData.append('Description', (this.experiment.Description || '').trim());
       formData.append('Status', (this.experiment.Status || 'Draft').trim());
       
       // Handle file upload
       if (this.modelFile) {
+        console.log('Adding file to form data:', this.modelFile.name);
         formData.append('ModelFile', this.modelFile, this.modelFile.name);
+        
+        // Get file extension and set ModelFileType (PascalCase to match DTO)
         const fileExtension = this.getFileExtension(this.modelFile.name);
         if (fileExtension) {
           formData.append('ModelFileType', fileExtension);
@@ -652,6 +657,7 @@ export class ExperimentModalComponent implements OnInit {
         formData.append('ModelFileType', this.existingModelFile.type);
       }
       
+      // For edit mode, include ExperimentId (PascalCase)
       if (this.mode === 'edit' && this.experiment.ExperimentId) {
         formData.append('ExperimentId', this.experiment.ExperimentId.toString());
       }

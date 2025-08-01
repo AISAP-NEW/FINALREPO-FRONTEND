@@ -39,31 +39,34 @@
   <ion-list>
     <ion-item *ngFor="let exp of filteredExperiments">
       <ion-label>
-        <h2>{{ exp.Name || exp.name || 'Unnamed Experiment' }}</h2>
-        <p>{{ exp.Description || exp.description || 'No description' }}</p>
+        <h2>{{ exp.Name || 'Unnamed Experiment' }}</h2>
+        <p>{{ exp.Description || 'No description' }}</p>
         <p>
-          <ion-badge [color]="getStatusColor(exp.Status || exp.status)">
-            {{ exp.Status || exp.status || 'Unknown' }}
+          <ion-badge [color]="getStatusColor(exp.Status)">
+            {{ exp.Status || 'Unknown' }}
           </ion-badge>
-          <span *ngIf="hasExecutionResult(exp.ExperimentId || exp.id)" style="margin-left: 8px;">
-            <ion-badge [color]="getExecutionStatusColor(exp.ExperimentId || exp.id)">
-              {{ getExecutionStatus(exp.ExperimentId || exp.id) }}
+          <span *ngIf="hasExecutionResult(exp.ExperimentId)" style="margin-left: 8px;">
+            <ion-badge [color]="getExecutionStatusColor(exp.ExperimentId)">
+              {{ getExecutionStatus(exp.ExperimentId) }}
             </ion-badge>
           </span>
         </p>
+        <p *ngIf="exp.CreatedAt" class="ion-text-sm ion-text-nowrap ion-text-uppercase ion-color-medium">
+          Created: {{ exp.CreatedAt | date:'medium' }}
+        </p>
       </ion-label>
-      <ion-buttons slot="end">
-        <ion-button fill="clear" color="success" (click)="runExperiment(exp)" title="Run Experiment">
-          <ion-icon name="play" slot="icon-only"></ion-icon>
+      <ion-buttons slot="end" class="ion-nowrap">
+        <ion-button (click)="runExperiment(exp)" fill="clear" color="primary" [disabled]="exp.Status === 'Running'">
+          <ion-icon slot="icon-only" name="play"></ion-icon>
         </ion-button>
-        <ion-button fill="clear" color="primary" (click)="viewExperiment(exp)" title="View Details">
-          <ion-icon name="eye" slot="icon-only"></ion-icon>
+        <ion-button (click)="viewExperiment(exp)" fill="clear" color="medium">
+          <ion-icon slot="icon-only" name="eye"></ion-icon>
         </ion-button>
-        <ion-button fill="clear" color="warning" (click)="openEditModal(exp)" title="Edit">
-          <ion-icon name="create" slot="icon-only"></ion-icon>
+        <ion-button (click)="openEditModal(exp)" fill="clear" color="secondary">
+          <ion-icon slot="icon-only" name="create"></ion-icon>
         </ion-button>
-        <ion-button fill="clear" color="danger" (click)="confirmDelete(exp)" title="Delete">
-          <ion-icon name="trash" slot="icon-only"></ion-icon>
+        <ion-button (click)="confirmDelete(exp)" fill="clear" color="danger">
+          <ion-icon slot="icon-only" name="trash"></ion-icon>
         </ion-button>
       </ion-buttons>
     </ion-item>
