@@ -43,38 +43,38 @@ export interface ExecutionResult {
 
 // Updated interfaces to match backend DTOs exactly
 export interface TrainingSessionDTO {
-  id: number; // Maps to Train_Session_ID
-  modelInstanceId: number; // Maps to Model_Instance_ID
-  datasetId?: string; // Maps to Dataset_ID (Guid? becomes string)
-  trainingConfig?: string;
-  metrics?: string;
-  status: string; // Maps to Status enum as string
-  startedAt?: string; // Maps to StartedAt (DateTime? becomes string)
-  completedAt?: string; // Maps to CompletedAt
-  pausedAt?: string; // Maps to PausedAt
-  logsPath?: string;
-  errorMessage?: string;
-  trainingParameters?: string;
-  learningRate: number; // Maps to LearningRate (float)
-  modelId?: number; // From ModelInstance.Model_ID
-  modelName?: string; // From ModelInstance.Model.model_name
-  modelInstanceName?: string; // From ModelInstance.Name
-  datasetName?: string; // From DatasetMetadata.DatasetName
+  Id: number; // Maps to Train_Session_ID
+  ModelInstanceId: number; // Maps to Model_Instance_ID
+  DatasetId?: string; // Maps to Dataset_ID (Guid? becomes string)
+  TrainingConfig?: string;
+  Metrics?: string;
+  Status: string; // Maps to Status enum as string
+  StartedAt?: string; // Maps to StartedAt (DateTime? becomes string)
+  CompletedAt?: string; // Maps to CompletedAt
+  PausedAt?: string; // Maps to PausedAt
+  LogsPath?: string;
+  ErrorMessage?: string;
+  TrainingParameters?: string;
+  LearningRate: number; // Maps to LearningRate (float)
+  ModelId?: number; // From ModelInstance.Model_ID
+  ModelName?: string; // From ModelInstance.Model.model_name
+  ModelInstanceName?: string; // From ModelInstance.Name
+  DatasetName?: string; // From DatasetMetadata.DatasetName
   // Computed properties from backend - these should be calculated server-side
-  canPause?: boolean;
-  canResume?: boolean;
-  canCancel?: boolean;
+  CanPause?: boolean;
+  CanResume?: boolean;
+  CanCancel?: boolean;
   // Additional computed property
-  duration?: string;
+  Duration?: string;
 }
 
 export interface TrainingSessionsResponseDTO {
-  success: boolean;
-  sessions: TrainingSessionDTO[];
-  totalCount: number;
-  filters?: any;
-  error?: string;
-  details?: string;
+  Success: boolean;
+  Sessions: TrainingSessionDTO[];
+  TotalCount: number;
+  Filters?: any;
+  Error?: string;
+  Details?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -234,8 +234,8 @@ export class TrainingService {
     return this.http.get<TrainingSessionsResponseDTO>(url, { params }).pipe(
       tap(response => {
         console.log('✅ TrainingService API response:', response);
-        console.log('📈 Sessions count:', response?.sessions?.length || 0);
-        console.log('🎯 Success flag:', response?.success);
+        console.log('📈 Sessions count:', response?.Sessions?.length || 0);
+        console.log('🎯 Success flag:', response?.Success);
       }),
       catchError(error => {
         console.error('❌ TrainingService API error:', error);

@@ -86,15 +86,15 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Direct fetch successful:', data);
-        console.log('🎯 Success flag from direct fetch:', data.success);
-        console.log('📊 Direct fetch sessions:', data.sessions);
-        console.log('🔢 Direct fetch session count:', data.sessions?.length);
+        console.log('🎯 Success flag from direct fetch:', data.Success);
+        console.log('📊 Direct fetch sessions:', data.Sessions);
+        console.log('🔢 Direct fetch session count:', data.Sessions?.length);
         
         // Check if backend is returning success=false
-        if (data.success === false) {
+        if (data.Success === false) {
           console.error('🚨 BACKEND IS RETURNING SUCCESS=FALSE!');
-          console.error('🔍 Backend error:', data.error);
-          console.error('📝 Backend details:', data.details);
+          console.error('🔍 Backend error:', data.Error);
+          console.error('📝 Backend details:', data.Details);
           console.error('💡 This suggests a backend issue, not a frontend issue');
         }
       } else {
@@ -140,22 +140,34 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
       .subscribe({
         next: (response: TrainingSessionsResponseDTO) => {
           console.log('🔄 Auto-refresh response:', response);
-          if (response && response.success) {
-            console.log('📊 Auto-refresh sessions count:', response.sessions?.length || 0);
-            this.sessions = response.sessions.map(session => ({
-              ...session,
-              startedAt: session.startedAt ? new Date(session.startedAt) : new Date(),
-              completedAt: session.completedAt ? new Date(session.completedAt) : undefined,
-              pausedAt: session.pausedAt ? new Date(session.pausedAt) : undefined,
+          if (response && response.Success) {
+            console.log('📊 Auto-refresh sessions count:', response.Sessions?.length || 0);
+            this.sessions = response.Sessions.map(session => ({
+              id: session.Id,
+              modelInstanceId: session.ModelInstanceId,
+              datasetId: session.DatasetId,
+              trainingConfig: session.TrainingConfig,
+              metrics: session.Metrics,
+              status: session.Status,
+              startedAt: session.StartedAt ? new Date(session.StartedAt) : new Date(),
+              completedAt: session.CompletedAt ? new Date(session.CompletedAt) : undefined,
+              pausedAt: session.PausedAt ? new Date(session.PausedAt) : undefined,
+              logsPath: session.LogsPath,
+              errorMessage: session.ErrorMessage,
+              trainingParameters: session.TrainingParameters,
+              learningRate: session.LearningRate,
+              modelId: session.ModelId,
+              modelName: session.ModelName,
+              modelInstanceName: session.ModelInstanceName,
+              datasetName: session.DatasetName,
               duration: this.calculateDuration({
-                ...session,
-                startedAt: session.startedAt ? new Date(session.startedAt) : new Date(),
-                completedAt: session.completedAt ? new Date(session.completedAt) : undefined
+                startedAt: session.StartedAt ? new Date(session.StartedAt) : new Date(),
+                completedAt: session.CompletedAt ? new Date(session.CompletedAt) : undefined
               }),
               // Use backend computed properties if available
-              canPause: session.canPause ?? (session.status === 'InProgress'),
-              canResume: session.canResume ?? (session.status === 'Paused'),
-              canCancel: session.canCancel ?? (session.status === 'InProgress' || session.status === 'Paused')
+              canPause: session.CanPause ?? (session.Status === 'InProgress'),
+              canResume: session.CanResume ?? (session.Status === 'Paused'),
+              canCancel: session.CanCancel ?? (session.Status === 'InProgress' || session.Status === 'Paused')
             }));
             this.applyFilters();
           } else {
@@ -180,46 +192,58 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
       const response = await this.trainingService.getAllTrainingSessions().toPromise() as TrainingSessionsResponseDTO;
       console.log('📦 Raw API response:', response);
       console.log('📊 Response type:', typeof response);
-      console.log('🎯 Success flag:', response?.success);
-      console.log('📈 Sessions array:', response?.sessions);
-      console.log('🔢 Sessions count:', response?.sessions?.length);
+              console.log('🎯 Success flag:', response?.Success);
+        console.log('📈 Sessions array:', response?.Sessions);
+        console.log('🔢 Sessions count:', response?.Sessions?.length);
       console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
       
       // Check if this is our mock error response
-      if (response?.error && response?.details) {
+      if (response?.Error && response?.Details) {
         console.error('🚨 This appears to be a mock error response from the service');
-        console.error('🔍 Error:', response.error);
-        console.error('📝 Details:', response.details);
+        console.error('🔍 Error:', response.Error);
+        console.error('📝 Details:', response.Details);
       }
       
-      if (response && response.success) {
-        console.log('✅ Successfully loaded sessions:', response.sessions.length);
+      if (response && response.Success) {
+        console.log('✅ Successfully loaded sessions:', response.Sessions.length);
         
-        if (response.sessions.length === 0) {
+        if (response.Sessions.length === 0) {
           console.log('ℹ️ No training sessions found in database');
           this.toastService.presentToast('info', 'No training sessions found. Start a training session first.');
         }
         
-        this.sessions = response.sessions.map(session => {
+        this.sessions = response.Sessions.map(session => {
           console.log('🔄 Processing session:', session);
-          console.log('📊 Session status:', session.status);
-          console.log('🎮 Session controls - canPause:', session.canPause, 'canResume:', session.canResume, 'canCancel:', session.canCancel);
+          console.log('📊 Session status:', session.Status);
+          console.log('🎮 Session controls - canPause:', session.CanPause, 'canResume:', session.CanResume, 'canCancel:', session.CanCancel);
           
           // Convert date strings to Date objects
           const processedSession = {
-            ...session,
-            startedAt: session.startedAt ? new Date(session.startedAt) : new Date(),
-            completedAt: session.completedAt ? new Date(session.completedAt) : undefined,
-            pausedAt: session.pausedAt ? new Date(session.pausedAt) : undefined,
+            id: session.Id,
+            modelInstanceId: session.ModelInstanceId,
+            datasetId: session.DatasetId,
+            trainingConfig: session.TrainingConfig,
+            metrics: session.Metrics,
+            status: session.Status,
+            startedAt: session.StartedAt ? new Date(session.StartedAt) : new Date(),
+            completedAt: session.CompletedAt ? new Date(session.CompletedAt) : undefined,
+            pausedAt: session.PausedAt ? new Date(session.PausedAt) : undefined,
+            logsPath: session.LogsPath,
+            errorMessage: session.ErrorMessage,
+            trainingParameters: session.TrainingParameters,
+            learningRate: session.LearningRate,
+            modelId: session.ModelId,
+            modelName: session.ModelName,
+            modelInstanceName: session.ModelInstanceName,
+            datasetName: session.DatasetName,
             duration: this.calculateDuration({
-              ...session,
-              startedAt: session.startedAt ? new Date(session.startedAt) : new Date(),
-              completedAt: session.completedAt ? new Date(session.completedAt) : undefined
+              startedAt: session.StartedAt ? new Date(session.StartedAt) : new Date(),
+              completedAt: session.CompletedAt ? new Date(session.CompletedAt) : undefined
             }),
             // Use backend computed properties - these should always be provided by the backend
-            canPause: session.canPause || false,
-            canResume: session.canResume || false,
-            canCancel: session.canCancel || false
+            canPause: session.CanPause || false,
+            canResume: session.CanResume || false,
+            canCancel: session.CanCancel || false
           };
           
           console.log('✅ Processed session controls - canPause:', processedSession.canPause, 'canResume:', processedSession.canResume, 'canCancel:', processedSession.canCancel);
@@ -229,10 +253,10 @@ export class TrainingSessionsPage implements OnInit, OnDestroy {
         console.log('🎯 Filtered sessions:', this.filteredSessions.length);
       } else {
         console.warn('⚠️ API response indicates failure:', response);
-        if (response?.error) {
-          console.error('❌ API Error:', response.error);
-          console.error('📝 Details:', response.details);
-          this.toastService.presentToast('error', `Failed to load sessions: ${response.error}`);
+        if (response?.Error) {
+          console.error('❌ API Error:', response.Error);
+          console.error('📝 Details:', response.Details);
+          this.toastService.presentToast('error', `Failed to load sessions: ${response.Error}`);
         } else {
           console.log('ℹ️ Response success is false but no error message');
           this.toastService.presentToast('warning', 'API returned success=false but no error details');
