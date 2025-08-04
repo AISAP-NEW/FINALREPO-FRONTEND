@@ -73,19 +73,19 @@
             <ion-item>
               <ion-label>
                 <h3>CPU Usage</h3>
-                <p>{{ systemResources.cpuUsage }}</p>
+                <p>{{ systemResources.CpuUsage }}</p>
               </ion-label>
             </ion-item>
             <ion-item>
               <ion-label>
                 <h3>Memory Usage</h3>
-                <p>{{ systemResources.memoryUsage }}</p>
+                <p>{{ systemResources.MemoryUsage }}</p>
               </ion-label>
             </ion-item>
             <ion-item>
               <ion-label>
                 <h3>Thread Count</h3>
-                <p>{{ systemResources.threadCount }}</p>
+                <p>{{ systemResources.ThreadCount }}</p>
               </ion-label>
             </ion-item>
           </ion-list>
@@ -115,16 +115,16 @@
           </div>
           
           <ion-list *ngIf="activeTrainingSessions.length > 0">
-            <ion-item *ngFor="let session of activeTrainingSessions" button (click)="navigateToSession(session.id)">
-              <ion-icon slot="start" [name]="getSessionIcon(session.status)" [color]="getSessionColor(session.status)"></ion-icon>
+            <ion-item *ngFor="let session of activeTrainingSessions" button (click)="navigateToSession(session.Id)">
+              <ion-icon slot="start" [name]="getSessionIcon(session.Status)" [color]="getSessionColor(session.Status)"></ion-icon>
               <ion-label>
-                <h3>{{ session.modelName || 'Model ' + session.modelId }}</h3>
-                <p><strong>Status:</strong> {{ session.status }}</p>
-                <p><strong>Started:</strong> {{ session.startedAt | date:'short' }}</p>
-                <p *ngIf="session.completedAt"><strong>Completed:</strong> {{ session.completedAt | date:'short' }}</p>
-                <p *ngIf="session.pausedAt"><strong>Paused:</strong> {{ session.pausedAt | date:'short' }}</p>
-                <p *ngIf="session.datasetName"><strong>Dataset:</strong> {{ session.datasetName }}</p>
-                <p *ngIf="session.learningRate"><strong>Learning Rate:</strong> {{ session.learningRate }}</p>
+                <h3>{{ session.ModelName || 'Model ' + session.ModelId }}</h3>
+                <p><strong>Status:</strong> {{ session.Status }}</p>
+                <p><strong>Started:</strong> {{ session.StartedAt | date:'short' }}</p>
+                <p *ngIf="session.CompletedAt"><strong>Completed:</strong> {{ session.CompletedAt | date:'short' }}</p>
+                <p *ngIf="session.PausedAt"><strong>Paused:</strong> {{ session.PausedAt | date:'short' }}</p>
+                <p *ngIf="session.DatasetName"><strong>Dataset:</strong> {{ session.DatasetName }}</p>
+                <p *ngIf="session.LearningRate"><strong>Learning Rate:</strong> {{ session.LearningRate }}</p>
               </ion-label>
               
               <!-- Session Controls -->

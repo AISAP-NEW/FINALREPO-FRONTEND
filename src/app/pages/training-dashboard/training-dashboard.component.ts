@@ -109,12 +109,12 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
     this.trainingService.getAllTrainingSessions().subscribe({
       next: (response: TrainingSessionsResponseDTO) => {
         console.log('Training sessions response:', response);
-        if (response && response.success) {
-          this.activeTrainingSessions = response.sessions || [];
+        if (response && response.Success) {
+          this.activeTrainingSessions = response.Sessions || [];
           console.log('Active training sessions:', this.activeTrainingSessions);
         } else {
           console.error('API returned unsuccessful response:', response);
-          this.error = response.error || 'Failed to load training sessions';
+          this.error = response.Error || 'Failed to load training sessions';
           this.activeTrainingSessions = [];
         }
         this.isLoading = false;
@@ -165,9 +165,9 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
   pauseSession(session: TrainingSessionDTO, event: Event) {
     event.stopPropagation(); // Prevent navigation
     
-    this.trainingService.pauseTrainingSession(session.id).subscribe({
+    this.trainingService.pauseTrainingSession(session.Id).subscribe({
       next: () => {
-        this.showSuccess(`Training session for ${session.modelName} paused successfully`);
+        this.showSuccess(`Training session for ${session.ModelName} paused successfully`);
         this.refreshTrainingSessions();
       },
       error: (err) => {
@@ -182,9 +182,9 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
   resumeSession(session: TrainingSessionDTO, event: Event) {
     event.stopPropagation(); // Prevent navigation
     
-    this.trainingService.resumeTrainingSession(session.id).subscribe({
+    this.trainingService.resumeTrainingSession(session.Id).subscribe({
       next: () => {
-        this.showSuccess(`Training session for ${session.modelName} resumed successfully`);
+        this.showSuccess(`Training session for ${session.ModelName} resumed successfully`);
         this.refreshTrainingSessions();
       },
       error: (err) => {
@@ -199,13 +199,13 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
   cancelSession(session: TrainingSessionDTO, event: Event) {
     event.stopPropagation(); // Prevent navigation
     
-    if (!confirm(`Are you sure you want to cancel the training session for ${session.modelName}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to cancel the training session for ${session.ModelName}? This action cannot be undone.`)) {
       return;
     }
     
-    this.trainingService.cancelTrainingSession(session.id).subscribe({
+    this.trainingService.cancelTrainingSession(session.Id).subscribe({
       next: () => {
-        this.showSuccess(`Training session for ${session.modelName} cancelled successfully`);
+        this.showSuccess(`Training session for ${session.ModelName} cancelled successfully`);
         this.refreshTrainingSessions();
       },
       error: (err) => {
@@ -496,20 +496,20 @@ export class TrainingDashboardComponent implements OnInit, OnDestroy {
    * Check if session can be paused
    */
   canPauseSession(session: TrainingSessionDTO): boolean {
-    return session.status === 'InProgress';
+    return session.Status === 'InProgress';
   }
 
   /**
    * Check if session can be resumed
    */
   canResumeSession(session: TrainingSessionDTO): boolean {
-    return session.status === 'Paused';
+    return session.Status === 'Paused';
   }
 
   /**
    * Check if session can be cancelled
    */
   canCancelSession(session: TrainingSessionDTO): boolean {
-    return session.status === 'InProgress' || session.status === 'Paused';
+    return session.Status === 'InProgress' || session.Status === 'Paused';
   }
 }
