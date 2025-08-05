@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, tap } from 'rxjs/operators';
 import { Project } from './project.service';
 import { environment } from '../../environments/environment';
 
@@ -50,9 +50,30 @@ export class UserService {
         errorMessage = 'You do not have permission to perform this action.';
       } else if (error.status === 404) {
         errorMessage = 'Resource not found.';
-      } else if (error.error?.message) {
-        errorMessage = error.error.message;
+      } else if (error.status === 201) {
+        // 201 Created is a successful response
+        console.log('Received 201 Created - this is a successful response');
+        errorMessage = 'Operation completed successfully';
+      } else if (error.status === 204) {
+        // 204 No Content is often a successful response
+        console.log('Received 204 No Content - this is a successful response');
+        errorMessage = 'Operation completed successfully';
+      } else if (error.status >= 200 && error.status < 300) {
+        // Any 2xx status code is successful
+        console.log(`Received ${error.status} status - this is a successful response`);
+        errorMessage = 'Operation completed successfully';
+      } else if (error.status >= 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.status >= 400) {
+        errorMessage = error.error?.message || error.error || 'Bad request.';
       }
+    }
+    
+    // Don't throw errors for successful status codes
+    if (error.status >= 200 && error.status < 300) {
+      console.log('Not throwing error for successful status code');
+      // Return a success error that will be handled by the component
+      return throwError(() => new Error('SUCCESS'));
     }
     
     return throwError(() => new Error(errorMessage));
@@ -104,28 +125,81 @@ export class UserService {
       Role: role
     };
 
+    console.log('Direct assigning user to project:', { projectId, userId, leadDeveloperId, role });
+    console.log('API URL:', url);
+    console.log('Request body:', body);
+
     return this.http.post<any>(url, body, { params }).pipe(
+      tap(response => {
+        console.log('=== DIRECT ASSIGN SUCCESS RESPONSE ===');
+        console.log('Direct assign response:', response);
+        console.log('Response type:', typeof response);
+        console.log('Response keys:', response ? Object.keys(response) : 'null/undefined');
+        console.log('Response is null?', response === null);
+        console.log('Response is undefined?', response === undefined);
+        console.log('Response stringified:', JSON.stringify(response));
+        console.log('=== END SUCCESS RESPONSE ===');
+      }),
       map(response => {
         // If we get a 204 No Content or empty response, consider it success
         if (!response) {
+          console.log('No response body - treating as success');
           return { message: 'Member added successfully' };
         }
         // Handle string response
         if (typeof response === 'string') {
+          console.log('String response - treating as success:', response);
           return { message: response };
         }
         // Handle error in response
         if (response?.error) {
+          console.log('Response contains error:', response.error);
           throw new Error(response.error);
         }
         // Return the response as is
+        console.log('Returning response as success:', response);
         return response;
       }),
       catchError((error: HttpErrorResponse) => {
+        console.log('=== DIRECT ASSIGN ERROR RESPONSE ===');
+        console.error('Direct assign error:', error);
+        console.error('Error status:', error.status);
+        console.error('Error statusText:', error.statusText);
+        console.error('Error message:', error.message);
+        console.error('Error error:', error.error);
+        console.error('Error name:', error.name);
+        console.error('Error url:', error.url);
+        console.error('Error type:', typeof error);
+        console.error('Error stringified:', JSON.stringify(error));
+        console.log('=== END ERROR RESPONSE ===');
+        
         // Handle 204 No Content as success
         if (error.status === 204) {
+          console.log('Received 204 No Content - treating as success');
           return of({ message: 'Member added successfully' });
         }
+        
+        // Handle 201 Created as success
+        if (error.status === 201) {
+          console.log('Received 201 Created - treating as success');
+          return of({ message: 'Member added successfully' });
+        }
+        
+        // More aggressive approach: treat any 2xx status as success, regardless of error
+        if (error.status >= 200 && error.status < 300) {
+          console.log('Received successful status code but Angular treated as error - treating as success');
+          return of({ message: 'Member added successfully' });
+        }
+        
+        // Check if the error message indicates success (some backends return success messages as errors)
+        if (error.error && typeof error.error === 'string' && 
+            (error.error.toLowerCase().includes('success') || 
+             error.error.toLowerCase().includes('added') ||
+             error.error.toLowerCase().includes('assigned'))) {
+          console.log('Error message indicates success:', error.error);
+          return of({ message: 'Member added successfully' });
+        }
+        
         return this.handleError(error);
       })
     );

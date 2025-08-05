@@ -190,6 +190,20 @@ export class ClientDetailsComponent {
     });
   }
 
+  ngOnInit() {
+    // Debug logging to track project status
+    console.log('Client Details Component - Client data:', this.client);
+    console.log('Client projects:', this.client.projects);
+    this.client.projects.forEach((project, index) => {
+      console.log(`Project ${index + 1}:`, {
+        name: project.name,
+        isActive: project.isActive,
+        projectId: project.projectId,
+        createdDate: project.createdDate
+      });
+    });
+  }
+
   dismiss() {
     this.modalController.dismiss();
   }

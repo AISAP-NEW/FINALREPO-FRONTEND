@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Project } from './project.service';
 
@@ -67,7 +67,10 @@ export class ClientService {
   }
 
   private normalizeClient(apiClient: any): Client {
-    return {
+    console.log('Normalizing client data:', apiClient);
+    console.log('Client projects from API:', apiClient.Projects || apiClient.projects);
+    
+    const normalizedClient = {
       clientId: apiClient.ClientId || apiClient.clientId || 0,
       name: apiClient.Name || apiClient.name || '',
       address: apiClient.Address || apiClient.address || '',
@@ -82,6 +85,19 @@ export class ClientService {
       Email: apiClient.Email || apiClient.email || '',
       Projects: apiClient.Projects || apiClient.projects || []
     };
+    
+    console.log('Normalized client:', normalizedClient);
+    console.log('Normalized projects:', normalizedClient.projects);
+    normalizedClient.projects.forEach((project: any, index: number) => {
+      console.log(`Project ${index + 1} normalized:`, {
+        name: project.name || project.Name,
+        isActive: project.isActive || project.IsActive,
+        projectId: project.projectId || project.ProjectId,
+        createdDate: project.createdDate || project.CreatedDate
+      });
+    });
+    
+    return normalizedClient;
   }
 
   getClients(): Observable<Client[]> {
@@ -98,9 +114,29 @@ export class ClientService {
   }
 
   getClient(id: number): Observable<Client> {
+    console.log('Fetching client with ID:', id);
     return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      tap(response => {
+        console.log('=== GET CLIENT API RESPONSE ===');
+        console.log('Raw API response:', response);
+        console.log('Client projects from API:', response.Projects || response.projects);
+        if (response.Projects || response.projects) {
+          (response.Projects || response.projects).forEach((project: any, index: number) => {
+            console.log(`Project ${index + 1} from API:`, {
+              name: project.name || project.Name,
+              isActive: project.isActive || project.IsActive,
+              projectId: project.projectId || project.ProjectId,
+              createdDate: project.createdDate || project.CreatedDate
+            });
+          });
+        }
+        console.log('=== END GET CLIENT API RESPONSE ===');
+      }),
       map(client => this.normalizeClient(client)),
-      catchError(this.handleError)
+      catchError(error => {
+        console.error('Error fetching client:', error);
+        return this.handleError(error);
+      })
     );
   }
 

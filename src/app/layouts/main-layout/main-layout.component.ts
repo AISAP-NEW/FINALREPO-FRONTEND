@@ -16,7 +16,8 @@ import {
   IonRouterOutlet,
   IonBadge,
   IonSpinner,
-  ModalController
+  ModalController,
+  AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -42,7 +43,8 @@ import {
   barChartOutline,
   chevronUp,
   chevronDown,
-  listOutline
+  listOutline,
+  warningOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -203,7 +205,7 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
               </ion-menu-toggle>
 
               <ion-menu-toggle auto-hide="false">
-                <ion-item (click)="logout()" lines="none" detail="false">
+                <ion-item (click)="confirmLogout()" lines="none" detail="false">
                   <ion-icon slot="start" name="log-out-outline"></ion-icon>
                   <ion-label>Logout</ion-label>
                 </ion-item>
@@ -393,6 +395,116 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
     ion-item ion-icon[name="chevron-down"] {
       transition: transform 0.3s ease;
     }
+
+    /* Logout Confirmation Alert Styles */
+    .logout-confirmation-alert {
+      --background: #ffffff;
+      --border-radius: 12px;
+      --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .logout-confirmation-alert .alert-wrapper {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .logout-confirmation-alert .alert-head {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 16px 16px;
+      text-align: center;
+    }
+
+    .logout-confirmation-alert .alert-head .alert-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .logout-confirmation-alert .alert-message {
+      padding: 20px 16px;
+      font-size: 15px;
+      line-height: 1.5;
+      color: #374151;
+      text-align: center;
+      margin: 0;
+    }
+
+    .logout-confirmation-alert .alert-button-group {
+      padding: 0;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .logout-confirmation-alert .cancel-button {
+      --color: #6b7280;
+      --background: transparent;
+      font-weight: 500;
+      border-right: 1px solid #e5e7eb;
+    }
+
+    .logout-confirmation-alert .logout-button {
+      --color: #dc2626;
+      --background: transparent;
+      font-weight: 600;
+    }
+
+    .logout-confirmation-alert .alert-button {
+      margin: 0;
+      padding: 16px;
+      font-size: 16px;
+      border-radius: 0;
+      min-height: 56px;
+    }
+
+    .logout-confirmation-alert .alert-button:first-child {
+      border-bottom-left-radius: 12px;
+    }
+
+    .logout-confirmation-alert .alert-button:last-child {
+      border-bottom-right-radius: 12px;
+    }
+
+    /* New styles for logout dialog */
+    .logout-dialog-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .logout-icon {
+      font-size: 60px;
+      color: var(--ion-color-danger);
+      margin-bottom: 15px;
+    }
+
+    .logout-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ion-color-dark);
+      margin-bottom: 10px;
+    }
+
+    .logout-message {
+      font-size: 16px;
+      color: var(--ion-color-medium);
+      text-align: center;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .logout-warning {
+      display: flex;
+      align-items: center;
+      color: var(--ion-color-warning);
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .logout-warning ion-icon {
+      font-size: 18px;
+      margin-right: 8px;
+    }
   `],
   standalone: true,
   imports: [
@@ -433,6 +545,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private sessionTimeoutService: SessionTimeoutService,
     private modalController: ModalController,
+    private alertController: AlertController,
     private router: Router
   ) {
     addIcons({
@@ -458,7 +571,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       barChartOutline,
       chevronUp,
       chevronDown,
-      listOutline
+      listOutline,
+      warningOutline
     });
   }
 
@@ -574,11 +688,51 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     await modal.present();
   }
 
-  logout() {
-    console.log('Logout initiated from main layout');
-    // Stop session monitoring before logout
-    this.sessionTimeoutService.stopMonitoring();
-    this.authService.logout();
+  async logout() {
+    const alert = await this.alertController.create({
+      header: 'Sign Out',
+      message: `
+        <div class="logout-dialog-content">
+          <div class="logout-icon">
+            <ion-icon name="log-out-outline"></ion-icon>
+          </div>
+          <div class="logout-title">Sign Out</div>
+          <div class="logout-message">
+            You are about to sign out of your account. All unsaved changes will be lost.
+          </div>
+          <div class="logout-warning">
+            <ion-icon name="warning-outline"></ion-icon>
+            <span>This action cannot be undone</span>
+          </div>
+        </div>
+      `,
+      cssClass: 'logout-confirmation-alert',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'cancel-button'
+        },
+        {
+          text: 'Sign Out',
+          role: 'destructive',
+          cssClass: 'logout-button',
+          handler: () => {
+            console.log('Logout confirmed from main layout');
+            // Stop session monitoring before logout
+            this.sessionTimeoutService.stopMonitoring();
+            this.authService.logout();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async confirmLogout() {
+    // This method is called from the HTML template
+    await this.logout();
   }
 
   toggleReportsDropdown() {

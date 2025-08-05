@@ -39,6 +39,7 @@ import { ClientService, Client } from '../../services/client.service';
 import { ClientFormComponent } from './client-form/client-form.component';
 import { ClientDetailsComponent } from './client-details/client-details.component';
 import { ClientProjectFormComponent } from './client-project-form/client-project-form.component';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-clients',
@@ -315,14 +316,33 @@ export class ClientsComponent implements OnInit {
   }
 
   async viewClient(client: Client) {
-    const modal = await this.modalController.create({
-      component: ClientDetailsComponent,
-      componentProps: {
-        client: client
-      },
-      cssClass: 'modal-full-height'
-    });
-    await modal.present();
+    try {
+      // Fetch fresh client data to get the latest project status
+      console.log('Fetching fresh client data for client ID:', client.clientId);
+      const freshClient = await firstValueFrom(this.clientService.getClient(client.clientId));
+      console.log('Fresh client data:', freshClient);
+      console.log('Project statuses:', freshClient.projects.map(p => ({ name: p.name, isActive: p.isActive })));
+      
+      const modal = await this.modalController.create({
+        component: ClientDetailsComponent,
+        componentProps: {
+          client: freshClient
+        },
+        cssClass: 'modal-full-height'
+      });
+      await modal.present();
+    } catch (error: any) {
+      console.error('Error fetching fresh client data:', error);
+      // Fallback to using cached data if fresh fetch fails
+      const modal = await this.modalController.create({
+        component: ClientDetailsComponent,
+        componentProps: {
+          client: client
+        },
+        cssClass: 'modal-full-height'
+      });
+      await modal.present();
+    }
   }
 
   async editClient(client: Client) {

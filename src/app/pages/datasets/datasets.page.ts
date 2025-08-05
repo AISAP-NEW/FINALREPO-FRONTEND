@@ -32,6 +32,10 @@ export class DatasetsComponent implements OnInit {
     this.loadDatasets();
   }
 
+  ionViewWillEnter() {
+    this.loadDatasets();
+  }
+
   loadDatasets() {
     this.loading = true;
     this.error = null;
@@ -77,5 +81,11 @@ export class DatasetsComponent implements OnInit {
         searchableFields.some(field => field.includes(term))
       );
     });
+  }
+
+  onDatasetDeleted(datasetId: string) {
+    // Remove the deleted dataset from the arrays
+    this.datasets = this.datasets.filter(dataset => dataset.datasetId !== datasetId);
+    this.filteredDatasets = this.filteredDatasets.filter(dataset => dataset.datasetId !== datasetId);
   }
 } 

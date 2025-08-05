@@ -91,11 +91,22 @@ export class ProjectService {
         // 204 No Content is often a successful response
         console.log('Received 204 No Content - this is a successful response');
         errorMessage = 'Operation completed successfully';
+      } else if (error.status >= 200 && error.status < 300) {
+        // Any 2xx status code is successful
+        console.log(`Received ${error.status} status - this is a successful response`);
+        errorMessage = 'Operation completed successfully';
       } else if (error.status >= 500) {
         errorMessage = 'Server error. Please try again later.';
       } else if (error.status >= 400) {
         errorMessage = error.error?.message || error.error || 'Bad request.';
       }
+    }
+    
+    // Don't throw errors for successful status codes
+    if (error.status >= 200 && error.status < 300) {
+      console.log('Not throwing error for successful status code');
+      // Return a success error that will be handled by the component
+      return throwError(() => new Error('SUCCESS'));
     }
     
     return throwError(() => new Error(errorMessage));
