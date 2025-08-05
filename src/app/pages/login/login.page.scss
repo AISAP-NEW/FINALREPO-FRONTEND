@@ -263,7 +263,7 @@ ion-content {
   border-radius: var(--border-radius);
   border: 1px solid var(--glass-border);
   transition: var(--transition);
-  overflow: hidden;
+  overflow: visible;
   
   &:focus-within {
     border-color: var(--ion-color-primary);
@@ -283,7 +283,7 @@ ion-content {
   
   .input-field {
     --padding-start: 0;
-    --padding-end: 1rem;
+    --padding-end: 3rem;
     --padding-top: 1rem;
     --padding-bottom: 1rem;
     --background: transparent;
@@ -299,16 +299,37 @@ ion-content {
   }
   
   .toggle-password {
-    --padding-start: 0.75rem;
-    --padding-end: 0.75rem;
-    --color: var(--ion-color-medium);
-    --color-hover: var(--ion-color-primary);
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --color: var(--ion-color-primary);
+    --color-hover: var(--ion-color-secondary);
     --background-hover: transparent;
     margin: 0;
     transition: var(--transition);
+    z-index: 10;
+    min-width: 50px;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    width: 40px !important;
+    height: 40px !important;
+    
+    ion-icon {
+      font-size: 1.5rem !important;
+      color: #ffffff !important;
+      display: block !important;
+    }
     
     &:hover {
-      --color: var(--ion-color-primary);
+      --color: var(--ion-color-secondary);
+      background: rgba(255, 255, 255, 0.2) !important;
+      
+      ion-icon {
+        color: #ffffff !important;
+      }
     }
   }
 }

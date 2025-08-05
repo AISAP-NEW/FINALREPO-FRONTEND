@@ -64,12 +64,18 @@
           <div class="input-wrapper">
             <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
             <input 
-              type="password" 
+              [type]="showPassword ? 'text' : 'password'" 
               formControlName="password" 
               [disabled]="isLoading"
               class="form-input"
               placeholder="Enter your password"
             />
+            <span 
+              class="toggle-password"
+              (click)="togglePassword()"
+              title="Show password">
+              {{ showPassword ? '👁️‍🗨️' : '👁️‍🗨️' }}
+            </span>
           </div>
           <div class="validation-error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
             <div *ngIf="loginForm.get('password')?.errors?.['required']">

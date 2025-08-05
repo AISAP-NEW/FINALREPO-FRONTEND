@@ -190,6 +190,39 @@
   position: relative;
   display: flex;
   align-items: center;
+  
+  input {
+    padding-right: 60px; /* Make space for the toggle button */
+  }
+}
+
+.toggle-password {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --color: var(--primary-color);
+  --color-hover: var(--secondary-color);
+  --background-hover: transparent;
+  margin: 0;
+  transition: all 0.2s ease;
+  z-index: 10;
+  min-width: 50px;
+  
+  ion-icon {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+  }
+  
+  &:hover {
+    --color: var(--secondary-color);
+    
+    ion-icon {
+      color: var(--secondary-color);
+    }
+  }
 }
 
 .input-icon {
@@ -202,7 +235,7 @@
 
 .form-input, .form-select {
   width: 100%;
-  padding: 16px 16px 16px 48px;
+  padding: 16px 48px 16px 48px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;

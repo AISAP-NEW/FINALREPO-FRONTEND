@@ -120,12 +120,18 @@
             <div class="input-wrapper">
               <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
               <input 
-                type="password" 
+                [type]="showPassword ? 'text' : 'password'" 
                 formControlName="Password" 
                 class="form-input"
                 [class.error]="hasFieldError('Password')"
                 placeholder="Enter your password"
               />
+              <span 
+                class="toggle-password"
+                (click)="togglePassword()"
+                title="Show password">
+                {{ showPassword ? '👁️‍🗨️' : '👁️‍🗨️' }}
+              </span>
             </div>
             <div class="validation-error" *ngIf="hasFieldError('Password')">
               <ion-icon name="alert-circle-outline"></ion-icon>
@@ -150,12 +156,18 @@
             <div class="input-wrapper">
               <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
               <input 
-                type="password" 
+                [type]="showConfirmPassword ? 'text' : 'password'" 
                 formControlName="ConfirmPassword" 
                 class="form-input"
                 [class.error]="hasFieldError('ConfirmPassword')"
                 placeholder="Confirm your password"
               />
+              <span 
+                class="toggle-password"
+                (click)="toggleConfirmPassword()"
+                title="Show password">
+                {{ showConfirmPassword ? '👁️‍🗨️' : '👁️‍🗨️' }}
+              </span>
             </div>
             <div class="validation-error" *ngIf="hasFieldError('ConfirmPassword')">
               <ion-icon name="alert-circle-outline"></ion-icon>

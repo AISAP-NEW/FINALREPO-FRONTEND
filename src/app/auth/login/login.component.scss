@@ -158,6 +158,10 @@
   position: relative;
   display: flex;
   align-items: center;
+  
+  input {
+    padding-right: 60px; /* Make space for the toggle button */
+  }
 }
 
 .input-icon {
@@ -166,6 +170,23 @@
   font-size: 1.25rem;
   color: var(--text-secondary);
   z-index: 2;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: #000000;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s ease;
+  padding: 8px;
+  
+  &:hover {
+    color: #333333;
+  }
 }
 
 .form-input {

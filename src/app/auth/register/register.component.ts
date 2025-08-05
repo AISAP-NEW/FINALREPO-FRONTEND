@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { ToastController } from '@ionic/angular/standalone';
-import { IonIcon, IonSpinner } from '@ionic/angular/standalone';
+import { ToastController, IonicModule } from '@ionic/angular';
 import { AuthService, RegisterDTO } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 
@@ -15,14 +14,15 @@ import { CommonModule } from '@angular/common';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    IonIcon,
-    IonSpinner
+    IonicModule
   ]
 })
 export class RegisterComponent {
   registerForm: FormGroup;
   passwordPattern = '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$';
   isLoading = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -133,6 +133,16 @@ export class RegisterComponent {
         dirty: control?.dirty
       });
     });
+  }
+
+  // Toggle password visibility
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
+
+  // Toggle confirm password visibility
+  toggleConfirmPassword() {
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 
   // Check if form is ready for submission
