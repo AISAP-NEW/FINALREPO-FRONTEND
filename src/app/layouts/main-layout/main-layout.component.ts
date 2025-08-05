@@ -43,8 +43,7 @@ import {
   barChartOutline,
   chevronUp,
   chevronDown,
-  listOutline,
-  warningOutline
+  listOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -463,48 +462,6 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
     .logout-confirmation-alert .alert-button:last-child {
       border-bottom-right-radius: 12px;
     }
-
-    /* New styles for logout dialog */
-    .logout-dialog-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .logout-icon {
-      font-size: 60px;
-      color: var(--ion-color-danger);
-      margin-bottom: 15px;
-    }
-
-    .logout-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--ion-color-dark);
-      margin-bottom: 10px;
-    }
-
-    .logout-message {
-      font-size: 16px;
-      color: var(--ion-color-medium);
-      text-align: center;
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-
-    .logout-warning {
-      display: flex;
-      align-items: center;
-      color: var(--ion-color-warning);
-      font-size: 14px;
-      margin-top: 10px;
-    }
-
-    .logout-warning ion-icon {
-      font-size: 18px;
-      margin-right: 8px;
-    }
   `],
   standalone: true,
   imports: [
@@ -571,8 +528,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       barChartOutline,
       chevronUp,
       chevronDown,
-      listOutline,
-      warningOutline
+      listOutline
     });
   }
 
@@ -691,25 +647,11 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   async logout() {
     const alert = await this.alertController.create({
       header: 'Sign Out',
-      message: `
-        <div class="logout-dialog-content">
-          <div class="logout-icon">
-            <ion-icon name="log-out-outline"></ion-icon>
-          </div>
-          <div class="logout-title">Sign Out</div>
-          <div class="logout-message">
-            You are about to sign out of your account. All unsaved changes will be lost.
-          </div>
-          <div class="logout-warning">
-            <ion-icon name="warning-outline"></ion-icon>
-            <span>This action cannot be undone</span>
-          </div>
-        </div>
-      `,
+      message: 'You are about to sign out of your account. All unsaved changes will be lost. Are you sure you want to continue?',
       cssClass: 'logout-confirmation-alert',
       buttons: [
         {
-          text: 'Cancel',
+          text: 'Stay Signed In',
           role: 'cancel',
           cssClass: 'cancel-button'
         },

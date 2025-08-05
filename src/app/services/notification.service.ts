@@ -149,20 +149,21 @@ export class NotificationService {
     );
   }
 
-  markAsRead(notificationId: number): Observable<void> {
+  markAsRead(notificationId: number): Observable<any> {
     console.debug('Marking notification as read:', notificationId);
     const url = `${this.API_URL}/markAsRead`;
     const body = {
       NotificationId: notificationId
     };
 
-    return this.http.put<void>(url, body).pipe(
-      tap(() => console.debug('Successfully marked notification as read:', notificationId)),
+    return this.http.put(url, body, { responseType: 'text' }).pipe(
+      tap(response => console.debug('Successfully marked notification as read:', notificationId, 'Response:', response)),
+      map(response => ({ message: response })),
       catchError(error => {
         // If it's a 204 No Content, consider it a success
         if (error.status === 204) {
           console.debug('Received 204 No Content - treating as success');
-          return of(undefined);
+          return of({ message: 'Notification marked as read' });
         }
         console.error('Error marking notification as read:', error);
         return this.handleError(error);
@@ -170,20 +171,21 @@ export class NotificationService {
     );
   }
 
-  markAllAsRead(userId: number): Observable<void> {
+  markAllAsRead(userId: number): Observable<any> {
     console.debug('Marking all notifications as read for userId:', userId);
     const url = `${this.API_URL}/markAllAsRead`;
     const body = {
       UserId: userId
     };
 
-    return this.http.put<void>(url, body).pipe(
-      tap(() => console.debug('Successfully marked all notifications as read for userId:', userId)),
+    return this.http.put(url, body, { responseType: 'text' }).pipe(
+      tap(response => console.debug('Successfully marked all notifications as read for userId:', userId, 'Response:', response)),
+      map(response => ({ message: response })),
       catchError(error => {
         // If it's a 204 No Content, consider it a success
         if (error.status === 204) {
           console.debug('Received 204 No Content - treating as success');
-          return of(undefined);
+          return of({ message: 'All notifications marked as read' });
         }
         console.error('Error marking all notifications as read:', error);
         return this.handleError(error);
