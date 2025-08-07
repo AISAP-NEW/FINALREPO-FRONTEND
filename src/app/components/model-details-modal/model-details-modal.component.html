@@ -1,0 +1,77 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ model.modelName }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list *ngFor="let version of model.versions">
+    <ion-item-divider color="light">
+      <ion-label>
+        <strong>Version:</strong> {{ version.version_Number }}<br>
+        <small>Created: {{ version.creationDate | date:'short' }}</small>
+      </ion-label>
+    </ion-item-divider>
+    <ion-card *ngFor="let file of version.files">
+      <ion-card-header>
+        <ion-card-title>{{ file.fileName }}</ion-card-title>
+        <ion-card-subtitle>{{ file.fileType }}, {{ file.fileSize | number }} bytes</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <div>
+          Uploaded: {{ file.uploadDate | date:'short' }}
+        </div>
+        <ion-button expand="block" fill="outline" (click)="downloadFile(file.filePath)">
+          Download
+        </ion-button>
+        <div class="training-button-container">
+          <ion-button 
+            expand="block" 
+            color="primary" 
+            [disabled]="isTraining" 
+            (click)="startTraining()" 
+            class="training-button">
+            <ion-icon slot="start" name="rocket-outline"></ion-icon>
+            <span>Start Training</span>
+            <ion-spinner *ngIf="isTraining" name="dots" style="width:20px;height:20px; margin-left: 8px;"></ion-spinner>
+          </ion-button>
+          <ion-button 
+            expand="block" 
+            color="medium" 
+            (click)="openTrainingDashboard()"
+            class="dashboard-button">
+            <ion-icon slot="start" name="analytics-outline"></ion-icon>
+            <span>Training Dashboard</span>
+          </ion-button>
+        </div>
+        <ion-text color="danger" *ngIf="trainError">{{ trainError }}</ion-text>
+      </ion-card-content>
+    </ion-card>
+  </ion-list>
+  <div style="margin: 24px 16px 0 16px; text-align: center;">
+    <ion-text color="danger" *ngIf="!model.versions || model.versions.length === 0 || !model.versions[0].files || model.versions[0].files.length === 0">
+      <p><strong>No model files found. You can still test the Training Dashboard below.</strong></p>
+    </ion-text>
+    <ion-button 
+      expand="block" 
+      style="--background: #fff; --color: #000; font-size: 1.15em; font-weight: bold; margin-bottom: 10px; border: 2px solid #000;"
+      (click)="startTraining()">
+      <ion-icon slot="start" name="rocket-outline" style="color: #000;"></ion-icon>
+      Start Training
+    </ion-button>
+    <ion-button 
+      expand="block" 
+      color="medium" 
+      style="font-size: 1.15em; font-weight: bold; border: 2px solid #222;"
+      (click)="openTrainingDashboard()">
+      <ion-icon slot="start" name="analytics-outline"></ion-icon>
+      Training Dashboard
+    </ion-button>
+    <ion-text color="danger" *ngIf="trainError">{{ trainError }}</ion-text>
+  </div>
+</ion-content>

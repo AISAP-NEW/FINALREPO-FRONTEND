@@ -1,0 +1,93 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Validation Results</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="validation-summary">
+    <ion-item lines="none">
+      <ion-icon 
+        slot="start" 
+        [name]="getStatusIcon(validationResult.status)" 
+        [color]="getStatusColor(validationResult.status)">
+      </ion-icon>
+      <ion-label>
+        <h2>Validation {{ validationResult.status | titlecase }}</h2>
+        <p *ngIf="validationResult.message">{{ validationResult.message }}</p>
+      </ion-label>
+    </ion-item>
+
+    <ion-list lines="full" class="ion-margin-top">
+      <ion-item>
+        <ion-label>Status</ion-label>
+        <ion-badge slot="end" [color]="getStatusColor(validationResult.status)">
+          {{ validationResult.status | uppercase }}
+        </ion-badge>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label>Total Rows</ion-label>
+        <ion-note slot="end">{{ validationResult.totalRows | number }}</ion-note>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label>Error Count</ion-label>
+        <ion-note slot="end" color="danger">{{ validationResult.errorCount | number }}</ion-note>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label>Validation ID</ion-label>
+        <ion-note slot="end" class="ion-text-wrap">{{ validationResult.validationId }}</ion-note>
+      </ion-item>
+      
+      <ion-item *ngIf="validationResult.versionId">
+        <ion-label>Version ID</ion-label>
+        <ion-note slot="end" class="ion-text-wrap">{{ validationResult.versionId }}</ion-note>
+      </ion-item>
+    </ion-list>
+
+    <!-- Error Details -->
+    <ion-card *ngIf="validationResult.errorCount > 0" class="error-card">
+      <ion-card-header>
+        <ion-card-title>Validation Errors</ion-card-title>
+        <ion-card-subtitle>
+          Found {{ validationResult.errorCount }} error{{ validationResult.errorCount !== 1 ? 's' : '' }}
+          <span *ngIf="safeErrors.length > 0">
+            in {{ safeErrors.length }} row{{ safeErrors.length !== 1 ? 's' : '' }}
+          </span>
+        </ion-card-subtitle>
+      </ion-card-header>
+      
+      <ion-list *ngIf="safeErrors.length > 0" class="error-list">
+        <ion-item *ngFor="let error of safeErrors" class="error-item">
+          <ion-label>
+            <h3>Row {{ error.rowNumber || 'Unknown' }}</h3>
+            <p>{{ error.message }}</p>
+            <p *ngIf="error.field" class="error-field">
+              <ion-text color="medium">Field:</ion-text> {{ error.field }}
+              <span *ngIf="error.value !== undefined">
+                <ion-text color="medium">Value:</ion-text> {{ error.value | json }}
+              </span>
+            </p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()" fill="solid">
+        Close
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>

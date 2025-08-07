@@ -1,0 +1,394 @@
+/* MLFlow-inspired Experiments Page Styling */
+.experiments-page {
+  --background: #f8f9fa;
+  background: var(--background);
+}
+
+/* Page Header */
+.page-header {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  padding: 40px 24px;
+  margin-bottom: 32px;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+  font-weight: 400;
+}
+
+.header-actions {
+  flex-shrink: 0;
+}
+
+/* Experiments Section */
+.experiments-section {
+  padding: 0 24px;
+  margin-bottom: 40px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 4px 0;
+}
+
+.section-header p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Filters Section */
+.filters-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 300px;
+}
+
+.search-group {
+  flex: 1;
+  min-width: 250px;
+}
+
+ion-segment {
+  --background: #f8f9fa;
+  border-radius: 8px;
+}
+
+ion-segment-button {
+  --color: #6c757d;
+  --color-checked: #1976d2;
+  --background-checked: #e3f2fd;
+  --border-radius: 6px;
+  margin: 2px;
+}
+
+ion-searchbar {
+  --background: #f8f9fa;
+  --border-radius: 8px;
+  --box-shadow: none;
+  --color: #2c3e50;
+}
+
+/* Experiments List */
+.experiments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.experiment-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.experiment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.experiment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.experiment-info {
+  flex: 1;
+}
+
+.experiment-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.experiment-description {
+  color: #6c757d;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.experiment-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.experiment-status {
+  flex-shrink: 0;
+}
+
+.status-badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+}
+
+/* Experiment Metrics */
+.experiment-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Experiment Progress */
+.experiment-progress {
+  margin-bottom: 16px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.progress-percentage {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+ion-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* Experiment Actions */
+.experiment-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+}
+
+.experiment-actions ion-button {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  font-size: 0.85rem;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.empty-state ion-icon {
+  font-size: 4rem;
+  color: #6c757d;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.empty-state p {
+  color: #6c757d;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+/* Activity Section */
+.activity-section {
+  padding: 0 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.activity-list {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.2s ease;
+}
+
+.activity-item:hover {
+  background-color: #f8f9fa;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.activity-icon ion-icon {
+  font-size: 1.2rem;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-title {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.activity-description {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .page-header {
+    padding: 24px 16px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .header-content h1 {
+    font-size: 2rem;
+  }
+  
+  .experiments-section,
+  .activity-section {
+    padding: 0 16px;
+  }
+  
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group,
+  .search-group {
+    min-width: auto;
+  }
+  
+  .experiment-card {
+    padding: 16px;
+  }
+  
+  .experiment-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .experiment-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .experiment-actions {
+    justify-content: center;
+  }
+}

@@ -1,0 +1,121 @@
+.calendar-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 0 1rem 0;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  border-radius: 18px;
+  box-shadow: 0 4px 32px 0 rgba(0,255,231,0.15);
+  padding: 1.5rem 2rem;
+  min-width: 340px;
+}
+
+.calendar-row {
+  display: flex;
+}
+
+.calendar-cell {
+  flex: 1 1 0;
+  min-width: 36px;
+  min-height: 36px;
+  height: 36px;
+  margin: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.header-cell {
+  font-weight: 600;
+  color: #00ffe7;
+  background: transparent;
+  cursor: default;
+}
+
+.calendar-cell.has-upload {
+  background: #00ffe7;
+  color: #232526;
+  box-shadow: 0 0 8px #00ffe7;
+}
+
+.calendar-cell.selected {
+  background: #b2fefa;
+  color: #232526;
+  border: 2px solid #00ffe7;
+  box-shadow: 0 0 12px #00ffe7;
+}
+
+.upload-dot {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #00ffe7;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #00ffe7;
+}
+
+.month-label {
+  color: #00ffe7;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0 1rem;
+  letter-spacing: 1px;
+}
+
+.futuristic-card {
+  background: rgba(30, 34, 45, 0.95);
+  border-radius: 18px;
+  box-shadow: 0 2px 24px 0 #00ffe7a0;
+  margin: 1.5rem 1rem;
+  padding: 1.5rem 1rem;
+  color: #fff;
+  border: 1px solid #00ffe7;
+}
+
+.models-list h2 {
+  color: #00ffe7;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  letter-spacing: 1px;
+}
+
+ion-item {
+  --background: transparent;
+  --color: #fff;
+  border-bottom: 1px solid #00ffe733;
+}
+
+ion-item:last-child {
+  border-bottom: none;
+}
+
+ion-label h3 {
+  color: #00ffe7;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+ion-label p {
+  color: #b2fefa;
+  font-size: 0.9rem;
+}
+
+.no-models {
+  text-align: center;
+  color: #b2fefa;
+  font-size: 1.1rem;
+}

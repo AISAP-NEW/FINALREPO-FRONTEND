@@ -1,0 +1,187 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Training Sessions</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refreshSessions()" fill="clear">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Training Sessions</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Filters Section -->
+  <div class="filters-container">
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="6">
+          <ion-item>
+            <ion-select 
+              [(ngModel)]="selectedStatus" 
+              (ionChange)="onStatusFilterChange()" 
+              placeholder="Filter by Status"
+              interface="popover">
+              <ion-select-option *ngFor="let status of statusOptions" [value]="status">
+                {{ status }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-col>
+        <ion-col size="12" size-md="6">
+          <ion-searchbar
+            [(ngModel)]="searchTerm"
+            (ionInput)="onSearchChange()"
+            placeholder="Search sessions..."
+            debounce="300">
+          </ion-searchbar>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading training sessions...</p>
+  </div>
+
+  <!-- Sessions List -->
+  <div *ngIf="!isLoading" class="sessions-container">
+    <!-- Pull to Refresh -->
+    <ion-refresher slot="fixed" (ionRefresh)="refreshSessions($event)">
+      <ion-refresher-content></ion-refresher-content>
+    </ion-refresher>
+
+    <!-- Sessions Count -->
+    <div class="sessions-header">
+      <h3>{{ filteredSessions.length }} Session{{ filteredSessions.length !== 1 ? 's' : '' }}</h3>
+    </div>
+
+    <!-- No Sessions Message -->
+    <div *ngIf="filteredSessions.length === 0" class="no-sessions">
+      <ion-icon name="fitness-outline" size="large"></ion-icon>
+      <h3>No Training Sessions Found</h3>
+      <p *ngIf="selectedStatus !== 'All' || searchTerm">Try adjusting your filters or search terms.</p>
+      <p *ngIf="selectedStatus === 'All' && !searchTerm">No training sessions have been started yet.</p>
+    </div>
+
+    <!-- Sessions Cards -->
+    <div class="sessions-grid">
+      <ion-card *ngFor="let session of filteredSessions" class="session-card">
+        <ion-card-header>
+          <div class="session-header">
+            <div class="session-info">
+              <ion-card-title>{{ session.modelName || 'Unknown Model' }}</ion-card-title>
+              <ion-card-subtitle>Session #{{ session.id }}</ion-card-subtitle>
+            </div>
+            <ion-chip [color]="getStatusColor(session.status)" class="status-chip">
+              <ion-icon [name]="getStatusIcon(session.status)"></ion-icon>
+              <ion-label>{{ session.status }}</ion-label>
+            </ion-chip>
+          </div>
+        </ion-card-header>
+
+        <ion-card-content>
+          <div class="session-details">
+            <!-- Model Instance -->
+            <div class="detail-row" *ngIf="session.modelInstanceName">
+              <ion-icon name="cube-outline"></ion-icon>
+              <span class="label">Instance:</span>
+              <span class="value">{{ session.modelInstanceName }}</span>
+            </div>
+
+            <!-- Dataset -->
+            <div class="detail-row" *ngIf="session.datasetName">
+              <ion-icon name="database-outline"></ion-icon>
+              <span class="label">Dataset:</span>
+              <span class="value">{{ session.datasetName }}</span>
+            </div>
+
+            <!-- Learning Rate -->
+            <div class="detail-row" *ngIf="session.learningRate">
+              <ion-icon name="trending-up-outline"></ion-icon>
+              <span class="label">Learning Rate:</span>
+              <span class="value">{{ session.learningRate }}</span>
+            </div>
+
+            <!-- Duration -->
+            <div class="detail-row">
+              <ion-icon name="time-outline"></ion-icon>
+              <span class="label">Duration:</span>
+              <span class="value">{{ session.duration }}</span>
+            </div>
+
+            <!-- Started At -->
+            <div class="detail-row">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <span class="label">Started:</span>
+              <span class="value">{{ session.startedAt | date:'medium' }}</span>
+            </div>
+
+            <!-- Completed At -->
+            <div class="detail-row" *ngIf="session.completedAt">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <span class="label">Completed:</span>
+              <span class="value">{{ session.completedAt | date:'medium' }}</span>
+            </div>
+
+            <!-- Paused At -->
+            <div class="detail-row" *ngIf="session.pausedAt">
+              <ion-icon name="pause-circle-outline"></ion-icon>
+              <span class="label">Paused:</span>
+              <span class="value">{{ session.pausedAt | date:'medium' }}</span>
+            </div>
+
+            <!-- Error Message -->
+            <div class="detail-row error-message" *ngIf="session.errorMessage">
+              <ion-icon name="alert-circle-outline" color="danger"></ion-icon>
+              <span class="label">Error:</span>
+              <span class="value error-text">{{ session.errorMessage }}</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <ion-button 
+              *ngIf="session.canPause" 
+              (click)="pauseSession(session)" 
+              fill="outline" 
+              color="warning"
+              size="small">
+              <ion-icon name="pause" slot="start"></ion-icon>
+              Pause
+            </ion-button>
+
+            <ion-button 
+              *ngIf="session.canResume" 
+              (click)="resumeSession(session)" 
+              fill="outline" 
+              color="success"
+              size="small">
+              <ion-icon name="play" slot="start"></ion-icon>
+              Resume
+            </ion-button>
+
+            <ion-button 
+              *ngIf="session.canCancel" 
+              (click)="cancelSession(session)" 
+              fill="outline" 
+              color="danger"
+              size="small">
+              <ion-icon name="stop" slot="start"></ion-icon>
+              Cancel
+            </ion-button>
+
+
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content>

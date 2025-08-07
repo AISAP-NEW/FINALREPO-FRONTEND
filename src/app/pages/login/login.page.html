@@ -1,0 +1,110 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>AI Dashboard</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="login-content">
+  <!-- Animated Background Elements -->
+  <div class="background">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+    <div class="shape shape-4"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div class="login-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Welcome Back</h1>
+      <p>Sign in to continue to your account</p>
+    </div>
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="login-form">
+      <!-- Username Field -->
+      <div class="form-group">
+        <div class="input-group">
+          <ion-icon name="person-outline" class="input-icon"></ion-icon>
+          <ion-input 
+            type="text" 
+            formControlName="username" 
+            placeholder="Username"
+            class="input-field"
+            mode="md"
+            required>
+          </ion-input>
+        </div>
+        <div *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.errors?.['required']" class="error-message">
+          Username is required
+        </div>
+        <div *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.errors?.['email']" class="error-message">
+          Please enter a valid email
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <div class="input-group">
+          <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+          <ion-input 
+            [type]="showPassword ? 'text' : 'password'" 
+            formControlName="password" 
+            placeholder="Password"
+            class="input-field"
+            mode="md"
+            required>
+          </ion-input>
+          <ion-button fill="clear" class="toggle-password" (click)="togglePassword()" title="Show password">
+            <ion-icon [name]="showPassword ? 'eye-off' : 'eye'"></ion-icon>
+          </ion-button>
+        </div>
+        <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']" class="error-message">
+          Password is required
+        </div>
+        <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['minlength']" class="error-message">
+          Password must be at least 6 characters
+        </div>
+      </div>
+
+      <!-- Remember Me & Forgot Password -->
+      <div class="form-options">
+        <ion-checkbox mode="md">Remember me</ion-checkbox>
+        <a href="#" class="forgot-password">Forgot password?</a>
+      </div>
+
+      <!-- Login Button -->
+      <ion-button 
+        expand="block" 
+        type="submit" 
+        [disabled]="!loginForm.valid || isLoading" 
+        class="login-button">
+        <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+        <span *ngIf="!isLoading">Sign In</span>
+      </ion-button>
+
+      <!-- Divider -->
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
+      <!-- Social Login Buttons -->
+      <div class="social-buttons">
+        <ion-button (click)="loginWithGoogle()" fill="clear" class="social-button google">
+          <ion-icon name="logo-google" slot="start"></ion-icon>
+          Google
+        </ion-button>
+        <ion-button (click)="loginWithGithub()" fill="clear" class="social-button github">
+          <ion-icon name="logo-github" slot="start"></ion-icon>
+          GitHub
+        </ion-button>
+      </div>
+    </form>
+
+    <!-- Sign Up Link -->
+    <div class="signup-link">
+      Don't have an account? <a routerLink="/register">Sign up</a>
+    </div>
+  </div>
+</ion-content>

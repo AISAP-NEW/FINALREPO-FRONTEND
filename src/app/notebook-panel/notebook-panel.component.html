@@ -1,0 +1,62 @@
+<div class="notebook-panel">
+  <!-- Loading State -->
+  <div *ngIf="loading && !code" class="loading-state">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p>Loading model code...</p>
+    </div>
+  </div>
+
+  <!-- Editor Container -->
+  <div class="editor-container" [class.hidden]="loading && !code">
+    <!-- Editor Toolbar -->
+    <div class="editor-toolbar">
+      <button class="btn btn-primary run-button" 
+              (click)="runCode()" 
+              [disabled]="loading || !code">
+        <span class="icon">▶</span>
+        <span class="text">Run Code</span>
+        <span *ngIf="loading" class="spinner-border spinner-border-sm" role="status"></span>
+      </button>
+      
+      <div class="status-indicator" [class.active]="loading">
+        {{ loading ? 'Executing...' : 'Ready' }}
+      </div>
+    </div>
+    
+    <!-- Monaco Editor -->
+    <div class="monaco-editor-container">
+      <ngx-monaco-editor 
+        [(ngModel)]="code" 
+        [options]="editorOptions"
+        (onInit)="onEditorInit($event)">
+      </ngx-monaco-editor>
+    </div>
+    
+    <!-- Output Console -->
+    <div class="output-console" *ngIf="output || error">
+      <div class="console-header">
+        <span>Output</span>
+        <button class="btn-clear" (click)="clearOutput()" title="Clear output">
+          <span class="icon">×</span>
+        </button>
+      </div>
+      
+      <div class="console-content">
+        <pre *ngIf="output" class="output" [class.empty]="!output.trim()">
+          {{ output || 'No output' }}
+        </pre>
+        <pre *ngIf="error" class="error">
+          {{ error }}
+        </pre>
+      </div>
+    </div>
+    
+    <!-- Error Boundary -->
+    <div *ngIf="!code && !loading" class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h3>No Code Available</h3>
+      <p>This model doesn't have any associated code or failed to load.</p>
+    </div>
+  </div>
+</div>

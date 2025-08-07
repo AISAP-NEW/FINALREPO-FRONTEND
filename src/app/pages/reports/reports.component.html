@@ -1,0 +1,677 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar style="--background: transparent; --color: white;">
+    <ion-title class="ion-text-center">
+      <ion-icon name="analytics-outline" class="title-icon"></ion-icon>
+      Analytics & Reports
+    </ion-title>
+    <ion-buttons slot="end" style="display: flex; align-items: center; gap: 0.5rem;">
+      <ion-button (click)="exportToPdf()" [disabled]="isLoading || !currentReportData" fill="clear" class="export-btn" style="--color: #333; --background: rgba(255, 255, 255, 0.9); --border-radius: 8px; --padding-start: 0.75rem; --padding-end: 0.75rem;">
+        <ion-icon name="document-outline" style="color: #dc3545; margin-right: 0.25rem;"></ion-icon>
+        PDF
+      </ion-button>
+      <ion-button (click)="exportToJson()" [disabled]="isLoading || !currentReportData" fill="clear" class="export-btn" style="--color: #333; --background: rgba(255, 255, 255, 0.9); --border-radius: 8px; --padding-start: 0.75rem; --padding-end: 0.75rem;">
+        <ion-icon name="code-outline" style="color: #28a745; margin-right: 0.25rem;"></ion-icon>
+        JSON
+      </ion-button>
+      <ion-button (click)="exportToExcel()" [disabled]="isLoading || !currentReportData" fill="clear" class="export-btn" style="--color: #333; --background: rgba(255, 255, 255, 0.9); --border-radius: 8px; --padding-start: 0.75rem; --padding-end: 0.75rem;">
+        <ion-icon name="grid-outline" style="color: #0066cc; margin-right: 0.25rem;"></ion-icon>
+        EXCEL
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding reports-content">
+  <div class="reports-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Report Types</h2>
+        <p>Select a report to generate</p>
+      </div>
+      <div class="report-categories">
+        <div class="category-section">
+          <h3>Simple Reports</h3>
+          <div class="report-list">
+            <div 
+              *ngFor="let reportType of reportTypes | filterByCategory:'simple'" 
+              class="report-item"
+              [class.active]="selectedReportType === reportType.id"
+              (click)="loadReport(reportType.id)">
+              <div class="report-icon">
+                <ion-icon [name]="reportType.icon"></ion-icon>
+              </div>
+              <div class="report-info">
+                <h4>{{ reportType.name }}</h4>
+                <p>{{ reportType.description }}</p>
+              </div>
+              <div class="report-badge">
+                <span class="badge simple">{{ reportType.category }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-section">
+          <h3>Analytics Reports</h3>
+          <div class="report-list">
+            <div 
+              *ngFor="let reportType of reportTypes | filterByCategory:'management'" 
+              class="report-item"
+              [class.active]="selectedReportType === reportType.id"
+              (click)="loadReport(reportType.id)">
+              <div class="report-icon">
+                <ion-icon [name]="reportType.icon"></ion-icon>
+              </div>
+              <div class="report-info">
+                <h4>{{ reportType.name }}</h4>
+                <p>{{ reportType.description }}</p>
+              </div>
+              <div class="report-badge">
+                <span class="badge management">{{ reportType.category }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-section">
+          <h3>Advanced Reports</h3>
+          <div class="report-list">
+            <div 
+              *ngFor="let reportType of reportTypes | filterByCategory:'transactional'" 
+              class="report-item"
+              [class.active]="selectedReportType === reportType.id"
+              (click)="loadReport(reportType.id)">
+              <div class="report-icon">
+                <ion-icon [name]="reportType.icon"></ion-icon>
+              </div>
+              <div class="report-info">
+                <h4>{{ reportType.name }}</h4>
+                <p>{{ reportType.description }}</p>
+              </div>
+              <div class="report-badge">
+                <span class="badge transactional">{{ reportType.category }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="category-section">
+          <h3>Custom Reports</h3>
+          <div class="report-list">
+            <div 
+              *ngFor="let reportType of reportTypes | filterByCategory:'adjustable'" 
+              class="report-item"
+              [class.active]="selectedReportType === reportType.id"
+              (click)="loadReport(reportType.id)">
+              <div class="report-icon">
+                <ion-icon [name]="reportType.icon"></ion-icon>
+              </div>
+              <div class="report-info">
+                <h4>{{ reportType.name }}</h4>
+                  <p>{{ reportType.description }}</p>
+              </div>
+              <div class="report-badge">
+                <span class="badge adjustable">{{ reportType.category }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Loading state -->
+      <div *ngIf="isLoading" class="loading-container">
+        <div class="loading-spinner">
+            <ion-spinner name="crescent"></ion-spinner>
+            <p>Loading report...</p>
+        </div>
+      </div>
+
+        <!-- Error state -->
+      <div *ngIf="errorMessage" class="error-container">
+        <div class="error-card">
+            <ion-icon name="warning-outline" color="danger"></ion-icon>
+          <h3>Error Loading Report</h3>
+            <p>{{ errorMessage }}</p>
+        </div>
+      </div>
+
+        <!-- Report content -->
+      <div *ngIf="!isLoading && !errorMessage" class="report-container">
+          <!-- Users Report -->
+          <div *ngIf="selectedReportType === 'users' && usersReport" class="report-content">
+          <div class="report-header">
+            <h2>Registered Users Report</h2>
+            <div class="report-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{usersReport?.Summary?.TotalRecords || 0}}</span>
+                <span class="stat-label">Total Users</span>
+              </div>
+            </div>
+          </div>
+          <div class="report-body">
+            <div class="data-table">
+              <div class="table-header">
+                <div class="header-cell">User</div>
+                <div class="header-cell">Email</div>
+                <div class="header-cell">Role</div>
+                <div class="header-cell">Projects</div>
+                <div class="header-cell">Status</div>
+              </div>
+              <div class="table-body">
+                <div *ngFor="let user of usersReport?.Users || []" class="table-row">
+                  <div class="table-cell">
+                    <div class="user-info">
+                      <div class="user-avatar">
+                        <ion-icon name="person"></ion-icon>
+                      </div>
+                      <span>{{user.Username}}</span>
+                    </div>
+                  </div>
+                  <div class="table-cell">{{user.Email}}</div>
+                  <div class="table-cell">{{user.Role}}</div>
+                  <div class="table-cell">{{user.ProjectCount}}</div>
+                  <div class="table-cell">
+                    <span class="status-badge" [class]="user.IsActive ? 'active' : 'inactive'">
+                      {{user.IsActive ? 'Active' : 'Inactive'}}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Clients & Projects Report -->
+          <div *ngIf="selectedReportType === 'clients-projects' && clientsProjectsReport" class="report-content">
+          <div class="report-header">
+            <h2>Clients & Projects Report</h2>
+            <div class="report-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{clientsProjectsReport?.Summary?.TotalRecords || 0}}</span>
+                <span class="stat-label">Total Clients</span>
+              </div>
+            </div>
+          </div>
+          <div class="report-body">
+            <div class="data-table">
+              <div class="table-header">
+                <div class="header-cell">Client</div>
+                <div class="header-cell">Contact</div>
+                <div class="header-cell">Projects</div>
+                <div class="header-cell">Active Projects</div>
+                <div class="header-cell">Status</div>
+              </div>
+              <div class="table-body">
+                <div *ngFor="let client of clientsProjectsReport?.Clients || []" class="table-row">
+                  <div class="table-cell">
+                    <div class="user-info">
+                      <div class="user-avatar">
+                      <ion-icon name="business"></ion-icon>
+                      </div>
+                      <span>{{client.ClientName}}</span>
+                    </div>
+                  </div>
+                  <div class="table-cell">{{client.ClientEmail}}<br>{{client.ClientPhone}}</div>
+                  <div class="table-cell">{{client.TotalProjects}}</div>
+                  <div class="table-cell">{{client.ActiveProjects}}</div>
+                  <div class="table-cell">
+                    <span class="status-badge" [class]="client.ActiveProjects > 0 ? 'active' : 'inactive'">
+                      {{client.ActiveProjects > 0 ? 'Active' : 'Inactive'}}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Training Sessions Report -->
+          <div *ngIf="selectedReportType === 'training-sessions' && trainingSessionReport" class="report-content">
+          <div class="report-header">
+            <h2>Model Training Sessions Report</h2>
+            <div class="report-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{trainingSessionReport?.Summary?.TotalRecords || 0}}</span>
+                <span class="stat-label">Total Sessions</span>
+              </div>
+            </div>
+          </div>
+          <div class="report-body">
+            <div class="data-table">
+              <div class="table-header">
+                <div class="header-cell">Model</div>
+                <div class="header-cell">Status</div>
+                <div class="header-cell">Started</div>
+                <div class="header-cell">Duration</div>
+                <div class="header-cell">Learning Rate</div>
+              </div>
+              <div class="table-body">
+                <div *ngFor="let session of trainingSessionReport?.Sessions || []" class="table-row">
+                  <div class="table-cell">
+                    <div class="user-info">
+                      <div class="user-avatar">
+                      <ion-icon name="analytics"></ion-icon>
+                      </div>
+                      <span>{{session.ModelName}}</span>
+                    </div>
+                  </div>
+                  <div class="table-cell">
+                    <span class="status-badge" [class]="getStatusColor(session.Status)">
+                      {{session.Status}}
+                    </span>
+                  </div>
+                  <div class="table-cell">{{formatDateTime(session.StartedAt)}}</div>
+                  <div class="table-cell">{{session.Duration || 'N/A'}}</div>
+                  <div class="table-cell">{{session.LearningRate}}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Charts for Training Sessions -->
+            <div class="charts-section">
+              <div class="chart-grid">
+                <div class="chart-container">
+                  <h3>Training Trends</h3>
+                  <canvas #trendsChart></canvas>
+                </div>
+                <div class="chart-container">
+                  <h3>Success Rate</h3>
+                  <canvas #successRateChart></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Model Deployments Report -->
+          <div *ngIf="selectedReportType === 'model-deployments' && modelDeploymentReport" class="report-content">
+          <div class="report-header">
+            <h2>Model Deployment Report</h2>
+            <div class="report-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{modelDeploymentReport?.Summary?.TotalRecords || 0}}</span>
+                <span class="stat-label">Total Deployments</span>
+              </div>
+            </div>
+          </div>
+          <div class="report-body">
+            <div class="data-table">
+              <div class="table-header">
+                <div class="header-cell">Application</div>
+                <div class="header-cell">Environment</div>
+                <div class="header-cell">Version</div>
+                <div class="header-cell">Requested By</div>
+                <div class="header-cell">Status</div>
+              </div>
+              <div class="table-body">
+                <div *ngFor="let deployment of modelDeploymentReport?.Deployments || []" class="table-row">
+                  <div class="table-cell">
+                    <div class="user-info">
+                      <div class="user-avatar">
+                      <ion-icon name="rocket"></ion-icon>
+                      </div>
+                      <span>{{deployment.AppName}}</span>
+                    </div>
+                  </div>
+                  <div class="table-cell">{{deployment.Environment}}</div>
+                  <div class="table-cell">{{deployment.Version}}</div>
+                  <div class="table-cell">{{deployment.RequestedBy}}</div>
+                  <div class="table-cell">
+                    <span class="status-badge" [class]="getDeploymentStatusColor(deployment.Status)">
+                      {{deployment.Status}}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Dataset Transaction Report -->
+          <div *ngIf="selectedReportType === 'dataset-transactions' && datasetTransactionReport" class="report-content">
+          <div class="report-header">
+            <h2>Dataset Transaction Summary Report</h2>
+            <div class="report-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{datasetTransactionReport?.Summary?.TotalRecords || 0}}</span>
+                <span class="stat-label">Total Transactions</span>
+              </div>
+            </div>
+          </div>
+          <div class="report-body">
+                          <div *ngFor="let group of datasetTransactionReport?.TransactionGroups || []" class="transaction-group">
+              <div class="group-header">
+                <h3>{{group.DeveloperName}}</h3>
+                <div class="group-stats">
+                  <span>Total Actions: {{group.TotalActions}}</span>
+                  <span>Last Action: {{formatDateTime(group.LastActionDate)}}</span>
+                </div>
+              </div>
+              
+                              <div *ngFor="let datasetGroup of group?.DatasetActions || []" class="dataset-action">
+                <div class="dataset-header">
+                  <h4>{{datasetGroup.DatasetName}}</h4>
+                  <div class="dataset-stats">
+                    <span>Actions: {{datasetGroup.TotalActions}}</span>
+                    <span>Last: {{formatDateTime(datasetGroup.LastActionDate)}}</span>
+                  </div>
+                </div>
+                
+                <div class="transactions-list">
+                  <div *ngFor="let transaction of datasetGroup?.Transactions || []" class="transaction-item">
+                    <div class="transaction-info">
+                      <span class="transaction-action">{{transaction.Action}}</span>
+                      <span class="transaction-details">{{transaction.Details}}</span>
+                      <span class="transaction-file">{{transaction.FileName}}</span>
+                      <span class="transaction-time">{{formatDateTime(transaction.Timestamp)}}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Dataset Status Report -->
+          <div *ngIf="selectedReportType === 'dataset-status' && datasetStatusReport" class="report-content">
+          <div class="report-header">
+            <h2>Dataset Status Report</h2>
+            <div class="report-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{datasetStatusReport?.Summary?.TotalRecords || 0}}</span>
+                <span class="stat-label">Total Datasets</span>
+              </div>
+            </div>
+          </div>
+          <div class="report-body">
+            <div class="data-table">
+              <div class="table-header">
+                <div class="header-cell">Dataset</div>
+                <div class="header-cell">Type</div>
+                <div class="header-cell">Version</div>
+                <div class="header-cell">Files</div>
+                <div class="header-cell">Status</div>
+              </div>
+              <div class="table-body">
+                <div *ngFor="let dataset of datasetStatusReport?.Datasets || []" class="table-row">
+                  <div class="table-cell">
+                    <div class="user-info">
+                      <div class="user-avatar">
+                      <ion-icon name="document"></ion-icon>
+                      </div>
+                      <div>
+                        <span class="dataset-name">{{dataset.DatasetName}}</span>
+                        <br>
+                        <span class="dataset-desc">{{dataset.Description}}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="table-cell">{{dataset.FileType}}</div>
+                  <div class="table-cell">{{dataset.Version}}</div>
+                  <div class="table-cell">{{dataset.FileCount}} ({{formatBytes(dataset.TotalFileSize)}})</div>
+                  <div class="table-cell">
+                    <span class="status-badge" [class]="getValidationStatusColor(dataset.ValidationStatus)">
+                      {{dataset.ValidationStatus}}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          <!-- Dataset Trends Report -->
+          <div *ngIf="selectedReportType === 'dataset-trends' && datasetTrendsReport" class="report-content">
+          <div class="report-header">
+            <h2>Dataset Trends Report</h2>
+            <div class="report-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{datasetTrendsReport?.Summary?.TotalRecords || 0}}</span>
+                <span class="stat-label">Total Records</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Professional Date Selector -->
+                <div class="filters-section">
+            <div class="filter-header">
+              <h3>Filter Options</h3>
+              <div *ngIf="areFiltersActive()" class="filter-status">
+                <ion-badge color="primary">
+                  <ion-icon name="checkmark-circle-outline"></ion-icon>
+                  Filters Applied
+                </ion-badge>
+              </div>
+            </div>
+            
+            <div class="date-selector-container">
+              <div class="date-selector">
+                <label>Start Date</label>
+                <div class="date-input-group">
+                  <div class="date-input">
+                    <label>Year</label>
+                    <div class="number-input">
+                      <button type="button" (click)="decrementYear()" class="arrow-btn">
+                        <ion-icon name="chevron-up"></ion-icon>
+                      </button>
+                      <input type="number" [(ngModel)]="customStartDate.year" (change)="updateStartDate()" min="2020" max="2030">
+                      <button type="button" (click)="incrementYear()" class="arrow-btn">
+                        <ion-icon name="chevron-down"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="date-input">
+                    <label>Month</label>
+                    <div class="number-input">
+                      <button type="button" (click)="decrementMonth()" class="arrow-btn">
+                        <ion-icon name="chevron-up"></ion-icon>
+                      </button>
+                      <input type="number" [(ngModel)]="customStartDate.month" (change)="updateStartDate()" min="1" max="12">
+                      <button type="button" (click)="incrementMonth()" class="arrow-btn">
+                        <ion-icon name="chevron-down"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="date-input">
+                    <label>Day</label>
+                    <div class="number-input">
+                      <button type="button" (click)="decrementDay()" class="arrow-btn">
+                        <ion-icon name="chevron-up"></ion-icon>
+                      </button>
+                      <input type="number" [(ngModel)]="customStartDate.day" (change)="updateStartDate()" min="1" max="31">
+                      <button type="button" (click)="incrementDay()" class="arrow-btn">
+                        <ion-icon name="chevron-down"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="date-selector">
+                <label>End Date</label>
+                <div class="date-input-group">
+                  <div class="date-input">
+                    <label>Year</label>
+                    <div class="number-input">
+                      <button type="button" (click)="decrementEndYear()" class="arrow-btn">
+                        <ion-icon name="chevron-up"></ion-icon>
+                      </button>
+                      <input type="number" [(ngModel)]="customEndDate.year" (change)="updateEndDate()" min="2020" max="2030">
+                      <button type="button" (click)="incrementEndYear()" class="arrow-btn">
+                        <ion-icon name="chevron-down"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="date-input">
+                    <label>Month</label>
+                    <div class="number-input">
+                      <button type="button" (click)="decrementEndMonth()" class="arrow-btn">
+                        <ion-icon name="chevron-up"></ion-icon>
+                      </button>
+                      <input type="number" [(ngModel)]="customEndDate.month" (change)="updateEndDate()" min="1" max="12">
+                      <button type="button" (click)="incrementEndMonth()" class="arrow-btn">
+                        <ion-icon name="chevron-down"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="date-input">
+                    <label>Day</label>
+                    <div class="number-input">
+                      <button type="button" (click)="decrementEndDay()" class="arrow-btn">
+                        <ion-icon name="chevron-up"></ion-icon>
+                      </button>
+                      <input type="number" [(ngModel)]="customEndDate.day" (change)="updateEndDate()" min="1" max="31">
+                      <button type="button" (click)="incrementEndDay()" class="arrow-btn">
+                        <ion-icon name="chevron-down"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="status-filter">
+                <label>Status Filter</label>
+                <div class="select-wrapper">
+                  <select [(ngModel)]="trendsFilters.status" (change)="applyTrendsFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="uploaded">Uploaded</option>
+                    <option value="processing">Processing</option>
+                    <option value="processed">Processed</option>
+                    <option value="validated">Validated</option>
+                    <option value="failed">Failed</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                  <ion-icon name="chevron-down" class="select-arrow"></ion-icon>
+                </div>
+              </div>
+            </div>
+
+            <div class="filter-actions">
+              <button type="button" (click)="applyTrendsFilters()" class="btn-primary" [disabled]="isLoading">
+                <ion-icon name="filter-outline"></ion-icon>
+                <span *ngIf="!isLoading">Apply Filters</span>
+                <span *ngIf="isLoading">Applying...</span>
+              </button>
+              <button type="button" (click)="clearTrendsFilters()" class="btn-secondary" [disabled]="isLoading">
+                <ion-icon name="refresh-outline"></ion-icon>
+                Clear Filters
+              </button>
+            </div>
+                </div>
+
+          <!-- Charts Section -->
+          <div class="charts-section">
+            <div class="chart-grid">
+                <div class="chart-container">
+                <h3>
+                  <ion-icon name="trending-up-outline"></ion-icon>
+                  Upload Trends
+                </h3>
+                <div class="chart-actions">
+                  <button type="button" class="chart-download-btn" (click)="downloadChartAsImage('trendsChart', 'upload-trends')">
+                    <ion-icon name="download-outline"></ion-icon>
+                    PNG
+                  </button>
+                </div>
+                  <canvas #trendsChart></canvas>
+                <div class="chart-info" *ngIf="datasetTrendsReport && datasetTrendsReport.UploadTrends && datasetTrendsReport.UploadTrends.length > 0">
+                  <div class="info-item">
+                    <span class="info-label">Total Uploads:</span>
+                    <span class="info-value">{{getTotalUploads()}}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Average Uploads:</span>
+                    <span class="info-value">{{getAverageUploads()}}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Peak Period:</span>
+                    <span class="info-value">{{getPeakUploadPeriod()}}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <h3>
+                  <ion-icon name="analytics-outline"></ion-icon>
+                  Processing Trends
+                </h3>
+                <div class="chart-actions">
+                  <button type="button" class="chart-download-btn" (click)="downloadChartAsImage('processingChart', 'processing-trends')">
+                    <ion-icon name="download-outline"></ion-icon>
+                    PNG
+                  </button>
+                </div>
+                <canvas #processingChart></canvas>
+                <div class="chart-info" *ngIf="datasetTrendsReport && datasetTrendsReport.ProcessingTrends && datasetTrendsReport.ProcessingTrends.length > 0">
+                  <div class="info-item">
+                    <span class="info-label">Total Processed:</span>
+                    <span class="info-value">{{getTotalProcessed()}}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Average Processed:</span>
+                    <span class="info-value">{{getAverageProcessed()}}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Success Rate:</span>
+                    <span class="info-value">{{getProcessingSuccessRate()}}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+                </div>
+
+                <!-- Trends Data -->
+          <div class="data-section">
+            <h3>Trend Data</h3>
+            <div *ngIf="datasetTrendsReport && datasetTrendsReport.Trends && datasetTrendsReport.Trends.length > 0; else noTrendsData" class="trends-grid">
+              <div *ngFor="let trend of datasetTrendsReport?.Trends || []" class="trend-card">
+                <div class="trend-header">
+                  <h4>{{trend.Period}}</h4>
+                  <span class="trend-badge">{{trend.TotalDatasets}}</span>
+                </div>
+                <div class="trend-stats">
+                  <div class="stat">
+                    <span class="stat-value">{{trend.UploadCount}}</span>
+                    <span class="stat-label">Uploads</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value">{{trend.ProcessedCount}}</span>
+                    <span class="stat-label">Processed</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value">{{trend.ValidatedCount}}</span>
+                    <span class="stat-label">Validated</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value">{{trend.FailedCount}}</span>
+                    <span class="stat-label">Failed</span>
+                  </div>
+                </div>
+                <div class="trend-metrics">
+                  <div class="metric">
+                    <span class="metric-label">Success Rate:</span>
+                    <span class="metric-value">{{trend.SuccessRate}}%</span>
+                  </div>
+                  <div class="metric">
+                    <span class="metric-label">Avg Time:</span>
+                    <span class="metric-value">{{trend.AverageProcessingTime}}ms</span>
+                  </div>
+                </div>
+              </div>
+                </div>
+                <ng-template #noTrendsData>
+              <div class="no-data">
+                <ion-icon name="analytics-outline"></ion-icon>
+                      <p>No trends data available</p>
+              </div>
+                </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content> 

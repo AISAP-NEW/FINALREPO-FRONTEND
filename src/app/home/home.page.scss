@@ -1,0 +1,446 @@
+/* MLFlow-inspired Dashboard Styling */
+.mlflow-dashboard {
+  --background: #f8f9fa;
+  background: var(--background);
+}
+
+/* Page Header */
+.page-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px 24px;
+  margin-bottom: 32px;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Metrics Section */
+.metrics-section {
+  padding: 0 24px;
+  margin-bottom: 40px;
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 4px 0;
+}
+
+.section-header p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.metrics-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Metric Cards */
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.metric-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-icon.projects {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.metric-icon.datasets {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  color: white;
+}
+
+.metric-icon.experiments {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: white;
+}
+
+.metric-icon.models {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: white;
+}
+
+.metric-icon ion-icon {
+  font-size: 1.5rem;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.metric-change {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.metric-change.positive {
+  color: #28a745;
+}
+
+.metric-change.neutral {
+  color: #6c757d;
+}
+
+.metric-change.negative {
+  color: #dc3545;
+}
+
+/* Content Sections */
+.content-sections {
+  padding: 0 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafbfc;
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.card-content {
+  padding: 0;
+}
+
+/* Experiment List */
+.experiment-list {
+  padding: 0;
+}
+
+.experiment-item {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f3f4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.experiment-item:hover {
+  background-color: #f8f9fa;
+}
+
+.experiment-item:last-child {
+  border-bottom: none;
+}
+
+.experiment-info {
+  flex: 1;
+}
+
+.experiment-name {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.experiment-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.experiment-status {
+  flex-shrink: 0;
+}
+
+/* Model List */
+.model-list {
+  padding: 0;
+}
+
+.model-item {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f3f4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.model-item:hover {
+  background-color: #f8f9fa;
+}
+
+.model-item:last-child {
+  border-bottom: none;
+}
+
+.model-info {
+  flex: 1;
+}
+
+.model-name {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 6px;
+}
+
+.model-meta {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.model-version {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.model-stage {
+  background: #e8f5e8;
+  color: #2e7d32;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.model-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.model-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* Dataset Grid */
+.dataset-grid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.dataset-item {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.dataset-item:hover {
+  background: #e3f2fd;
+  border-color: #1976d2;
+}
+
+.dataset-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.dataset-icon ion-icon {
+  font-size: 1.2rem;
+}
+
+.dataset-info {
+  flex: 1;
+}
+
+.dataset-name {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.dataset-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.dataset-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .page-header {
+    padding: 24px 16px;
+  }
+  
+  .header-content h1 {
+    font-size: 2rem;
+  }
+  
+  .metrics-section,
+  .content-sections {
+    padding: 0 16px;
+  }
+  
+  .metric-card {
+    padding: 16px;
+  }
+  
+  .card-header {
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .dataset-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .experiment-item,
+  .model-item {
+    padding: 12px 16px;
+  }
+}
+
+.error-message {
+  text-align: center;
+  padding: 40px 20px;
+  
+  ion-icon {
+    font-size: 48px;
+    color: var(--ion-color-warning);
+    margin-bottom: 16px;
+  }
+  
+  p {
+    margin-bottom: 20px;
+  }
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+}
+
+/* Ensure cards in the same row have equal height */
+ion-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+ion-col {
+  display: flex;
+  flex-direction: column;
+}

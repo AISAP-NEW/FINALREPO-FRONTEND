@@ -1,0 +1,60 @@
+ion-menu {
+  --width: 250px;
+
+  ion-content {
+    --background: var(--ion-item-background, var(--ion-background-color, #fff));
+    --padding-bottom: 60px; // Make space for the logout button
+  }
+
+  ion-list {
+    padding: 20px 0;
+
+    ion-item {
+      --padding-start: 20px;
+      --padding-end: 20px;
+      --min-height: 50px;
+
+      &.selected {
+        --background: var(--ion-color-light);
+        --color: var(--ion-color-primary);
+        
+        ion-icon {
+          color: var(--ion-color-primary);
+        }
+      }
+
+      ion-icon {
+        font-size: 24px;
+        margin-right: 12px;
+      }
+    }
+  }
+
+  .logout-section {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    border-top: 1px solid var(--ion-color-light-shade);
+    background: var(--ion-background-color);
+
+    ion-item {
+      --background: transparent;
+      --background-hover: var(--ion-color-danger-tint);
+      --background-activated: var(--ion-color-danger-tint);
+      
+      &::part(native) {
+        padding-top: 16px;
+        padding-bottom: 16px;
+      }
+
+      ion-icon {
+        font-size: 24px;
+      }
+    }
+  }
+}
+
+// Make sure the menu button is visible on mobile
+ion-menu-button {
+  display: block;
+}

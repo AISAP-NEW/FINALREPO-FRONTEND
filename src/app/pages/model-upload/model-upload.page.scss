@@ -1,0 +1,136 @@
+/* Style for the drag and drop zone */
+.drop-zone {
+  border: 2px dashed var(--ion-color-medium);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  position: relative;
+  background-color: var(--ion-color-light);
+
+  ion-icon {
+    font-size: 3rem;
+    color: var(--ion-color-medium);
+    margin-bottom: 1rem;
+  }
+
+  .upload-text {
+    h3 {
+      margin: 0.5rem 0;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 0.25rem 0;
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+
+      &.file-types {
+        font-size: 0.8rem;
+        margin-top: 1rem;
+      }
+    }
+  }
+
+  ion-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    --padding-start: 0.5rem;
+    --padding-end: 0.5rem;
+    --padding-top: 0.5rem;
+    --padding-bottom: 0.5rem;
+  }
+
+  &.dragging {
+    border-color: var(--ion-color-primary);
+    background-color: rgba(var(--ion-color-primary-rgb), 0.05);
+
+    ion-icon, h3 {
+      color: var(--ion-color-primary);
+    }
+  }
+}
+
+/* Form validation styles */
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --border-color: var(--ion-color-light-shade);
+  margin-bottom: 1rem;
+
+  ion-label[position="stacked"] {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  ion-input, ion-textarea, ion-select {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    border: 1px solid var(--ion-color-light-shade);
+    border-radius: 6px;
+    margin-top: 0.5rem;
+  }
+
+  ion-note {
+    font-size: 0.8rem;
+  }
+}
+
+/* Card styles */
+ion-card {
+  margin: 1rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+
+  ion-card-header {
+    padding-bottom: 0.5rem;
+
+    ion-card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+  }
+
+  ion-card-content {
+    padding-top: 0.5rem;
+  }
+}
+
+/* Submit button */
+ion-button[type="submit"] {
+  --border-radius: 8px;
+  height: 48px;
+  font-weight: 600;
+  text-transform: none;
+  margin: 1.5rem 0;
+}
+
+/* Loading spinner */
+ion-spinner {
+  --color: white;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  ion-content {
+    --padding-start: 5%;
+    --padding-end: 5%;
+  }
+
+  .drop-zone {
+    min-height: 250px;
+
+    ion-icon {
+      font-size: 4rem;
+    }
+  }
+}

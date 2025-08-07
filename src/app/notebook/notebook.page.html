@@ -1,0 +1,225 @@
+<div class="notebook-container">
+  <header class="notebook-header">
+    <div class="header-left">
+      <h1>Notebook</h1>
+      <div class="dataset-info">
+        <span class="dataset-name">{{ datasetName }}</span>
+        <span class="dataset-status">
+          <mat-icon class="status-icon">check_circle</mat-icon>
+          Connected
+        </span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="saveNotebook()" [disabled]="isProcessing">
+        <mat-icon>save</mat-icon> Save
+      </button>
+      <button mat-stroked-button (click)="exportNotebook()" [disabled]="isProcessing">
+        <mat-icon>download</mat-icon> Export
+      </button>
+      <button mat-raised-button color="primary" (click)="executeAllCells()" [disabled]="isProcessing">
+        <mat-icon>play_arrow</mat-icon> Run All
+      </button>
+    </div>
+  </header>
+
+  <div class="notebook-content">
+    <!-- Left sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>Dataset</h3>
+        <div class="dataset-actions">
+          <button mat-stroked-button (click)="onPreprocess()" [disabled]="isProcessing">
+            <mat-icon>cleaning_services</mat-icon> Preprocess
+          </button>
+          <button mat-stroked-button (click)="onValidate()" [disabled]="isProcessing">
+            <mat-icon>check_circle</mat-icon> Validate
+          </button>
+          <button mat-stroked-button (click)="onTrainTestSplit()" [disabled]="isProcessing">
+            <mat-icon>call_split</mat-icon> Split Data
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-section" *ngIf="validationResult">
+        <h3>Validation Results</h3>
+        <div class="validation-result" [class.error]="validationResult.status === 'error'"
+             [class.warning]="validationResult.status === 'warning'">
+          <mat-icon>{{ getValidationIcon() }}</mat-icon>
+          <span>{{ validationResult.message || 'Validation completed' }}</span>
+          <div *ngIf="validationResult.errorCount > 0" class="error-count">
+            {{ validationResult.errorCount }} issues found
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Variables</h3>
+        <div class="variables-list">
+          <div class="variable-item">
+            <span class="variable-name">df</span>
+            <span class="variable-type">DataFrame</span>
+            <span class="variable-shape">
+              ({{ datasetPreview.data?.length || 0 }}, {{ datasetPreview.columns?.length || 0 }})
+            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <mat-tab-group (selectedTabChange)="onTabChange($event)">
+        <mat-tab label="Notebook">
+          <div class="notebook-cells">
+            <div *ngFor="let cell of notebookCells; let i = index" class="cell-wrapper" [id]="'cell-' + cell.id">
+              <div class="cell-toolbar">
+                <div class="cell-type">
+                  <mat-icon>{{ cell.type === 'code' ? 'code' : 'text_fields' }}</mat-icon>
+                  <span>{{ cell.type === 'code' ? 'Code' : 'Markdown' }}</span>
+                </div>
+                <div class="cell-actions">
+                  <button mat-icon-button [matMenuTriggerFor]="cellMenu" [disabled]="cell.isExecuting">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #cellMenu="matMenu">
+                    <button mat-menu-item (click)="moveCell(cell.id, 'up')" [disabled]="i === 0">
+                      <mat-icon>arrow_upward</mat-icon>
+                      <span>Move Up</span>
+                    </button>
+                    <button mat-menu-item (click)="moveCell(cell.id, 'down')" [disabled]="i === notebookCells.length - 1">
+                      <mat-icon>arrow_downward</mat-icon>
+                      <span>Move Down</span>
+                    </button>
+                    <button mat-menu-item (click)="deleteCell(cell.id)" [disabled]="notebookCells.length <= 1">
+                      <mat-icon>delete</mat-icon>
+                      <span>Delete Cell</span>
+                    </button>
+                  </mat-menu>
+                </div>
+              </div>
+              
+              <app-notebook-cell
+                [type]="cell.type"
+                [content]="cell.content"
+                [isExecuting]="cell.isExecuting"
+                (execute)="executeCell(cell, $event)"
+                (contentChange)="onCellContentChange(cell, $event)">
+              </app-notebook-cell>
+              
+              <div class="cell-output" *ngIf="cell.output">
+                <div *ngIf="cell.output.type === 'table'" class="output-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of cell.output.data.columns">{{ col }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of cell.output.data.data">
+                        <td *ngFor="let cell of row">{{ cell }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <pre *ngIf="cell.output.type === 'text' || cell.output.type === 'error'" 
+                     [class.error]="cell.output.type === 'error'">
+                  {{ cell.output.data }}
+                </pre>
+              </div>
+            </div>
+            
+            <div class="add-cell-buttons">
+              <button mat-stroked-button (click)="addCell('code')" [disabled]="isProcessing">
+                <mat-icon>add</mat-icon> Code Cell
+              </button>
+              <button mat-stroked-button (click)="addCell('markdown')" [disabled]="isProcessing">
+                <mat-icon>add</mat-icon> Markdown Cell
+              </button>
+            </div>
+          </div>
+        </mat-tab>
+        
+        <mat-tab label="Data">
+          <div class="data-preview">
+            <div class="data-tabs">
+              <button mat-button 
+                      [class.active]="selectedDataTab === 'schema'" 
+                      (click)="selectedDataTab = 'schema'"
+                      [disabled]="!datasetSchema.length">
+                Schema
+              </button>
+              <button mat-button 
+                      [class.active]="selectedDataTab === 'preview'" 
+                      (click)="selectedDataTab = 'preview'"
+                      [disabled]="!datasetPreview.data?.length">
+                Preview
+              </button>
+            </div>
+            
+            <div class="data-content">
+              <div *ngIf="selectedDataTab === 'schema'" class="schema-view">
+                <table mat-table [dataSource]="datasetSchema" class="mat-elevation-z1">
+                  <!-- Name Column -->
+                  <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>Column Name</th>
+                    <td mat-cell *matCellDef="let element">{{element.name}}</td>
+                  </ng-container>
+                  
+                  <!-- Type Column -->
+                  <ng-container matColumnDef="type">
+                    <th mat-header-cell *matHeaderCellDef>Data Type</th>
+                    <td mat-cell *matCellDef="let element">{{element.type}}</td>
+                  </ng-container>
+                  
+                  <!-- Nullable Column -->
+                  <ng-container matColumnDef="nullable">
+                    <th mat-header-cell *matHeaderCellDef>Nullable</th>
+                    <td mat-cell *matCellDef="let element">
+                      <mat-icon>{{element.nullable ? 'check_circle' : 'cancel'}}</mat-icon>
+                    </td>
+                  </ng-container>
+                  
+                  <!-- Description Column -->
+                  <ng-container matColumnDef="description">
+                    <th mat-header-cell *matHeaderCellDef>Description</th>
+                    <td mat-cell *matCellDef="let element">{{element.description || 'N/A'}}</td>
+                  </ng-container>
+                  
+                  <tr mat-header-row *matHeaderRowDef="['name', 'type', 'nullable', 'description']"></tr>
+                  <tr mat-row *matRowDef="let row; columns: ['name', 'type', 'nullable', 'description'];"></tr>
+                </table>
+              </div>
+              
+              <div *ngIf="selectedDataTab === 'preview'" class="preview-view">
+                <div class="table-container">
+                  <table mat-table [dataSource]="datasetPreview.data" class="mat-elevation-z1">
+                    <ng-container *ngFor="let col of displayedColumns; let i = index" [matColumnDef]="col">
+                      <th mat-header-cell *matHeaderCellDef>{{col}}</th>
+                      <td mat-cell *matCellDef="let element">
+                        <ng-container [ngSwitch]="getColumnType(col)">
+                          <span *ngSwitchCase="'boolean'">
+                            <mat-icon>{{ element[col] ? 'check_circle' : 'cancel' }}</mat-icon>
+                          </span>
+                          <span *ngSwitchDefault>{{element[col]}}</span>
+                        </ng-container>
+                      </td>
+                    </ng-container>
+                    
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </main>
+  </div>
+
+  <div class="processing-overlay" *ngIf="isProcessing">
+    <mat-spinner diameter="50"></mat-spinner>
+    <span>Processing...</span>
+  </div>
+</div>

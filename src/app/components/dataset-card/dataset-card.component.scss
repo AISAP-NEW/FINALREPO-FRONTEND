@@ -1,0 +1,263 @@
+.dataset-card {
+  position: relative;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  background: white;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    
+    .card-actions-bottom {
+      background: linear-gradient(to top, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9));
+    }
+    
+    .dataset-thumbnail img {
+      transform: scale(1.05);
+    }
+  }
+  
+  &.selected {
+    border: 2px solid var(--ion-color-primary);
+  }
+  
+  .card-link {
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    &:hover {
+      text-decoration: none;
+    }
+  }
+  
+  .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .card-actions-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8));
+    backdrop-filter: blur(4px);
+    
+    ion-button {
+      flex: 1;
+      --border-radius: 6px;
+      --padding-start: 8px;
+      --padding-end: 8px;
+      height: 32px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      --border-width: 1px;
+      
+      ion-icon {
+        font-size: 1rem;
+        margin-right: 4px;
+      }
+    }
+    
+    .view-btn {
+      --color: #3b82f6;
+      --border-color: #3b82f6;
+      --background: transparent;
+    }
+    
+    .edit-btn {
+      --color: #10b981;
+      --border-color: #10b981;
+      --background: transparent;
+    }
+    
+    .delete-btn {
+      --color: #ef4444;
+      --border-color: #ef4444;
+      --background: transparent;
+    }
+    
+    .options-btn {
+      --color: #6b7280;
+      --border-color: #6b7280;
+      --background: transparent;
+    }
+  }
+  
+  .dataset-thumbnail {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .thumbnail-loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(248, 249, 250, 0.9);
+      z-index: 2;
+      
+      ion-spinner {
+        --color: var(--ion-color-medium);
+      }
+    }
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+      position: relative;
+      z-index: 1;
+      
+      &[hidden] {
+        display: none;
+      }
+    }
+    
+    .no-thumbnail {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f1f3f5 0%, #e9ecef 100%);
+      
+      ion-icon {
+        font-size: 3rem;
+        color: #adb5bd;
+      }
+    }
+  }
+  
+  .dataset-info {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    .dataset-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    
+    .dataset-name {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #212529;
+      flex: 1;
+    }
+    
+    .dataset-status {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 8px;
+      white-space: nowrap;
+      
+      &.status-valid {
+        background-color: #e6f7ee;
+        color: #0a5c36;
+      }
+      
+      &.status-invalid {
+        background-color: #fdf0ef;
+        color: #c92a2a;
+      }
+      
+      &.status-pending {
+        background-color: #f8f9fa;
+        color: #5f6b7a;
+      }
+    }
+    
+    .dataset-meta {
+      display: flex;
+      gap: 12px;
+      margin: 0 0 12px 0;
+      font-size: 0.8rem;
+      color: #5f6b7a;
+      
+      span {
+        display: flex;
+        align-items: center;
+        
+        ion-icon {
+          margin-right: 4px;
+          font-size: 1rem;
+        }
+      }
+    }
+    
+    .dataset-description {
+      margin: 0 0 16px 0;
+      font-size: 0.9rem;
+      color: #5f6b7a;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      line-clamp: 3; // Standard property for better compatibility
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .dataset-footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #868e96;
+      padding-top: 12px;
+      border-top: 1px solid #f1f3f5;
+      
+      .created-date {
+        display: flex;
+        align-items: center;
+        
+        ion-icon {
+          margin-right: 4px;
+        }
+      }
+      
+      .validation-errors {
+        display: flex;
+        align-items: center;
+        color: #e03131;
+        font-weight: 500;
+        
+        ion-icon {
+          margin-right: 4px;
+        }
+      }
+    }
+  }
+}

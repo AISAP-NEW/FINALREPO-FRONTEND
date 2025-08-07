@@ -1,0 +1,74 @@
+<div class="dataset-card" [class.selected]="isSelected" (click)="router.navigate(['/datasets', dataset.datasetId, 'details'])">
+  <div class="card-content">
+    <div class="dataset-thumbnail">
+      <div *ngIf="isLoading" class="thumbnail-loading">
+        <ion-spinner></ion-spinner>
+      </div>
+      <img 
+        [src]="getFullThumbnailUrl(dataset.ThumbnailUrl!)" 
+        [alt]="dataset.datasetName" 
+        (load)="onImageLoad()"
+        (error)="onImageError()"
+        [hidden]="isLoading || hasImageError"
+        loading="lazy"
+        decoding="async"
+      >
+      <div *ngIf="hasImageError" class="no-thumbnail">
+        <ion-icon name="document"></ion-icon>
+      </div>
+    </div>
+    <div class="dataset-info">
+      <div class="dataset-header">
+        <h2 class="dataset-name">{{ dataset.datasetName }}</h2>
+        <span class="dataset-status" [ngClass]="getStatusClass()">
+          {{ dataset.validationStatus || 'Pending' }}
+        </span>
+      </div>
+      <p class="dataset-meta">
+        <span class="file-type">
+          <ion-icon name="code-slash"></ion-icon>
+          {{ dataset.fileType || 'Unknown' }}
+        </span>
+        <span class="file-count">
+          <ion-icon name="document"></ion-icon>
+          {{ dataset.fileCount || 0 }} {{ (dataset.fileCount === 1 ? 'File' : 'Files') }}
+        </span>
+        <span class="file-size">
+          <ion-icon name="save"></ion-icon>
+          {{ (dataset.totalFileSizeKB | number:'1.0-2') || '0.00' }} KB
+        </span>
+      </p>
+      <p class="dataset-description" *ngIf="dataset.description">
+        {{ dataset.description }}
+      </p>
+      <div class="dataset-footer">
+        <span class="created-date">
+          <ion-icon name="calendar"></ion-icon>
+          {{ (dataset.createdAt | date:'mediumDate') || 'N/A' }}
+        </span>
+        <span class="validation-errors" *ngIf="dataset.validationErrors && dataset.validationErrors > 0">
+          <ion-icon name="warning"></ion-icon>
+          {{ dataset.validationErrors }} issue{{ dataset.validationErrors !== 1 ? 's' : '' }}
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="card-actions-bottom">
+    <ion-button fill="outline" size="small" color="primary" class="view-btn" [routerLink]="['/datasets', dataset.datasetId, 'details']" (click)="$event.stopPropagation()">
+      <ion-icon name="eye" slot="start"></ion-icon>
+      View
+    </ion-button>
+    <ion-button fill="outline" size="small" color="secondary" class="edit-btn" (click)="$event.stopPropagation(); editDataset()">
+      <ion-icon name="create-outline" slot="start"></ion-icon>
+      Edit
+    </ion-button>
+    <ion-button fill="outline" size="small" color="danger" class="delete-btn" (click)="$event.stopPropagation(); deleteDataset()">
+      <ion-icon name="trash-outline" slot="start"></ion-icon>
+      Delete
+    </ion-button>
+    <ion-button fill="outline" size="small" color="medium" class="options-btn" (click)="$event.stopPropagation(); openOperationsModal()">
+      <ion-icon name="ellipsis-vertical" slot="start"></ion-icon>
+      More
+    </ion-button>
+  </div>
+</div>

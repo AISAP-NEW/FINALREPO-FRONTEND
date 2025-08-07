@@ -1,0 +1,40 @@
+.split-page-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.split-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.split-table th, .split-table td {
+  border: 1px solid #e0e0e0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.split-table th {
+  background: #f5f5f5;
+}
+
+ion-card {
+  margin-bottom: 1.5rem;
+}
+
+ion-badge {
+  font-size: 1rem;
+  padding: 0.4em 0.8em;
+}
+
+ion-list ion-item {
+  --padding-start: 0;
+}
+
+ion-note {
+  color: var(--ion-color-medium);
+}
+
+.error-message {
+  color: var(--ion-color-danger);
+  font-size: 14px;
+  margin: 8px 16px;
+}

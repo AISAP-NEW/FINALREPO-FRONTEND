@@ -1,0 +1,205 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Dashboard</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="mlflow-dashboard">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>ML Platform Dashboard</h1>
+      <p class="header-subtitle">Monitor your machine learning projects and datasets</p>
+    </div>
+  </div>
+
+  <!-- Metrics Overview -->
+  <div class="metrics-section">
+    <div class="section-header">
+      <h2>Overview</h2>
+      <p>Key metrics and statistics</p>
+    </div>
+    
+    <ion-grid class="metrics-grid">
+      <ion-row>
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon projects">
+              <ion-icon name="folder-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : totalProjects }}</div>
+              <div class="metric-label">Total Projects</div>
+              <div class="metric-change positive">+12% from last month</div>
+            </div>
+          </div>
+        </ion-col>
+
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon datasets">
+              <ion-icon name="database-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : activeDatasets }}</div>
+              <div class="metric-label">Active Datasets</div>
+              <div class="metric-change positive">+8% from last month</div>
+            </div>
+          </div>
+        </ion-col>
+
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon experiments">
+              <ion-icon name="flask-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : pendingTasks }}</div>
+              <div class="metric-label">Running Experiments</div>
+              <div class="metric-change neutral">No change</div>
+            </div>
+          </div>
+        </ion-col>
+
+        <ion-col size="12" size-md="6" size-lg="3">
+          <div class="metric-card">
+            <div class="metric-icon models">
+              <ion-icon name="cube-outline"></ion-icon>
+            </div>
+            <div class="metric-content">
+              <div class="metric-value">{{ loading ? '...' : unreadNotifications }}</div>
+              <div class="metric-label">Deployed Models</div>
+              <div class="metric-change positive">+3 this week</div>
+            </div>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <!-- Content Sections -->
+  <div class="content-sections">
+    <ion-grid>
+      <ion-row>
+        <!-- Recent Experiments -->
+        <ion-col size="12" size-lg="6">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Recent Experiments</h3>
+              <ion-button fill="clear" size="small">
+                <ion-icon name="add-outline" slot="start"></ion-icon>
+                New Experiment
+              </ion-button>
+            </div>
+            <div class="card-content">
+              <div class="experiment-list">
+                <div class="experiment-item" *ngFor="let activity of recentActivities">
+                  <div class="experiment-info">
+                    <div class="experiment-name">{{ activity.action }}</div>
+                    <div class="experiment-meta">
+                      <span class="experiment-user">by {{ activity.user || 'Unknown' }}</span>
+                      <span class="experiment-time">
+                        <ng-container *ngIf="activity.timestamp && (activity.timestamp | date:'short') !== 'Invalid Date'; else invalidDate">
+                          {{ activity.timestamp | date:'short' }}
+                        </ng-container>
+                        <ng-template #invalidDate>N/A</ng-template>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="experiment-status">
+                    <ion-badge color="success">Completed</ion-badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ion-col>
+
+        <!-- Recent Models -->
+        <ion-col size="12" size-lg="6">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Model Registry</h3>
+              <ion-button fill="clear" size="small">
+                <ion-icon name="cube-outline" slot="start"></ion-icon>
+                Register Model
+              </ion-button>
+            </div>
+            <div class="card-content">
+              <div class="model-list">
+                <div class="model-item" *ngFor="let project of activeProjects">
+                  <div class="model-info">
+                    <div class="model-name">{{ project.name }}</div>
+                    <div class="model-meta">
+                      <span class="model-version">v1.2.0</span>
+                      <span class="model-stage">Production</span>
+                    </div>
+                    <div class="model-progress">
+                      <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="project.progress * 100"></div>
+                      </div>
+                      <span class="progress-text">{{ (project.progress * 100) | number:'1.0-0' }}% accuracy</span>
+                    </div>
+                  </div>
+                  <div class="model-actions">
+                    <ion-button fill="clear" size="small" color="primary">
+                      <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" color="medium">
+                      <ion-icon name="download-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <!-- Datasets Overview -->
+        <ion-col size="12">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Datasets</h3>
+              <ion-button fill="clear" size="small">
+                <ion-icon name="add-outline" slot="start"></ion-icon>
+                Upload Dataset
+              </ion-button>
+            </div>
+            <div class="card-content">
+              <div class="dataset-grid">
+                <div class="dataset-item" *ngFor="let dataset of recentDatasets">
+                  <div class="dataset-icon">
+                    <ion-icon name="database-outline"></ion-icon>
+                  </div>
+                  <div class="dataset-info">
+                    <div class="dataset-name">{{ dataset.name }}</div>
+                    <div class="dataset-meta">
+                      <span class="dataset-records">{{ dataset.records }} records</span>
+                      <span class="dataset-type">{{ dataset.type }}</span>
+                    </div>
+                  </div>
+                  <div class="dataset-actions">
+                    <ion-button fill="clear" size="small" color="primary">
+                      <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" color="medium">
+                      <ion-icon name="download-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" color="danger">
+                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+</ion-content>

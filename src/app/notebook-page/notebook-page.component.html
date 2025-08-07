@@ -1,0 +1,110 @@
+<div class="notebook-container">
+  <header class="notebook-header">
+    <div class="header-left">
+      <h1>Notebook</h1>
+      <div class="dataset-info">
+        <span class="dataset-name">Customer Purchase Analysis</span>
+        <span class="dataset-status">Connected</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="saveNotebook()">
+        <mat-icon>save</mat-icon> Save
+      </button>
+      <button mat-stroked-button (click)="exportNotebook()">
+        <mat-icon>download</mat-icon> Export
+      </button>
+      <button mat-raised-button color="primary" (click)="runAllCells()" [disabled]="isLoading">
+        <mat-icon>play_arrow</mat-icon> Run All
+      </button>
+    </div>
+  </header>
+
+  <div class="notebook-content" #notebookContent>
+    <!-- Left sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>Dataset</h3>
+        <div class="dataset-actions">
+          <button mat-stroked-button (click)="onPreprocess()" [disabled]="isLoading">
+            <mat-icon>cleaning_services</mat-icon> Preprocess
+          </button>
+          <button mat-stroked-button (click)="onValidate()" [disabled]="isLoading">
+            <mat-icon>check_circle</mat-icon> Validate
+          </button>
+          <button mat-stroked-button (click)="onTrainTestSplit()" [disabled]="isLoading">
+            <mat-icon>call_split</mat-icon> Split Data
+          </button>
+        </div>
+        <div class="dataset-info">
+          <span class="dataset-name">Customer Purchase Analysis</span>
+          <span class="dataset-status">Connected</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="cells-container">
+      <div class="cell-container" *ngFor="let cell of cells; let i = index">
+        <app-notebook-cell
+          [type]="cell.type"
+          [content]="cell.content"
+          [isExecuting]="cell.isExecuting"
+          (execute)="executeCell(i, $event)"
+          (contentChange)="onCellContentChange(i, $event)">
+        </app-notebook-cell>
+        
+        <div class="cell-actions">
+          <button mat-icon-button (click)="addCell(i, 'code')" matTooltip="Add code cell">
+            <mat-icon>add</mat-icon>
+          </button>
+          <button mat-icon-button (click)="addCell(i, 'markdown')" matTooltip="Add markdown cell">
+            <mat-icon>text_fields</mat-icon>
+          </button>
+          <button mat-icon-button (click)="deleteCell(i)" matTooltip="Delete cell" [disabled]="cells.length <= 1">
+            <mat-icon>delete</mat-icon>
+          </button>
+          
+          <!-- Move cell up/down buttons -->
+          <div class="move-buttons">
+            <button mat-icon-button (click)="moveCell(cell.id, 'up')" [disabled]="i === 0" matTooltip="Move cell up">
+              <mat-icon>keyboard_arrow_up</mat-icon>
+            </button>
+            <button mat-icon-button (click)="moveCell(cell.id, 'down')" [disabled]="i === cells.length - 1" matTooltip="Move cell down">
+              <mat-icon>keyboard_arrow_down</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Cell output -->
+        <div class="cell-output" *ngIf="cell.output">
+          <div class="output-content" [ngClass]="cell.output.type">
+            <pre *ngIf="cell.output.type === 'text/plain'">
+              {{ cell.output.data.join('\n') }}
+            </pre>
+            <div *ngIf="cell.output.type === 'text/markdown'" [innerHTML]="sanitizer.bypassSecurityTrustHtml(cell.output.data.join('\n'))">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Add cell buttons at the bottom -->
+      <div class="add-cell-container">
+        <button mat-stroked-button (click)="addCell(cells.length, 'code')" color="primary">
+          <mat-icon>add</mat-icon> Add Code Cell
+        </button>
+        <button mat-stroked-button (click)="addCell(cells.length, 'markdown')" color="accent">
+          <mat-icon>text_fields</mat-icon> Add Markdown Cell
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Status Bar -->
+  <footer class="notebook-footer">
+    <div class="status-bar">
+      <span>Cells: {{ cells.length }} | </span>
+      <span>Last saved: {{ lastSaved | date:'medium' || 'Not saved yet' }}</span>
+    </div>
+  </footer>
+</div>

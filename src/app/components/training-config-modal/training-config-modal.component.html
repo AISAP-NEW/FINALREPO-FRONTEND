@@ -1,0 +1,138 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Training Configuration</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="onDismiss()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Error Display -->
+  <div *ngIf="error" class="error-message">
+    <ion-icon name="alert-circle" color="danger"></ion-icon>
+    <span>{{ error }}</span>
+    <ion-button size="small" fill="clear" (click)="retryLoadDatasets()">
+      <ion-icon slot="start" name="refresh"></ion-icon>
+      Retry
+    </ion-button>
+  </div>
+
+  <form [formGroup]="trainingForm" (ngSubmit)="onSubmit()">
+    <!-- Dataset Selection -->
+    <ion-item>
+      <ion-label position="stacked">Validated Dataset *</ion-label>
+      <ion-select 
+        formControlName="datasetValidationId" 
+        interface="action-sheet" 
+        placeholder="Select a validated dataset" 
+        [disabled]="isLoading || validatedDatasets.length === 0">
+        
+        <div *ngIf="isLoading" slot="start">
+          <ion-spinner name="dots"></ion-spinner>
+          <span>Loading datasets...</span>
+        </div>
+        
+        <ion-select-option 
+          *ngFor="let dataset of validatedDatasets" 
+          [value]="dataset.validationId">
+          {{ dataset.datasetName }}
+          <small *ngIf="dataset.description"> - {{ dataset.description }}</small>
+        </ion-select-option>
+      </ion-select>
+      
+      <ion-note slot="error" color="danger" *ngIf="validatedDatasets.length === 0 && !isLoading">
+        No validated datasets available. Please validate a dataset before starting training.
+      </ion-note>
+      
+      <ion-note slot="helper" *ngIf="isLoading">
+        <ion-spinner name="dots"></ion-spinner> Loading validated datasets...
+      </ion-note>
+      
+      <ion-note slot="error" *ngIf="trainingForm.get('datasetValidationId')?.errors?.['required'] && trainingForm.get('datasetValidationId')?.touched">
+        Please select a validated dataset
+      </ion-note>
+    </ion-item>
+
+    <!-- Learning Rate -->
+    <ion-item>
+      <ion-label position="stacked">Learning Rate *</ion-label>
+      <ion-input 
+        type="number" 
+        formControlName="learningRate" 
+        [min]="0.0001" 
+        [max]="1" 
+        [step]="0.0001"
+        placeholder="0.001">
+      </ion-input>
+      <ion-note slot="error" *ngIf="trainingForm.get('learningRate')?.errors?.['required'] && trainingForm.get('learningRate')?.touched">
+        Learning rate is required
+      </ion-note>
+      <ion-note slot="error" *ngIf="trainingForm.get('learningRate')?.errors?.['min'] && trainingForm.get('learningRate')?.touched">
+        Learning rate must be at least 0.0001
+      </ion-note>
+      <ion-note slot="error" *ngIf="trainingForm.get('learningRate')?.errors?.['max'] && trainingForm.get('learningRate')?.touched">
+        Learning rate must be at most 1
+      </ion-note>
+    </ion-item>
+
+    <!-- Epochs -->
+    <ion-item>
+      <ion-label position="stacked">Number of Epochs *</ion-label>
+      <ion-select formControlName="epochs" interface="action-sheet">
+        <ion-select-option *ngFor="let epoch of epochsOptions" [value]="epoch">{{ epoch }}</ion-select-option>
+      </ion-select>
+      <ion-note slot="error" *ngIf="trainingForm.get('epochs')?.errors?.['required'] && trainingForm.get('epochs')?.touched">
+        Number of epochs is required
+      </ion-note>
+    </ion-item>
+
+    <!-- Batch Size -->
+    <ion-item>
+      <ion-label position="stacked">Batch Size *</ion-label>
+      <ion-select formControlName="batchSize" interface="action-sheet">
+        <ion-select-option *ngFor="let size of batchSizes" [value]="size">{{ size }}</ion-select-option>
+      </ion-select>
+      <ion-note slot="error" *ngIf="trainingForm.get('batchSize')?.errors?.['required'] && trainingForm.get('batchSize')?.touched">
+        Batch size is required
+      </ion-note>
+    </ion-item>
+
+    <!-- Notes -->
+    <ion-item>
+      <ion-label position="stacked">Notes (Optional)</ion-label>
+      <ion-input 
+        type="text" 
+        formControlName="notes" 
+        placeholder="Add any notes about this training session">
+      </ion-input>
+    </ion-item>
+
+    <!-- Training Info -->
+    <div class="training-info">
+      <ion-card>
+        <ion-card-content>
+          <h4>Training Information</h4>
+          <p><strong>Model ID:</strong> {{ modelId }}</p>
+          <p><strong>Model Version ID:</strong> {{ modelVersionId }}</p>
+          <p><strong>Training will be executed on:</strong> Virtual Machine</p>
+          <p><strong>Estimated time:</strong> Depends on dataset size and epochs</p>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="ion-padding">
+      <ion-button 
+        expand="block" 
+        type="submit" 
+        [disabled]="!trainingForm.valid || isLoading || validatedDatasets.length === 0"
+        color="primary">
+        <ion-spinner *ngIf="isLoading" name="dots"></ion-spinner>
+        <span *ngIf="!isLoading">Start Training Session</span>
+      </ion-button>
+    </div>
+  </form>
+</ion-content>
