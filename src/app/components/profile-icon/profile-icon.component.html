@@ -1,0 +1,17 @@
+<div class="profile-icon-wrapper" (click)="showProfilePopover($event)">
+  <div class="profile-avatar">
+    <img 
+      [src]="userProfile?.profilePictureUrl || '/assets/default-avatar.png'" 
+      [alt]="userProfile?.username || 'User'"
+      class="avatar-image"
+      (error)="onImageError($event)"
+    />
+    <div class="online-indicator" *ngIf="isOnline"></div>
+  </div>
+  <div class="profile-info" *ngIf="showDetails">
+    <p class="username">{{ userProfile?.username || 'User' }}</p>
+    <p class="role">{{ userProfile?.role || 'Member' }}</p>
+  </div>
+</div>
+
+

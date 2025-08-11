@@ -16,6 +16,11 @@ import {
   IonRouterOutlet,
   IonBadge,
   IonSpinner,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonMenuButton,
   ModalController,
   AlertController
 } from '@ionic/angular/standalone';
@@ -49,6 +54,7 @@ import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { SessionTimeoutService } from '../../services/session-timeout.service';
 import { SessionTimeoutWarningComponent } from '../../components/session-timeout-warning/session-timeout-warning.component';
+import { ProfileIconComponent } from '../../components/profile-icon/profile-icon.component';
 import { HelpComponent } from '../../pages/help/help.component';
 import { interval, Subscription, Subject, BehaviorSubject, timer } from 'rxjs';
 import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
@@ -63,7 +69,14 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
           <ion-content>
             <ion-list id="inbox-list">
               <ion-list-header>AISAP</ion-list-header>
-              <ion-note>{{ currentUserUserName }}</ion-note>
+              <div class="user-profile-section">
+                <app-profile-icon 
+                  [showDetails]="false" 
+                  size="small"
+                  style="display: inline-block; margin-right: 8px; vertical-align: middle;">
+                </app-profile-icon>
+                <ion-note style="display: inline-block; vertical-align: middle;">{{ currentUserUserName }}</ion-note>
+              </div>
 
               <ion-menu-toggle auto-hide="false">
                 <ion-item routerLink="/home" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
@@ -212,7 +225,9 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
             </ion-list>
           </ion-content>
         </ion-menu>
-        <ion-router-outlet id="main-content"></ion-router-outlet>
+        <div class="ion-page" id="main-content">
+          <ion-router-outlet></ion-router-outlet>
+        </div>
       </ion-split-pane>
       
       <!-- Session Timeout Warning Component -->
@@ -385,10 +400,6 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
       --color: var(--ion-color-primary);
     }
 
-    ion-item.selected {
-      --color: var(--ion-color-primary);
-    }
-
     /* Chevron animation */
     ion-item ion-icon[name="chevron-up"],
     ion-item ion-icon[name="chevron-down"] {
@@ -462,6 +473,19 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
     .logout-confirmation-alert .alert-button:last-child {
       border-bottom-right-radius: 12px;
     }
+
+    /* User Profile Section Styles */
+    .user-profile-section {
+      display: flex;
+      align-items: center;
+      padding: 0 10px 20px 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--ion-color-step-150, #d7d8da);
+    }
+
+    .user-profile-section ion-note {
+      margin-bottom: 0;
+    }
   `],
   standalone: true,
   imports: [
@@ -481,7 +505,8 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
     IonRouterOutlet,
     IonBadge,
     IonSpinner,
-    SessionTimeoutWarningComponent
+    SessionTimeoutWarningComponent,
+    ProfileIconComponent
   ]
 })
 export class MainLayoutComponent implements OnInit, OnDestroy {

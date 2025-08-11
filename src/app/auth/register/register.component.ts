@@ -35,7 +35,12 @@ export class RegisterComponent {
       Email: ['', [Validators.required, Validators.email]],
       Password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(this.passwordPattern)]],
       ConfirmPassword: ['', [Validators.required]],
-      Role: ['Developer', [Validators.required]] // Default role
+      Role: ['Developer', [Validators.required]], // Default role
+      FirstName: [''],
+      LastName: [''],
+      PhoneNumber: ['', [Validators.pattern('^[+]?[0-9]{10,15}$')]],
+      Bio: ['', [Validators.maxLength(500)]],
+      DateOfBirth: ['']
     }, {
       validators: this.passwordMatchValidator
     });
@@ -62,7 +67,12 @@ export class RegisterComponent {
           Email: formValue.Email,
           Password: formValue.Password,
           ConfirmPassword: formValue.ConfirmPassword,
-          Role: formValue.Role
+          Role: formValue.Role,
+          FirstName: formValue.FirstName?.trim() || undefined,
+          LastName: formValue.LastName?.trim() || undefined,
+          PhoneNumber: formValue.PhoneNumber?.trim() || undefined,
+          Bio: formValue.Bio?.trim() || undefined,
+          DateOfBirth: formValue.DateOfBirth || undefined
         };
 
         console.log('Sending registration data:', userData);
@@ -147,7 +157,24 @@ export class RegisterComponent {
 
   // Check if form is ready for submission
   isFormReady(): boolean {
-    return this.registerForm.valid;
+    // Check if all required fields are valid
+    const requiredFields = ['Username', 'Email', 'Password', 'ConfirmPassword', 'Role'];
+    const requiredFieldsValid = requiredFields.every(field => {
+      const control = this.registerForm.get(field);
+      return control && control.valid;
+    });
+    
+    // Check if password match validator passes
+    const passwordsMatch = !this.registerForm.errors?.['mismatch'];
+    
+    // Check if optional fields with values are valid
+    const optionalFields = ['PhoneNumber', 'Bio'];
+    const optionalFieldsValid = optionalFields.every(field => {
+      const control = this.registerForm.get(field);
+      return !control || !control.value || control.valid;
+    });
+    
+    return requiredFieldsValid && passwordsMatch && optionalFieldsValid;
   }
 
   // Get specific validation messages for better UX
@@ -167,8 +194,14 @@ export class RegisterComponent {
     if (errors['minlength']) {
       return `${fieldName} must be at least ${errors['minlength'].requiredLength} characters`;
     }
+    if (errors['maxlength']) {
+      return `${fieldName} must not exceed ${errors['maxlength'].requiredLength} characters`;
+    }
     if (errors['pattern'] && fieldName === 'Password') {
       return 'Password must contain at least 8 characters with uppercase, lowercase, number, and special character';
+    }
+    if (errors['pattern'] && fieldName === 'PhoneNumber') {
+      return 'Please enter a valid phone number (10-15 digits)';
     }
     if (this.registerForm.errors?.['mismatch'] && fieldName === 'ConfirmPassword') {
       return 'Passwords do not match';
@@ -193,5 +226,16 @@ export class RegisterComponent {
       color
     });
     await toast.present();
+  }
+
+  // Get character count for bio field
+  getBioCharacterCount(): number {
+    const bioValue = this.registerForm.get('Bio')?.value;
+    return bioValue ? bioValue.length : 0;
+  }
+
+  // Check if bio is over character limit
+  isBioOverLimit(): boolean {
+    return this.getBioCharacterCount() > 500;
   }
 } 

@@ -1,0 +1,57 @@
+<div class="profile-popover-content">
+  <div class="profile-header">
+    <img 
+      [src]="userProfile?.profilePictureUrl || '/assets/default-avatar.png'" 
+      [alt]="userProfile?.username || 'User'"
+      class="popover-avatar"
+      (error)="onImageError($event)"
+    />
+    <div class="profile-details">
+      <h3 class="user-name">{{ userProfile?.firstName || userProfile?.username || 'User' }} {{ userProfile?.lastName || '' }}</h3>
+      <p class="user-role">{{ userProfile?.role || 'Member' }}</p>
+      <p class="user-email" *ngIf="userProfile?.email">{{ userProfile?.email }}</p>
+    </div>
+  </div>
+  
+  <div class="profile-info-section" *ngIf="userProfile">
+    <div class="info-item" *ngIf="userProfile?.phoneNumber">
+      <ion-icon name="call-outline"></ion-icon>
+      <span>{{ userProfile?.phoneNumber }}</span>
+    </div>
+    
+    <div class="info-item" *ngIf="userProfile?.businessEmail">
+      <ion-icon name="business-outline"></ion-icon>
+      <span>{{ userProfile?.businessEmail }}</span>
+    </div>
+    
+    <div class="info-item" *ngIf="userProfile?.createdAt">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <span>Member since {{ userProfile?.createdAt | date:'MMM yyyy' }}</span>
+    </div>
+    
+    <div class="info-item" *ngIf="userProfile?.bio">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>{{ userProfile?.bio }}</span>
+    </div>
+  </div>
+  
+  <div class="profile-actions">
+    <ion-button 
+      fill="solid" 
+      color="primary" 
+      size="small"
+      (click)="editProfile()">
+      <ion-icon name="create-outline" slot="start"></ion-icon>
+      Edit Profile
+    </ion-button>
+    
+    <ion-button 
+      fill="outline" 
+      color="medium" 
+      size="small"
+      (click)="viewFullProfile()">
+      <ion-icon name="person-outline" slot="start"></ion-icon>
+      View Profile
+    </ion-button>
+  </div>
+</div>

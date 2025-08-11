@@ -10,11 +10,30 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  profilePictureUrl?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  bio?: string;
+  dateOfBirth?: string;
+  businessEmail?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isFirstLogin?: boolean;
   // Add these for API response compatibility
   UserId?: number;
   Username?: string;
   Email?: string;
   Role?: string;
+  FirstName?: string;
+  LastName?: string;
+  PhoneNumber?: string;
+  Bio?: string;
+  DateOfBirth?: string;
+  BusinessEmail?: string;
+  CreatedAt?: string;
+  UpdatedAt?: string;
+  IsFirstLogin?: boolean;
 }
 
 export interface DirectAssignResponse {
@@ -208,6 +227,63 @@ export class UserService {
   deleteUser(userId: number): Observable<void> {
     const url = `${this.API_URL}/User/${userId}`;
     return this.http.delete<void>(url).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // Profile Management Methods
+  getUserProfile(userId: number): Observable<any> {
+    const url = `${this.API_URL}/User/${userId}`;
+    return this.http.get<any>(url).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  updateUserProfile(profileData: any): Observable<any> {
+    const url = `${this.API_URL}/User/profile`;
+    return this.http.put<any>(url, profileData).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  uploadProfilePicture(formData: FormData): Observable<any> {
+    const url = `${this.API_URL}/User/profile-picture/upload`;
+    return this.http.post<any>(url, formData).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  deleteProfilePicture(userId: number): Observable<any> {
+    const url = `${this.API_URL}/User/profile-picture/${userId}`;
+    return this.http.delete<any>(url).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  changePassword(passwordData: any): Observable<any> {
+    const url = `${this.API_URL}/User/change-password`;
+    return this.http.post<any>(url, passwordData).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  updateUsername(usernameData: any): Observable<any> {
+    const url = `${this.API_URL}/User/username`;
+    return this.http.put<any>(url, usernameData).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  updateEmail(emailData: any): Observable<any> {
+    const url = `${this.API_URL}/User/email`;
+    return this.http.put<any>(url, emailData).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  updatePhoneNumber(phoneData: any): Observable<any> {
+    const url = `${this.API_URL}/User/phone`;
+    return this.http.put<any>(url, phoneData).pipe(
       catchError(this.handleError)
     );
   }

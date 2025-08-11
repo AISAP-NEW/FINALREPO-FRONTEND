@@ -166,6 +166,11 @@ export const routes: Routes = [
         path: 'experiments',
         loadComponent: () => import('./pages/experiments/experiments.page')
           .then(m => m.ExperimentsPage)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile.page')
+          .then(m => m.ProfilePage)
       }
     ]
   },
