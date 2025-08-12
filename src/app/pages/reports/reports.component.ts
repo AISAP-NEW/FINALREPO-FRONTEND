@@ -4,19 +4,36 @@ import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
-import { ReportService, 
-         UsersReportRequest, UsersReportResponse, UserReportItem,
-         ClientsProjectsReportRequest, ClientsProjectsReportResponse, ClientProjectReportItem,
-         TrainingSessionReportRequest, TrainingSessionReportResponse, TrainingSessionReportItem,
-         ModelDeploymentReportRequest, ModelDeploymentReportResponse, ModelDeploymentReportItem,
-         DatasetTransactionReportRequest, DatasetTransactionReportResponse, DatasetTransactionGroup,
-         DatasetStatusReportRequest, DatasetStatusReportResponse, DatasetStatusReportItem,
-         DatasetTrendsReportRequest, DatasetTrendsReportResponse, DatasetTrendItem,
-         ModelTrainingSummaryReportRequest, ModelTrainingSummaryReportResponse, ModelTrainingGroup,
-         ChartDataPoint } from '../../services/report.service';
+import { 
+  ReportService, 
+  UsersReportRequest, 
+  UsersReportResponse,
+  ClientsProjectsReportRequest,
+  ClientsProjectsReportResponse,
+  TrainingSessionReportRequest,
+  TrainingSessionReportResponse,
+  ModelDeploymentReportRequest,
+  ModelDeploymentReportResponse,
+  DatasetTransactionReportRequest,
+  DatasetTransactionReportResponse,
+  DatasetStatusReportRequest,
+  DatasetStatusReportResponse,
+  DatasetTrendsReportRequest,
+  DatasetTrendsReportResponse,
+  ModelTrainingSummaryReportRequest,
+  ModelTrainingSummaryReportResponse,
+  ModelActivityByExperimentReportRequest,
+  ModelActivityByExperimentReportResponse,
+  ModelDeploymentStatusReportRequest,
+  ModelDeploymentStatusReportResponse,
+  ChartDataPoint
+} from '../../services/report.service';
+import { AuthService } from '../../services/auth.service';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 Chart.register(...registerables);
 
@@ -31,12 +48,14 @@ export class FilterByCategoryPipe implements PipeTransform {
 }
 
 export interface ReportType {
-  id: string;
+  id: ReportTypeId;
   name: string;
   description: string;
   icon: string;
   category: 'simple' | 'transactional' | 'management' | 'adjustable';
 }
+
+type ReportTypeId = 'users' | 'clients-projects' | 'training-sessions' | 'model-deployments' | 'dataset-transactions' | 'dataset-status' | 'dataset-trends' | 'model-activity-experiment' | 'model-deployment-status';
 
 @Component({
   selector: 'app-reports',
@@ -50,61 +69,78 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   @ViewChild('successRateChart') successRateChart!: ElementRef<HTMLCanvasElement>;
   @ViewChild('processingChart') processingChart!: ElementRef<HTMLCanvasElement>;
 
+  // Add Object for template access
+  Object = Object;
+
   // Report types configuration
   reportTypes: ReportType[] = [
     {
-      id: 'users',
+      id: 'users' as ReportTypeId,
       name: 'Registered Users Report',
       description: 'Simple list report of all registered users with their details',
       icon: 'people-outline',
       category: 'simple'
     },
     {
-      id: 'clients-projects',
+      id: 'clients-projects' as ReportTypeId,
       name: 'Clients and Projects Report',
       description: 'Simple list report of clients and their associated projects',
       icon: 'business-outline',
       category: 'simple'
     },
     {
-      id: 'training-sessions',
+      id: 'training-sessions' as ReportTypeId,
       name: 'Model Training Session Report',
       description: 'Management report with graphs showing training trends and success rates',
       icon: 'trending-up-outline',
       category: 'management'
     },
     {
-      id: 'model-deployments',
+      id: 'model-deployments' as ReportTypeId,
       name: 'Model Deployment Report',
       description: 'Simple list report of model deployments and their status',
       icon: 'cloud-upload-outline',
       category: 'simple'
     },
     {
-      id: 'dataset-transactions',
+      id: 'dataset-transactions' as ReportTypeId,
       name: 'Dataset Transaction Summary Report',
       description: 'Transactional report with control breaks by developer and dataset',
       icon: 'analytics-outline',
       category: 'transactional'
     },
     {
-      id: 'dataset-status',
+      id: 'dataset-status' as ReportTypeId,
       name: 'Dataset Status Report',
       description: 'Simple list report of dataset statuses and validation results',
       icon: 'checkmark-circle-outline',
       category: 'simple'
     },
     {
-      id: 'dataset-trends',
+      id: 'dataset-trends' as ReportTypeId,
       name: 'Dataset Trends Report',
       description: 'Adjustable criteria report with trend analysis and filtering options',
       icon: 'bar-chart-outline',
       category: 'adjustable'
+    },
+    {
+      id: 'model-activity-experiment' as ReportTypeId,
+      name: 'Model Activity by Experiment Report',
+      description: 'Transactional report with control breaks by experiment status showing model training activities',
+      icon: 'flask-outline',
+      category: 'transactional'
+    },
+    {
+      id: 'model-deployment-status' as ReportTypeId,
+      name: 'Model Deployment Status Report',
+      description: 'Transactional report with control breaks by deployment status showing deployed models and their environments',
+      icon: 'server-outline',
+      category: 'transactional'
     }
   ];
 
   // Current state
-  selectedReportType: string = '';
+  selectedReportType: ReportTypeId = 'users';
   currentReportData: any = null;
   isLoading: boolean = false;
   errorMessage: string = '';
@@ -118,12 +154,14 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   datasetStatusReport: DatasetStatusReportResponse | null = null;
   datasetTrendsReport: DatasetTrendsReportResponse | null = null;
   modelTrainingSummaryReport: ModelTrainingSummaryReportResponse | null = null;
+  modelActivityExperimentReport: ModelActivityByExperimentReportResponse | null = null;
+  modelDeploymentStatusReport: ModelDeploymentStatusReportResponse | null = null;
 
   // Filter states for adjustable reports
   trendsFilters = {
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     endDate: new Date(),
-    status: ''
+    status: '' as string
   };
 
   // Custom date selector properties
@@ -142,7 +180,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   constructor(
     private reportService: ReportService, 
     private http: HttpClient,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private authService: AuthService
   ) {}
 
   async ngOnInit() {
@@ -173,7 +212,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
         const reportType = params['type'];
         if (reportType) {
           console.log('Auto-loading report type from query params:', reportType);
-          this.loadReport(reportType);
+          this.loadReport(reportType as ReportTypeId);
         } else {
           // Set default report if no query parameter
           this.selectedReportType = 'users';
@@ -201,11 +240,13 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     // Charts will be created after data is loaded
   }
 
-  async loadReport(reportType: string) {
+  async loadReport(reportType: ReportTypeId) {
     console.log('Loading report type:', reportType);
+    console.log('Previous selectedReportType:', this.selectedReportType);
     this.isLoading = true;
     this.errorMessage = '';
     this.selectedReportType = reportType;
+    console.log('New selectedReportType:', this.selectedReportType);
 
     try {
       switch (reportType) {
@@ -229,6 +270,12 @@ export class ReportsComponent implements OnInit, AfterViewInit {
           break;
         case 'dataset-trends':
           await this.loadDatasetTrendsReport();
+          break;
+        case 'model-activity-experiment':
+          await this.loadModelActivityExperimentReport();
+          break;
+        case 'model-deployment-status':
+          await this.loadModelDeploymentStatusReport();
           break;
         default:
           throw new Error(`Unknown report type: ${reportType}`);
@@ -327,6 +374,12 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       this.trainingSessionReport = response;
       this.currentReportData = response;
       this.errorMessage = '';
+      
+      // Create charts after data is loaded with a small delay to ensure DOM is ready
+      setTimeout(() => {
+        this.createTrainingTrendsChart();
+        this.createSuccessRateChart();
+      }, 100);
     } catch (error: any) {
       console.error('Error loading training session report:', error);
       this.errorMessage = `Failed to load training session report: ${error?.message || error?.statusText || 'Unknown error'}`;
@@ -347,9 +400,15 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       this.modelDeploymentReport = response;
       this.currentReportData = response;
       this.errorMessage = '';
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading model deployment report:', error);
-      this.errorMessage = 'Failed to load model deployment report';
+      this.errorMessage = `Failed to load model deployment report: ${error?.message || error?.statusText || 'Unknown error'}`;
+      console.error('Error details:', {
+        message: error?.message,
+        status: error?.status,
+        statusText: error?.statusText,
+        url: error?.url
+      });
       throw error;
     }
   }
@@ -358,8 +417,11 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     const request: DatasetTransactionReportRequest = {
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
       endDate: new Date(),
-      includeLogo: true
+      includeLogo: true,
+      logoPath: "wwwroot/images/logo.png"
     };
+
+    console.log('Making API call to load dataset transaction report with request:', request);
 
     try {
       const response = await firstValueFrom(this.reportService.generateDatasetTransactionReport(request));
@@ -367,9 +429,20 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       this.datasetTransactionReport = response;
       this.currentReportData = response;
       this.errorMessage = '';
-    } catch (error) {
+      
+      console.log('Dataset transaction report loaded successfully. DatasetGroups:', this.datasetTransactionReport?.DatasetGroups);
+      console.log('TransactionGroups (old format):', this.datasetTransactionReport?.TransactionGroups);
+      console.log('Full response structure:', Object.keys(this.datasetTransactionReport || {}));
+      console.log('Current report data:', this.currentReportData);
+    } catch (error: any) {
       console.error('Error loading dataset transaction report:', error);
-      this.errorMessage = 'Failed to load dataset transaction report';
+      this.errorMessage = `Failed to load dataset transaction report: ${error?.message || error?.statusText || 'Unknown error'}`;
+      console.error('Error details:', {
+        message: error?.message,
+        status: error?.status,
+        statusText: error?.statusText,
+        url: error?.url
+      });
       throw error;
     }
   }
@@ -463,6 +536,86 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     }
   }
 
+  async loadModelActivityExperimentReport() {
+    const currentUser = this.authService.getCurrentUser();
+    console.log('Current user:', currentUser);
+    
+    const request: ModelActivityByExperimentReportRequest = {
+      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+      endDate: new Date(),
+      includeLogo: true
+    };
+
+    console.log('Making API call to load model activity experiment report with request:', request);
+
+    try {
+      const response = await firstValueFrom(this.reportService.generateModelActivityByExperimentReport(request));
+      console.log('Model Activity Experiment Report Response:', response);
+      
+      this.modelActivityExperimentReport = response;
+      this.currentReportData = response;
+      
+      this.errorMessage = '';
+      
+      console.log('Model activity experiment report loaded successfully.');
+      console.log('modelActivityExperimentReport:', this.modelActivityExperimentReport);
+      console.log('modelActivityExperimentReport.ExperimentGroups:', this.modelActivityExperimentReport?.ExperimentGroups);
+      console.log('modelActivityExperimentReport.ExperimentGroups?.length:', this.modelActivityExperimentReport?.ExperimentGroups?.length);
+      console.log('Current report data:', this.currentReportData);
+      console.log('selectedReportType:', this.selectedReportType);
+      console.log('isModelActivityExperimentReport():', this.isModelActivityExperimentReport());
+      console.log('modelActivityExperimentReport exists:', !!this.modelActivityExperimentReport);
+      
+      // Force change detection
+      setTimeout(() => {
+        console.log('After timeout - modelActivityExperimentReport:', this.modelActivityExperimentReport);
+        console.log('After timeout - selectedReportType:', this.selectedReportType);
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Error loading model activity experiment report:', error);
+      this.errorMessage = `Failed to load model activity experiment report: ${error?.message || error?.statusText || 'Unknown error'}`;
+      console.error('Error details:', {
+        message: error?.message,
+        status: error?.status,
+        statusText: error?.statusText,
+        url: error?.url
+      });
+      throw error;
+    }
+  }
+
+  async loadModelDeploymentStatusReport() {
+    const request: ModelDeploymentStatusReportRequest = {
+      includeLogo: true
+    };
+
+    console.log('Making API call to load model deployment status report with request:', request);
+
+    try {
+      const response = await firstValueFrom(this.reportService.generateModelDeploymentStatusReport(request));
+      console.log('Model Deployment Status Report Response:', response);
+      
+      this.modelDeploymentStatusReport = response;
+      this.currentReportData = response;
+      
+      this.errorMessage = '';
+      
+      console.log('Model deployment status report loaded successfully. DeploymentGroups:', this.modelDeploymentStatusReport?.DeploymentGroups);
+      console.log('Current report data:', this.currentReportData);
+    } catch (error: any) {
+      console.error('Error loading model deployment status report:', error);
+      this.errorMessage = `Failed to load model deployment status report: ${error?.message || error?.statusText || 'Unknown error'}`;
+      console.error('Error details:', {
+        message: error?.message,
+        status: error?.status,
+        statusText: error?.statusText,
+        url: error?.url
+      });
+      throw error;
+    }
+  }
+
   // Export functions
   async exportToPdf() {
     try {
@@ -511,6 +664,16 @@ export class ReportsComponent implements OnInit, AfterViewInit {
           };
           blob = await firstValueFrom(this.reportService.generateDatasetTrendsReportPdf(trendsRequest));
           filename = 'dataset-trends-report.pdf';
+          break;
+        case 'model-activity-experiment':
+          const experimentRequest: ModelActivityByExperimentReportRequest = { includeLogo: true };
+          blob = await firstValueFrom(this.reportService.generateModelActivityByExperimentReportPdf(experimentRequest));
+          filename = 'model-activity-experiment-report.pdf';
+          break;
+        case 'model-deployment-status':
+          const deploymentStatusRequest: ModelDeploymentStatusReportRequest = { includeLogo: true };
+          blob = await firstValueFrom(this.reportService.generateModelDeploymentStatusReportPdf(deploymentStatusRequest));
+          filename = 'model-deployment-status-report.pdf';
           break;
         default:
           throw new Error('Unknown report type');
@@ -588,6 +751,16 @@ export class ReportsComponent implements OnInit, AfterViewInit {
           };
           data = await firstValueFrom(this.reportService.generateDatasetTrendsReportJson(trendsRequest));
           filename = 'dataset-trends-report.json';
+          break;
+        case 'model-activity-experiment':
+          const experimentRequest: ModelActivityByExperimentReportRequest = { includeLogo: true };
+          data = await firstValueFrom(this.reportService.generateModelActivityByExperimentReportJson(experimentRequest));
+          filename = 'model-activity-experiment-report.json';
+          break;
+        case 'model-deployment-status':
+          const deploymentStatusRequest: ModelDeploymentStatusReportRequest = { includeLogo: true };
+          data = await firstValueFrom(this.reportService.generateModelDeploymentStatusReportJson(deploymentStatusRequest));
+          filename = 'model-deployment-status-report.json';
           break;
         default:
           throw new Error('Unknown report type');
@@ -668,6 +841,16 @@ export class ReportsComponent implements OnInit, AfterViewInit {
           blob = await firstValueFrom(this.reportService.generateDatasetTrendsReportExcel(trendsRequest));
           filename = 'dataset-trends-report.xlsx';
           break;
+        case 'model-activity-experiment':
+          const experimentRequest: ModelActivityByExperimentReportRequest = { includeLogo: true };
+          blob = await firstValueFrom(this.reportService.generateModelActivityByExperimentReportExcel(experimentRequest));
+          filename = 'model-activity-experiment-report.xlsx';
+          break;
+        case 'model-deployment-status':
+          const deploymentStatusRequest: ModelDeploymentStatusReportRequest = { includeLogo: true };
+          blob = await firstValueFrom(this.reportService.generateModelDeploymentStatusReportExcel(deploymentStatusRequest));
+          filename = 'model-deployment-status-report.xlsx';
+          break;
         default:
           throw new Error('Unknown report type');
       }
@@ -699,9 +882,18 @@ export class ReportsComponent implements OnInit, AfterViewInit {
 
   // Chart creation methods
   createTrainingTrendsChart() {
-    if (!this.trendsChart?.nativeElement || !this.trainingSessionReport) return;
+    if (!this.trendsChart?.nativeElement) return;
 
     const canvas = this.trendsChart.nativeElement;
+    
+    // Destroy existing chart
+    Chart.getChart(canvas)?.destroy();
+
+    if (!this.trainingSessionReport?.TrainingTrends || this.trainingSessionReport.TrainingTrends.length === 0) {
+      this.createFallbackChart(canvas, 'No Training Trends Data Available');
+      return;
+    }
+
     new Chart(canvas, {
       type: 'line',
       data: {
@@ -732,9 +924,18 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   }
 
   createSuccessRateChart() {
-    if (!this.successRateChart?.nativeElement || !this.trainingSessionReport) return;
+    if (!this.successRateChart?.nativeElement) return;
 
     const canvas = this.successRateChart.nativeElement;
+    
+    // Destroy existing chart
+    Chart.getChart(canvas)?.destroy();
+
+    if (!this.trainingSessionReport?.SuccessRateData || this.trainingSessionReport.SuccessRateData.length === 0) {
+      this.createFallbackChart(canvas, 'No Success Rate Data Available');
+      return;
+    }
+
     new Chart(canvas, {
       type: 'bar',
       data: {
@@ -1118,7 +1319,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     this.trendsFilters = {
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
       endDate: new Date(),
-      status: ''
+      status: '' as string
     };
     
     console.log('Filters cleared, new values:', this.trendsFilters);
@@ -1357,5 +1558,59 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       case 'not validated': return 'medium';
       default: return 'medium';
     }
+  }
+
+  // Helper methods to avoid TypeScript template type issues
+  isModelActivityExperimentReport(): boolean {
+    const result = this.selectedReportType === 'model-activity-experiment';
+    console.log('isModelActivityExperimentReport() called, selectedReportType:', this.selectedReportType, 'result:', result);
+    return result;
+  }
+
+  isModelDeploymentStatusReport(): boolean {
+    const result = this.selectedReportType === 'model-deployment-status';
+    console.log('isModelDeploymentStatusReport() called, selectedReportType:', this.selectedReportType, 'result:', result);
+    return result;
+  }
+
+  isTrainingSessionReport(): boolean {
+    return this.selectedReportType === 'training-sessions';
+  }
+
+  isModelDeploymentReport(): boolean {
+    return this.selectedReportType === 'model-deployments';
+  }
+
+  // Helper methods for handling both old and new data structures
+  getDatasetGroups(): any[] {
+    if (!this.datasetTransactionReport) return [];
+    
+    // Try new format first
+    if (this.datasetTransactionReport.DatasetGroups) {
+      return this.datasetTransactionReport.DatasetGroups;
+    }
+    
+    // Fallback to old format
+    if (this.datasetTransactionReport.TransactionGroups) {
+      return this.datasetTransactionReport.TransactionGroups;
+    }
+    
+    return [];
+  }
+
+  getActionGroups(datasetGroup: any): any[] {
+    if (!datasetGroup) return [];
+    
+    // Try new format first
+    if (datasetGroup.ActionGroups) {
+      return datasetGroup.ActionGroups;
+    }
+    
+    // Fallback to old format
+    if (datasetGroup.DatasetActions) {
+      return datasetGroup.DatasetActions;
+    }
+    
+    return [];
   }
 } 

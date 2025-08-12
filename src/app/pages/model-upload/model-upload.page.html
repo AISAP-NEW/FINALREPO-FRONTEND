@@ -17,15 +17,15 @@
         <ion-item>
           <ion-label position="stacked">Model Name <ion-text color="danger">*</ion-text></ion-label>
           <ion-input 
-            formControlName="name" 
+            formControlName="modelName" 
             type="text" 
             placeholder="Enter model name"
-            (ionInput)="uploadForm.get('name')?.markAsTouched()"
+            (ionInput)="uploadForm.get('modelName')?.markAsTouched()"
           ></ion-input>
-          <ion-note slot="error" *ngIf="uploadForm.get('name')?.touched && uploadForm.get('name')?.errors?.['required']">
+          <ion-note slot="error" *ngIf="uploadForm.get('modelName')?.touched && uploadForm.get('modelName')?.errors?.['required']">
             Model name is required
           </ion-note>
-          <ion-note slot="error" *ngIf="uploadForm.get('name')?.touched && uploadForm.get('name')?.errors?.['minlength']">
+          <ion-note slot="error" *ngIf="uploadForm.get('modelName')?.touched && uploadForm.get('modelName')?.errors?.['minlength']">
             Model name must be at least 3 characters
           </ion-note>
         </ion-item>
@@ -47,15 +47,43 @@
         </ion-item>
 
         <ion-item>
-          <ion-label position="stacked">Framework <ion-text color="danger">*</ion-text></ion-label>
-          <ion-select formControlName="framework" placeholder="Select framework">
-            <ion-select-option *ngFor="let framework of frameworks" [value]="framework">
-              {{ framework }}
+          <ion-label position="stacked">Category <ion-text color="danger">*</ion-text></ion-label>
+          <ion-select 
+            formControlName="categoryId" 
+            placeholder="Select category"
+            [disabled]="isCategoriesLoading"
+          >
+            <ion-select-option *ngFor="let category of categories" [value]="category.Category_ID">
+              {{ category.CategoryName }}
             </ion-select-option>
           </ion-select>
-          <ion-note slot="error" *ngIf="uploadForm.get('framework')?.touched && uploadForm.get('framework')?.errors?.['required']">
-            Framework is required
+          <ion-spinner *ngIf="isCategoriesLoading" name="crescent"></ion-spinner>
+          <ion-note slot="error" *ngIf="uploadForm.get('categoryId')?.touched && uploadForm.get('categoryId')?.errors?.['required']">
+            Category is required
           </ion-note>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Topic <ion-text color="danger">*</ion-text></ion-label>
+          <ion-select 
+            formControlName="topicId" 
+            placeholder="Select topic"
+            [disabled]="isTopicsLoading || !uploadForm.get('categoryId')?.value"
+          >
+            <ion-select-option *ngFor="let topic of topics" [value]="topic.Topic_ID">
+              {{ topic.TopicName }}
+            </ion-select-option>
+          </ion-select>
+          <ion-spinner *ngIf="isTopicsLoading" name="crescent"></ion-spinner>
+          <ion-note slot="error" *ngIf="uploadForm.get('topicId')?.touched && uploadForm.get('topicId')?.errors?.['required']">
+            Topic is required
+          </ion-note>
+        </ion-item>
+
+        <!-- Display selected topic description -->
+        <ion-item *ngIf="selectedTopicDescription">
+          <ion-label position="stacked">Topic Description</ion-label>
+          <ion-text>{{ selectedTopicDescription }}</ion-text>
         </ion-item>
       </ion-card-content>
     </ion-card>
@@ -133,10 +161,11 @@
       <p><strong>Is Loading:</strong> {{ isLoading }}</p>
       <p><strong>Button Disabled:</strong> {{ uploadForm.invalid || !selectedFile || isLoading }}</p>
       
-      <h5>Field Details:</h5>
-      <p><strong>Name:</strong> Value: "{{ uploadForm.get('name')?.value }}" | Valid: {{ uploadForm.get('name')?.valid }} | Touched: {{ uploadForm.get('name')?.touched }} | Errors: {{ uploadForm.get('name')?.errors | json }}</p>
-      <p><strong>Description:</strong> Value: "{{ uploadForm.get('description')?.value }}" | Valid: {{ uploadForm.get('description')?.valid }} | Touched: {{ uploadForm.get('description')?.touched }} | Errors: {{ uploadForm.get('description')?.errors | json }}</p>
-      <p><strong>Framework:</strong> Value: "{{ uploadForm.get('framework')?.value }}" | Valid: {{ uploadForm.get('framework')?.valid }} | Touched: {{ uploadForm.get('framework')?.touched }} | Errors: {{ uploadForm.get('framework')?.errors | json }}</p>
+              <h5>Field Details:</h5>
+        <p><strong>Model Name:</strong> Value: "{{ uploadForm.get('modelName')?.value }}" | Valid: {{ uploadForm.get('modelName')?.valid }} | Touched: {{ uploadForm.get('modelName')?.touched }} | Errors: {{ uploadForm.get('modelName')?.errors | json }}</p>
+        <p><strong>Description:</strong> Value: "{{ uploadForm.get('description')?.value }}" | Valid: {{ uploadForm.get('description')?.valid }} | Touched: {{ uploadForm.get('description')?.touched }} | Errors: {{ uploadForm.get('description')?.errors | json }}</p>
+        <p><strong>Category:</strong> Value: "{{ uploadForm.get('categoryId')?.value }}" | Valid: {{ uploadForm.get('categoryId')?.valid }} | Touched: {{ uploadForm.get('categoryId')?.touched }} | Errors: {{ uploadForm.get('categoryId')?.errors | json }}</p>
+        <p><strong>Topic:</strong> Value: "{{ uploadForm.get('topicId')?.value }}" | Valid: {{ uploadForm.get('topicId')?.valid }} | Touched: {{ uploadForm.get('topicId')?.touched }} | Errors: {{ uploadForm.get('topicId')?.errors | json }}</p>
       
       <h5>Form Values:</h5>
       <pre>{{ uploadForm.value | json }}</pre>

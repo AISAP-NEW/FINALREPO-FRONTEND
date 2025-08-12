@@ -267,6 +267,66 @@
             </div>
           </ion-accordion>
 
+          <ion-accordion value="preprocess">
+            <ion-item slot="header" color="light">
+              <ion-icon name="settings-outline" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h3>Data Preprocessing</h3>
+                <p>Clean and prepare your dataset for analysis</p>
+              </ion-label>
+            </ion-item>
+            <div class="ion-padding" slot="content">
+              <ion-item lines="none">
+                <ion-label position="stacked">Handle Missing Values</ion-label>
+                <ion-toggle [(ngModel)]="preprocessOptions.handleMissingValues"></ion-toggle>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-label position="stacked">Remove Duplicates</ion-label>
+                <ion-toggle [(ngModel)]="preprocessOptions.removeDuplicates"></ion-toggle>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-label position="stacked">Fix Data Types</ion-label>
+                <ion-toggle [(ngModel)]="preprocessOptions.fixDataTypes"></ion-toggle>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-label position="stacked">Scaling Method</ion-label>
+                <ion-select [(ngModel)]="preprocessOptions.scalingMethod" placeholder="Select scaling method">
+                  <ion-select-option value="">None</ion-select-option>
+                  <ion-select-option value="standard">Standard Scaling</ion-select-option>
+                  <ion-select-option value="minmax">Min-Max Scaling</ion-select-option>
+                  <ion-select-option value="robust">Robust Scaling</ion-select-option>
+                </ion-select>
+              </ion-item>
+              <ion-button expand="block" color="primary" (click)="preprocessDataset()" [disabled]="isLoading">
+                Run Preprocessing
+              </ion-button>
+              
+              <!-- Preprocessing Result -->
+              <div *ngIf="latestPreprocessResult" class="response-message preprocess-result">
+                <ion-card color="light">
+                  <ion-card-header>
+                    <ion-card-title>Preprocessing Result</ion-card-title>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <ion-grid>
+                      <ion-row><ion-col>Message:</ion-col><ion-col>{{ latestPreprocessResult.message }}</ion-col></ion-row>
+                      <ion-row><ion-col>Dataset ID:</ion-col><ion-col>{{ latestPreprocessResult.datasetId }}</ion-col></ion-row>
+                      <ion-row><ion-col>Status URL:</ion-col><ion-col>{{ latestPreprocessResult.statusUrl }}</ion-col></ion-row>
+                    </ion-grid>
+                    <ion-text color="success">
+                      <div>
+                        <strong>Preprocessing request accepted and is being processed asynchronously!</strong>
+                      </div>
+                    </ion-text>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+              <div *ngIf="error && error.includes('Preprocess')" class="response-message error-message">
+                <ion-text color="danger">{{ error }}</ion-text>
+              </div>
+            </div>
+          </ion-accordion>
+
           <ion-accordion value="export">
             <ion-item slot="header" color="light">
               <ion-icon name="download-outline" slot="start" color="primary"></ion-icon>

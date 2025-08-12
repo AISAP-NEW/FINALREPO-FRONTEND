@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
@@ -7,6 +7,8 @@ import { IonIcon, IonSpinner } from '@ionic/angular/standalone';
 import { environment } from '../../../environments/environment';
 import { DatasetActionsModalComponent } from '../dataset-actions-modal/dataset-actions-modal.component';
 import { ModalController } from '@ionic/angular';
+import { Subject, fromEvent, debounceTime, takeUntil } from 'rxjs';
+import { ThumbnailService } from '../../services/thumbnail.service';
 
 @Component({
   selector: 'app-dataset-card',
@@ -21,12 +23,116 @@ import { ModalController } from '@ionic/angular';
     IonSpinner
   ]
 })
-export class DatasetCardComponent implements OnChanges {
+export class DatasetCardComponent implements OnChanges, OnInit, OnDestroy {
+  @Input() dataset!: Dataset;
+  @Input() isSelected = false;
+  
+  hasImageError = false;
+  isLoading = true;
+  thumbnailUrl: string | SafeUrl = 'assets/images/default-dataset.png';
+  defaultThumbnail = 'assets/images/default-dataset.png';
+  isInViewport = false;
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private sanitizer: DomSanitizer,
+    private modalCtrl: ModalController,
+    public router: Router,
+    private thumbnailService: ThumbnailService
+  ) {}
+
+  ngOnInit() {
+    // Set up intersection observer for lazy loading
+    this.setupIntersectionObserver();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['dataset']) {
+      this.updateThumbnail();
+    }
+  }
+
+  private setupIntersectionObserver() {
+    // Use Intersection Observer for lazy loading
+    const options = {
+      root: null,
+      rootMargin: '100px', // Start loading 100px before entering viewport
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.isInViewport = true;
+          this.loadThumbnailIfNeeded();
+          observer.unobserve(entry.target);
+        }
+      });
+    }, options);
+
+    // Observe this component's element
+    setTimeout(() => {
+      const element = document.querySelector(`[data-dataset-id="${this.dataset?.datasetId}"]`);
+      if (element) {
+        observer.observe(element);
+      }
+    }, 100);
+  }
+
+  private loadThumbnailIfNeeded() {
+    if (this.isInViewport && this.isLoading && this.dataset?.datasetId) {
+      this.updateThumbnail();
+    }
+  }
+
   getFullThumbnailUrl(_: string): string {
     if (this.dataset?.datasetId) {
-      return `http://localhost:5183/api/Dataset/${this.dataset.datasetId}/thumbnail`;
+      return this.thumbnailService.getThumbnailUrl(this.dataset.datasetId);
     }
     return 'assets/images/default-dataset.png';
+  }
+
+  private async updateThumbnail() {
+    this.isLoading = true;
+    this.hasImageError = false;
+
+    if (this.dataset?.datasetId) {
+      try {
+        // Check if already cached
+        const cachedUrl = this.thumbnailService.getCachedThumbnailUrl(this.dataset.datasetId);
+        if (cachedUrl) {
+          this.thumbnailUrl = cachedUrl;
+          this.isLoading = false;
+          return;
+        }
+
+        // Use the thumbnail service to load with optimization
+        const thumbnailUrl = await this.thumbnailService.preloadThumbnail(this.dataset.datasetId);
+        this.thumbnailUrl = thumbnailUrl;
+        this.isLoading = false;
+      } catch (error) {
+        console.warn(`Failed to load thumbnail for dataset ${this.dataset.datasetId}:`, error);
+        this.onImageError();
+      }
+    } else {
+      this.thumbnailUrl = this.defaultThumbnail;
+      this.isLoading = false;
+    }
+  }
+
+  onImageError() {
+    this.hasImageError = true;
+    this.thumbnailUrl = this.defaultThumbnail;
+    this.isLoading = false;
+  }
+
+  onImageLoad() {
+    this.isLoading = false;
   }
 
   // Opens the DatasetOperationsModal for this dataset
@@ -38,46 +144,6 @@ export class DatasetCardComponent implements OnChanges {
       }
     });
     return modal.present();
-  }
-  @Input() dataset!: Dataset;
-  @Input() isSelected = false;
-  
-  hasImageError = false;
-  isLoading = true;
-  thumbnailUrl: string | SafeUrl = 'assets/images/default-dataset.png';
-  defaultThumbnail = 'assets/images/default-dataset.png';
-
-  constructor(
-    private sanitizer: DomSanitizer,
-    private modalCtrl: ModalController,
-    public router: Router
-  ) {}
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['dataset']) {
-      this.updateThumbnail();
-    }
-  }
-
-  private updateThumbnail() {
-    this.isLoading = true;
-    this.hasImageError = false;
-
-    if (this.dataset?.datasetId) {
-      // Always use the backend thumbnail endpoint
-      this.thumbnailUrl = `http://localhost:5183/api/Dataset/${this.dataset.datasetId}/thumbnail?t=${Date.now()}`;
-    } else {
-      this.thumbnailUrl = this.defaultThumbnail;
-    }
-  }
-
-  onImageError() {
-    this.hasImageError = true;
-    this.thumbnailUrl = this.defaultThumbnail;
-  }
-
-  onImageLoad() {
-    this.isLoading = false;
   }
 
   async onClick() {
@@ -98,11 +164,17 @@ export class DatasetCardComponent implements OnChanges {
     return modal.present();
   }
 
-  getStatusClass() {
-    return {
-      'status-valid': this.dataset.isValidated,
-      'status-invalid': !this.dataset.isValidated && this.dataset.validationStatus === 'error',
-      'status-pending': !this.dataset.isValidated
-    };
+  getStatusClass(): string {
+    const status = this.dataset.validationStatus?.toLowerCase() || 'pending';
+    switch (status) {
+      case 'validated':
+        return 'status-validated';
+      case 'invalid':
+        return 'status-invalid';
+      case 'processing':
+        return 'status-processing';
+      default:
+        return 'status-pending';
+    }
   }
 }

@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { AuthService, User } from './auth.service';
 
 export interface UsersReportRequest {
   startDate?: Date;
@@ -122,11 +123,28 @@ export interface DatasetTransactionReportRequest {
 }
 
 export interface DatasetTransactionReportResponse {
-  TransactionGroups: DatasetTransactionGroup[];
+  DatasetGroups?: DatasetGroup[];
+  TransactionGroups?: DatasetTransactionGroup[]; // Keep for backward compatibility
   Summary: ReportSummary;
   Metadata: ReportMetadata;
 }
 
+export interface DatasetGroup {
+  DatasetName: string;
+  DatasetId: string;
+  ActionGroups: ActionGroup[];
+  TotalActions: number;
+  LastActionDate: Date;
+}
+
+export interface ActionGroup {
+  ActionType: string;
+  Transactions: TransactionItem[];
+  TotalActions: number;
+  LastActionDate: Date;
+}
+
+// Keep old interface for backward compatibility
 export interface DatasetTransactionGroup {
   DeveloperName: string;
   DeveloperId: number;
@@ -220,6 +238,87 @@ export interface ModelTrainingSummaryReportResponse {
   Metadata: ReportMetadata;
 }
 
+// Model Activity by Experiment Report interfaces
+export interface ModelActivityByExperimentReportRequest {
+  startDate?: Date;
+  endDate?: Date;
+  modelName?: string;
+  userName?: string;
+  includeLogo?: boolean;
+  logoPath?: string;
+}
+
+export interface ModelActivityByExperimentReportResponse {
+  ExperimentGroups: ExperimentStatusGroup[];
+  GrandTotals: ExperimentGroupTotals;
+  Summary: ReportSummary;
+  Metadata: ReportMetadata;
+}
+
+export interface ExperimentStatusGroup {
+  Status: string;
+  Experiments: ExperimentReportItem[];
+  SubTotals: ExperimentGroupTotals;
+  Subtotal: number;
+}
+
+export interface ExperimentReportItem {
+  ExperimentId: number;
+  ExperimentName: string;
+  Status: string;
+  CreatedDate: string;
+  LastModified: string;
+  ModelFileName: string;
+  FilePath: string;
+  FileSize: number;
+  FileType: string;
+  CreatedByUser: string;
+  ModelName: string;
+}
+
+export interface ExperimentGroupTotals {
+  TotalExperiments: number;
+  CompletedExperiments: number;
+  RunningExperiments: number;
+  FailedExperiments: number;
+  TotalFileSize: number;
+  AverageFileSize: number;
+}
+
+// Model Deployment Status Report interfaces
+export interface ModelDeploymentStatusReportRequest {
+  includeLogo?: boolean;
+  logoPath?: string;
+}
+
+export interface ModelDeploymentStatusReportResponse {
+  DeploymentGroups: ModelDeploymentStatusGroup[];
+  Summary: ReportSummary;
+  Metadata: ReportMetadata;
+}
+
+export interface ModelDeploymentStatusGroup {
+  Status: string;
+  Deployments: ModelDeploymentStatusItem[];
+  Subtotal: number;
+}
+
+export interface ModelDeploymentStatusItem {
+  DeploymentId: number;
+  ModelName: string;
+  DeployedBy: string;
+  DeployedDate: string;
+  AppName: string;
+  Environment: string;
+  Version: string;
+  Status: string;
+  DateSubmitted: string;
+  ApprovalTimestamp?: string;
+  RequestedBy: string;
+  ApprovedBy: string;
+  Endpoint: string;
+}
+
 export interface ModelTrainingGroup {
   ModelType: string;
   TotalSessions: number;
@@ -294,7 +393,7 @@ export interface ReportMetadata {
 export class ReportService {
   private apiUrl = `${environment.apiUrl}/api/Report`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private auth: AuthService) {}
 
   // Users Report
   generateUsersReport(request: UsersReportRequest): Observable<UsersReportResponse> {
@@ -304,8 +403,24 @@ export class ReportService {
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
     return this.http.get<UsersReportResponse>(`${this.apiUrl}/users`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
       catchError(error => {
         console.error('Error generating users report:', error);
         throw error;
@@ -319,6 +434,14 @@ export class ReportService {
     if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
 
     return this.http.get(`${this.apiUrl}/users/pdf`, { params, responseType: 'blob' }).pipe(
       catchError(error => {
@@ -335,8 +458,24 @@ export class ReportService {
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
     return this.http.get<UsersReportResponse>(`${this.apiUrl}/users/json`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
       catchError(error => {
         console.error('Error generating users report JSON:', error);
         throw error;
@@ -350,6 +489,14 @@ export class ReportService {
     if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
 
     return this.http.get(`${this.apiUrl}/users/excel`, { params, responseType: 'blob' }).pipe(
       catchError(error => {
@@ -365,8 +512,24 @@ export class ReportService {
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
     return this.http.get<ClientsProjectsReportResponse>(`${this.apiUrl}/clients-projects`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
       catchError(error => {
         console.error('Error generating clients projects report:', error);
         throw error;
@@ -378,6 +541,14 @@ export class ReportService {
     let params = new HttpParams();
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
 
     return this.http.get(`${this.apiUrl}/clients-projects/pdf`, { params, responseType: 'blob' }).pipe(
       catchError(error => {
@@ -392,8 +563,24 @@ export class ReportService {
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
     return this.http.get<ClientsProjectsReportResponse>(`${this.apiUrl}/clients-projects/json`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
       catchError(error => {
         console.error('Error generating clients projects report JSON:', error);
         throw error;
@@ -405,6 +592,14 @@ export class ReportService {
     let params = new HttpParams();
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
 
     return this.http.get(`${this.apiUrl}/clients-projects/excel`, { params, responseType: 'blob' }).pipe(
       catchError(error => {
@@ -423,7 +618,13 @@ export class ReportService {
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
     return this.http.get<TrainingSessionReportResponse>(`${this.apiUrl}/training-sessions`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath)
+        } 
+      })),
       catchError(error => {
         console.error('Error generating training session report:', error);
         throw error;
@@ -454,7 +655,13 @@ export class ReportService {
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
     return this.http.get<TrainingSessionReportResponse>(`${this.apiUrl}/training-sessions/json`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath)
+        } 
+      })),
       catchError(error => {
         console.error('Error generating training session report JSON:', error);
         throw error;
@@ -485,8 +692,24 @@ export class ReportService {
     if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
     if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
     return this.http.get<ModelDeploymentReportResponse>(`${this.apiUrl}/model-deployments`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
       catchError(error => {
         console.error('Error generating model deployment report:', error);
         throw error;
@@ -542,63 +765,127 @@ export class ReportService {
 
   // Dataset Transaction Report
   generateDatasetTransactionReport(request: DatasetTransactionReportRequest): Observable<DatasetTransactionReportResponse> {
-    let params = new HttpParams();
-    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
-    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
-    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
-    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+    return this.getCurrentUserInfo$().pipe(
+      switchMap(userInfo => {
+        let params = new HttpParams();
+        if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+        if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+        if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+        if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
-    return this.http.get<DatasetTransactionReportResponse>(`${this.apiUrl}/dataset-transactions`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
-      catchError(error => {
-        console.error('Error generating dataset transaction report:', error);
-        throw error;
+        // Ensure backend groups data by action for the on-screen view as well
+        params = params.set('groupBy', 'action');
+
+        if (userInfo) {
+          params = params.set('currentUser', userInfo.username);
+          params = params.set('currentUserEmail', userInfo.email);
+          params = params.set('currentUserRole', userInfo.role);
+          const generatedBy = `${userInfo.username} (${userInfo.email}) - ${userInfo.role}`.trim();
+          params = params.set('generatedBy', generatedBy);
+          params = params.set('GeneratedBy', generatedBy);
+        }
+
+        return this.http.get<DatasetTransactionReportResponse>(`${this.apiUrl}/dataset-transactions`, { params }).pipe(
+          map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+          catchError(error => {
+            console.error('Error generating dataset transaction report:', error);
+            throw error;
+          })
+        );
       })
     );
   }
 
   generateDatasetTransactionReportPdf(request: DatasetTransactionReportRequest): Observable<Blob> {
-    let params = new HttpParams();
-    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
-    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
-    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
-    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+    return this.getCurrentUserInfo$().pipe(
+      switchMap(userInfo => {
+        let params = new HttpParams();
+        if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+        if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+        if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+        if (request.logoPath) params = params.set('logoPath', request.logoPath);
+        
+        // Request the backend to group by action if supported
+        params = params.set('groupBy', 'action');
 
-    return this.http.get(`${this.apiUrl}/dataset-transactions/pdf`, { params, responseType: 'blob' }).pipe(
-      catchError(error => {
-        console.error('Error generating dataset transaction report PDF:', error);
-        return of(new Blob());
+        if (userInfo) {
+          params = params.set('currentUser', userInfo.username);
+          params = params.set('currentUserEmail', userInfo.email);
+          params = params.set('currentUserRole', userInfo.role);
+          const generatedBy = `${userInfo.username} (${userInfo.email}) - ${userInfo.role}`.trim();
+          params = params.set('generatedBy', generatedBy);
+          params = params.set('GeneratedBy', generatedBy);
+        }
+
+        return this.http.get(`${this.apiUrl}/dataset-transactions/pdf`, { params, responseType: 'blob' }).pipe(
+          catchError(error => {
+            console.error('Error generating dataset transaction report PDF:', error);
+            return of(new Blob());
+          })
+        );
       })
     );
   }
 
   generateDatasetTransactionReportJson(request: DatasetTransactionReportRequest): Observable<DatasetTransactionReportResponse> {
-    let params = new HttpParams();
-    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
-    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
-    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
-    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+    return this.getCurrentUserInfo$().pipe(
+      switchMap(userInfo => {
+        let params = new HttpParams();
+        if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+        if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+        if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+        if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
-    return this.http.get<DatasetTransactionReportResponse>(`${this.apiUrl}/dataset-transactions/json`, { params }).pipe(
-      map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
-      catchError(error => {
-        console.error('Error generating dataset transaction report JSON:', error);
-        throw error;
+        // Request grouping by action if supported
+        params = params.set('groupBy', 'action');
+
+        if (userInfo) {
+          params = params.set('currentUser', userInfo.username);
+          params = params.set('currentUserEmail', userInfo.email);
+          params = params.set('currentUserRole', userInfo.role);
+          const generatedBy = `${userInfo.username} (${userInfo.email}) - ${userInfo.role}`.trim();
+          params = params.set('generatedBy', generatedBy);
+          params = params.set('GeneratedBy', generatedBy);
+        }
+
+        return this.http.get<DatasetTransactionReportResponse>(`${this.apiUrl}/dataset-transactions/json`, { params }).pipe(
+          map(response => ({ ...response, Metadata: { ...response.Metadata, LogoPath: this.getLogoPath(request.includeLogo, request.logoPath) } })),
+          catchError(error => {
+            console.error('Error generating dataset transaction report JSON:', error);
+            throw error;
+          })
+        );
       })
     );
   }
 
   generateDatasetTransactionReportExcel(request: DatasetTransactionReportRequest): Observable<Blob> {
-    let params = new HttpParams();
-    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
-    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
-    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
-    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+    return this.getCurrentUserInfo$().pipe(
+      switchMap(userInfo => {
+        let params = new HttpParams();
+        if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+        if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+        if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+        if (request.logoPath) params = params.set('logoPath', request.logoPath);
 
-    return this.http.get(`${this.apiUrl}/dataset-transactions/excel`, { params, responseType: 'blob' }).pipe(
-      catchError(error => {
-        console.error('Error generating dataset transaction report Excel:', error);
-        return of(new Blob());
+        // Request grouping by action if supported
+        params = params.set('groupBy', 'action');
+
+        if (userInfo) {
+          params = params.set('currentUser', userInfo.username);
+          params = params.set('currentUserEmail', userInfo.email);
+          params = params.set('currentUserRole', userInfo.role);
+          const generatedBy = `${userInfo.username} (${userInfo.email}) - ${userInfo.role}`.trim();
+          params = params.set('generatedBy', generatedBy);
+          params = params.set('GeneratedBy', generatedBy);
+        }
+
+        return this.http.get(`${this.apiUrl}/dataset-transactions/excel`, { params, responseType: 'blob' }).pipe(
+          catchError(error => {
+            console.error('Error generating dataset transaction report Excel:', error);
+            return of(new Blob());
+          })
+        );
       })
     );
   }
@@ -788,6 +1075,228 @@ export class ReportService {
     );
   }
 
+  // Model Activity by Experiment Report
+  generateModelActivityByExperimentReport(request: ModelActivityByExperimentReportRequest): Observable<ModelActivityByExperimentReportResponse> {
+    let params = new HttpParams();
+    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+    if (request.modelName) params = params.set('modelName', request.modelName);
+    if (request.userName) params = params.set('userName', request.userName);
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get<ModelActivityByExperimentReportResponse>(`${this.apiUrl}/model-activity-by-experiment`, { params }).pipe(
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
+      catchError(error => {
+        console.error('Error generating model activity by experiment report:', error);
+        throw error;
+      })
+    );
+  }
+
+  generateModelActivityByExperimentReportPdf(request: ModelActivityByExperimentReportRequest): Observable<Blob> {
+    let params = new HttpParams();
+    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+    if (request.modelName) params = params.set('modelName', request.modelName);
+    if (request.userName) params = params.set('userName', request.userName);
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get(`${this.apiUrl}/model-activity-by-experiment/pdf`, { params, responseType: 'blob' }).pipe(
+      catchError(error => {
+        console.error('Error generating model activity by experiment report PDF:', error);
+        return of(new Blob());
+      })
+    );
+  }
+
+  generateModelActivityByExperimentReportJson(request: ModelActivityByExperimentReportRequest): Observable<ModelActivityByExperimentReportResponse> {
+    let params = new HttpParams();
+    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+    if (request.modelName) params = params.set('modelName', request.modelName);
+    if (request.userName) params = params.set('userName', request.userName);
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get<ModelActivityByExperimentReportResponse>(`${this.apiUrl}/model-activity-by-experiment/json`, { params }).pipe(
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
+      catchError(error => {
+        console.error('Error generating model activity by experiment report JSON:', error);
+        throw error;
+      })
+    );
+  }
+
+  generateModelActivityByExperimentReportExcel(request: ModelActivityByExperimentReportRequest): Observable<Blob> {
+    let params = new HttpParams();
+    if (request.startDate) params = params.set('startDate', request.startDate.toISOString());
+    if (request.endDate) params = params.set('endDate', request.endDate.toISOString());
+    if (request.modelName) params = params.set('modelName', request.modelName);
+    if (request.userName) params = params.set('userName', request.userName);
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get(`${this.apiUrl}/model-activity-by-experiment/excel`, { params, responseType: 'blob' }).pipe(
+      catchError(error => {
+        console.error('Error generating model activity by experiment report Excel:', error);
+        return of(new Blob());
+      })
+    );
+  }
+
+  // Model Deployment Status Report methods
+  generateModelDeploymentStatusReport(request: ModelDeploymentStatusReportRequest): Observable<ModelDeploymentStatusReportResponse> {
+    let params = new HttpParams();
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get<ModelDeploymentStatusReportResponse>(`${this.apiUrl}/model-deployments`, { params }).pipe(
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
+      catchError(error => {
+        console.error('Error generating model deployment status report:', error);
+        throw error;
+      })
+    );
+  }
+
+  generateModelDeploymentStatusReportPdf(request: ModelDeploymentStatusReportRequest): Observable<Blob> {
+    let params = new HttpParams();
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get(`${this.apiUrl}/model-deployments/pdf`, { params, responseType: 'blob' }).pipe(
+      catchError(error => {
+        console.error('Error generating model deployment status report PDF:', error);
+        return of(new Blob());
+      })
+    );
+  }
+
+  generateModelDeploymentStatusReportJson(request: ModelDeploymentStatusReportRequest): Observable<ModelDeploymentStatusReportResponse> {
+    let params = new HttpParams();
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get<ModelDeploymentStatusReportResponse>(`${this.apiUrl}/model-deployments/json`, { params }).pipe(
+      map(response => ({ 
+        ...response, 
+        Metadata: { 
+          ...response.Metadata, 
+          LogoPath: this.getLogoPath(request.includeLogo, request.logoPath),
+          GeneratedBy: currentUser ? (currentUser.username || currentUser.Username || 'System') : 'System',
+          GeneratedByEmail: currentUser ? (currentUser.email || currentUser.Email || 'system@aisap.com') : 'system@aisap.com'
+        } 
+      })),
+      catchError(error => {
+        console.error('Error generating model deployment status report JSON:', error);
+        throw error;
+      })
+    );
+  }
+
+  generateModelDeploymentStatusReportExcel(request: ModelDeploymentStatusReportRequest): Observable<Blob> {
+    let params = new HttpParams();
+    if (request.includeLogo !== undefined) params = params.set('includeLogo', request.includeLogo.toString());
+    if (request.logoPath) params = params.set('logoPath', request.logoPath);
+
+    // Add current user information if available
+    const currentUser = this.getCurrentUserFromStorage();
+    if (currentUser) {
+      params = params.set('currentUser', currentUser.username || currentUser.Username || '');
+      params = params.set('currentUserEmail', currentUser.email || currentUser.Email || '');
+      params = params.set('currentUserRole', currentUser.role || currentUser.Role || '');
+    }
+
+    return this.http.get(`${this.apiUrl}/model-deployments/excel`, { params, responseType: 'blob' }).pipe(
+      catchError(error => {
+        console.error('Error generating model deployment status report Excel:', error);
+        return of(new Blob());
+      })
+    );
+  }
+
   // Helper method to download blob
   downloadBlob(blob: Blob, filename: string): void {
     const url = window.URL.createObjectURL(blob);
@@ -830,5 +1339,43 @@ export class ReportService {
       GeneratedBy: 'System',
       IncludeLogo: false
     };
+  }
+
+  private getCurrentUserFromStorage(): any {
+    const user = localStorage.getItem('currentUser');
+    if (user) {
+      return JSON.parse(user);
+    }
+    return null;
+  }
+
+  private getCurrentUserInfo(): { username: string; email: string; role: string } | null {
+    const svcUser: User | null = this.auth?.getCurrentUser ? this.auth.getCurrentUser() : null;
+    const storeUser = this.getCurrentUserFromStorage();
+    const user = svcUser || storeUser;
+    if (!user) return null;
+    const username = (user as any).username || (user as any).Username || '';
+    const email = (user as any).email || (user as any).Email || '';
+    const role = (user as any).role || (user as any).Role || '';
+    if (!username && !email && !role) return null;
+    return { username, email, role };
+  }
+
+  private getCurrentUserInfo$(): Observable<{ username: string; email: string; role: string } | null> {
+    const info = this.getCurrentUserInfo();
+    if (info) return of(info);
+    // Fallback: ask backend for users and pick the first as a best-effort default
+    return this.http.get<any[]>(`${environment.apiUrl}/api/User`).pipe(
+      map(users => {
+        if (!users || users.length === 0) return null;
+        const u = users[0];
+        return {
+          username: u.Username || u.username || '',
+          email: u.Email || u.email || '',
+          role: u.Role || u.role || ''
+        };
+      }),
+      catchError(() => of(null))
+    );
   }
 } 

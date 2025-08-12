@@ -1,16 +1,20 @@
-<div class="dataset-card" [class.selected]="isSelected" (click)="router.navigate(['/datasets', dataset.datasetId, 'details'])">
+<div class="dataset-card" 
+     [class.selected]="isSelected" 
+     (click)="router.navigate(['/datasets', dataset.datasetId, 'details'])"
+     [attr.data-dataset-id]="dataset.datasetId">
   <div class="card-content">
     <div class="dataset-thumbnail">
       <div *ngIf="isLoading" class="thumbnail-loading">
         <ion-spinner></ion-spinner>
       </div>
       <img 
-        [src]="getFullThumbnailUrl(dataset.ThumbnailUrl!)" 
+        [src]="isInViewport ? thumbnailUrl : defaultThumbnail" 
         [alt]="dataset.datasetName" 
         (load)="onImageLoad()"
         (error)="onImageError()"
         [hidden]="isLoading || hasImageError"
         loading="lazy"
+        decoding="async"
       >
       <div *ngIf="hasImageError" class="no-thumbnail">
         <ion-icon name="document"></ion-icon>

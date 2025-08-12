@@ -230,7 +230,7 @@
           </div>
 
           <!-- Training Sessions Report -->
-          <div *ngIf="selectedReportType === 'training-sessions' && trainingSessionReport" class="report-content">
+          <div *ngIf="isTrainingSessionReport() && trainingSessionReport" class="report-content">
           <div class="report-header">
             <h2>Model Training Sessions Report</h2>
             <div class="report-stats">
@@ -287,8 +287,36 @@
           </div>
           </div>
 
+          <!-- Model Deployments Report - No Data -->
+          <div *ngIf="isModelDeploymentReport() && !modelDeploymentReport" class="report-content">
+            <div class="report-header">
+              <h2>Model Deployment Report</h2>
+            </div>
+            <div class="report-body">
+              <div class="no-data-message">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                <p>No model deployment data available or report failed to load.</p>
+                <p *ngIf="errorMessage" class="error-message">{{errorMessage}}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Sessions Report - No Data -->
+          <div *ngIf="isTrainingSessionReport() && !trainingSessionReport" class="report-content">
+            <div class="report-header">
+              <h2>Model Training Sessions Report</h2>
+            </div>
+            <div class="report-body">
+              <div class="no-data-message">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                <p>No training session data available or report failed to load.</p>
+                <p *ngIf="errorMessage" class="error-message">{{errorMessage}}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Model Deployments Report -->
-          <div *ngIf="selectedReportType === 'model-deployments' && modelDeploymentReport" class="report-content">
+          <div *ngIf="isModelDeploymentReport() && modelDeploymentReport" class="report-content">
           <div class="report-header">
             <h2>Model Deployment Report</h2>
             <div class="report-stats">
@@ -331,49 +359,105 @@
           </div>
           </div>
 
-          <!-- Dataset Transaction Report -->
+                    <!-- Dataset Transaction Report -->
           <div *ngIf="selectedReportType === 'dataset-transactions' && datasetTransactionReport" class="report-content">
-          <div class="report-header">
-            <h2>Dataset Transaction Summary Report</h2>
-            <div class="report-stats">
-              <div class="stat-item">
-                <span class="stat-number">{{datasetTransactionReport?.Summary?.TotalRecords || 0}}</span>
-                <span class="stat-label">Total Transactions</span>
-              </div>
+            <!-- Debug Info -->
+            <div style="background: #f0f0f0; padding: 10px; margin: 10px; border-radius: 5px; font-size: 12px;">
+              <strong>Debug Info:</strong><br>
+              DatasetGroups: {{datasetTransactionReport?.DatasetGroups?.length || 0}}<br>
+              TransactionGroups: {{datasetTransactionReport?.TransactionGroups?.length || 0}}<br>
+              Total Groups: {{getDatasetGroups().length}}<br>
+              Available keys: {{Object.keys(datasetTransactionReport || {}).join(', ')}}
             </div>
-          </div>
-          <div class="report-body">
-                          <div *ngFor="let group of datasetTransactionReport?.TransactionGroups || []" class="transaction-group">
-              <div class="group-header">
-                <h3>{{group.DeveloperName}}</h3>
-                <div class="group-stats">
-                  <span>Total Actions: {{group.TotalActions}}</span>
-                  <span>Last Action: {{formatDateTime(group.LastActionDate)}}</span>
+            
+            <div class="report-header">
+              <h2>Dataset Transaction Summary Report</h2>
+              <div class="report-stats">
+                <div class="stat-item">
+                  <span class="stat-number">{{datasetTransactionReport?.Summary?.TotalRecords || 0}}</span>
+                  <span class="stat-label">Total Transactions</span>
                 </div>
               </div>
+            </div>
+            
+            <div class="report-body">
+              <!-- No Data Message -->
+              <div *ngIf="getDatasetGroups().length === 0" class="no-data-message">
+                <ion-icon name="document-outline" class="no-data-icon"></ion-icon>
+                <h3>No transactions found</h3>
+                <p>There are no dataset transactions available for the selected criteria.</p>
+              </div>
               
-                              <div *ngFor="let datasetGroup of group?.DatasetActions || []" class="dataset-action">
+              <!-- Dataset Groups -->
+              <div *ngFor="let datasetGroup of getDatasetGroups(); let datasetIndex = index" class="dataset-group">
+                <!-- Dataset Header -->
                 <div class="dataset-header">
-                  <h4>{{datasetGroup.DatasetName}}</h4>
-                  <div class="dataset-stats">
-                    <span>Actions: {{datasetGroup.TotalActions}}</span>
-                    <span>Last: {{formatDateTime(datasetGroup.LastActionDate)}}</span>
+                  <div class="dataset-title">
+                    <ion-icon name="folder-outline" class="dataset-icon"></ion-icon>
+                    <h3>{{datasetGroup.DatasetName || datasetGroup.DeveloperName}}</h3>
+                  </div>
+                  <div class="dataset-summary">
+                    <span class="summary-item">
+                      <ion-icon name="analytics-outline"></ion-icon>
+                      Total Actions: {{datasetGroup.TotalActions}}
+                    </span>
+                    <span class="summary-item">
+                      <ion-icon name="time-outline"></ion-icon>
+                      Last Action: {{formatDateTime(datasetGroup.LastActionDate)}}
+                    </span>
                   </div>
                 </div>
                 
-                <div class="transactions-list">
-                  <div *ngFor="let transaction of datasetGroup?.Transactions || []" class="transaction-item">
-                    <div class="transaction-info">
-                      <span class="transaction-action">{{transaction.Action}}</span>
-                      <span class="transaction-details">{{transaction.Details}}</span>
-                      <span class="transaction-file">{{transaction.FileName}}</span>
-                      <span class="transaction-time">{{formatDateTime(transaction.Timestamp)}}</span>
+                <!-- Action Groups -->
+                <div class="action-groups-container">
+                  <div *ngFor="let actionGroup of getActionGroups(datasetGroup); let actionIndex = index" class="action-group">
+                    <!-- Action Header -->
+                    <div class="action-header">
+                      <div class="action-title">
+                        <ion-icon name="flash-outline" class="action-icon"></ion-icon>
+                        <h4>{{actionGroup.ActionType || actionGroup.DatasetName}}</h4>
+                      </div>
+                      <div class="action-summary">
+                        <span class="summary-item">
+                          <ion-icon name="checkmark-circle-outline"></ion-icon>
+                          {{actionGroup.TotalActions}} actions
+                        </span>
+                        <span class="summary-item">
+                          <ion-icon name="time-outline"></ion-icon>
+                          Last: {{formatDateTime(actionGroup.LastActionDate)}}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <!-- Transactions Table -->
+                    <div class="transactions-table">
+                      <div class="table-header">
+                        <div class="header-cell">Action</div>
+                        <div class="header-cell">Details</div>
+                        <div class="header-cell">File</div>
+                        <div class="header-cell">Timestamp</div>
+                      </div>
+                      <div class="table-body">
+                        <div *ngFor="let transaction of actionGroup?.Transactions || []" class="table-row transaction-row">
+                          <div class="table-cell">
+                            <span class="action-badge">{{transaction.Action}}</span>
+                          </div>
+                          <div class="table-cell">
+                            <span class="transaction-details">{{transaction.Details}}</span>
+                          </div>
+                          <div class="table-cell">
+                            <span class="file-name">{{transaction.FileName}}</span>
+                          </div>
+                          <div class="table-cell">
+                            <span class="timestamp">{{formatDateTime(transaction.Timestamp)}}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
           </div>
 
           <!-- Dataset Status Report -->
@@ -669,6 +753,188 @@
                       <p>No trends data available</p>
               </div>
                 </ng-template>
+          </div>
+
+          <!-- Model Activity by Experiment Report -->
+          <div *ngIf="isModelActivityExperimentReport() && modelActivityExperimentReport" class="report-content">
+            <!-- Debug Info -->
+            <div style="background: #f0f0f0; padding: 10px; margin: 10px; border: 1px solid #ccc;">
+              <h4>Debug Info:</h4>
+              <p>selectedReportType: {{selectedReportType}}</p>
+              <p>modelActivityExperimentReport exists: {{modelActivityExperimentReport ? 'YES' : 'NO'}}</p>
+              <p>ExperimentGroups length: {{modelActivityExperimentReport?.ExperimentGroups?.length || 0}}</p>
+              <p>Current report data exists: {{currentReportData ? 'YES' : 'NO'}}</p>
+            </div>
+            
+            <div class="report-header">
+              <h2>Model Activity by Experiment Report</h2>
+              <div class="report-stats">
+                <div class="stat-item">
+                  <span class="stat-number">{{modelActivityExperimentReport?.Summary?.TotalRecords || 0}}</span>
+                  <span class="stat-label">Total Experiments</span>
+                </div>
+              </div>
+            </div>
+            <div class="report-body">
+              <div *ngFor="let group of modelActivityExperimentReport?.ExperimentGroups || []" class="experiment-group">
+                <div class="group-header">
+                  <h3>{{group.Status}}</h3>
+                  <div class="group-stats">
+                    <span>Total Experiments: {{group.SubTotals.TotalExperiments}}</span>
+                    <span>Completed: {{group.SubTotals.CompletedExperiments}}</span>
+                    <span>Running: {{group.SubTotals.RunningExperiments}}</span>
+                    <span>Failed: {{group.SubTotals.FailedExperiments}}</span>
+                    <span>Total File Size: {{formatBytes(group.SubTotals.TotalFileSize)}}</span>
+                    <span>Average File Size: {{formatBytes(group.SubTotals.AverageFileSize)}}</span>
+                  </div>
+                </div>
+                
+                <div class="experiments-list">
+                  <div class="data-table">
+                    <div class="table-header">
+                      <div class="header-cell">Experiment Name</div>
+                      <div class="header-cell">Model Name</div>
+                      <div class="header-cell">Created Date</div>
+                      <div class="header-cell">Last Modified</div>
+                      <div class="header-cell">File Name</div>
+                      <div class="header-cell">File Size</div>
+                      <div class="header-cell">File Type</div>
+                      <div class="header-cell">Created By</div>
+                      <div class="header-cell">Status</div>
+                    </div>
+                    <div class="table-body">
+                      <div *ngFor="let experiment of group?.Experiments || []" class="table-row">
+                        <div class="table-cell">
+                          <div class="user-info">
+                            <div class="user-avatar">
+                              <ion-icon name="flask"></ion-icon>
+                            </div>
+                            <span>{{experiment.ExperimentName}}</span>
+                          </div>
+                        </div>
+                        <div class="table-cell">{{experiment.ModelName}}</div>
+                        <div class="table-cell">{{formatDateTime(experiment.CreatedDate)}}</div>
+                        <div class="table-cell">{{formatDateTime(experiment.LastModified)}}</div>
+                        <div class="table-cell">{{experiment.ModelFileName}}</div>
+                        <div class="table-cell">{{formatBytes(experiment.FileSize)}}</div>
+                        <div class="table-cell">{{experiment.FileType}}</div>
+                        <div class="table-cell">{{experiment.CreatedByUser}}</div>
+                        <div class="table-cell">
+                          <span class="status-badge" [class]="getStatusColor(experiment.Status)">
+                            {{experiment.Status}}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fallback for Model Activity Experiment Report -->
+          <div *ngIf="isModelActivityExperimentReport() && !modelActivityExperimentReport" class="report-content">
+            <div class="report-header">
+              <h2>Model Activity by Experiment Report</h2>
+            </div>
+            <div class="report-body">
+              <div style="text-align: center; padding: 50px;">
+                <ion-icon name="flask-outline" style="font-size: 48px; color: #ccc;"></ion-icon>
+                <h3>Loading Report Data...</h3>
+                <p *ngIf="isLoading">Please wait while we fetch the experiment data...</p>
+                <p *ngIf="!isLoading && errorMessage">{{errorMessage}}</p>
+                <p *ngIf="!isLoading && !errorMessage">No data available for this report.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Model Deployment Status Report -->
+          <div *ngIf="isModelDeploymentStatusReport() && modelDeploymentStatusReport" class="report-content">
+            <!-- Debug Information -->
+            <div style="background: #f0f0f0; padding: 10px; margin: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+              <strong>Debug Info:</strong><br>
+              Selected Report Type: {{selectedReportType}}<br>
+              Is Model Deployment Status Report: {{isModelDeploymentStatusReport()}}<br>
+              Model Deployment Status Report exists: {{modelDeploymentStatusReport ? 'Yes' : 'No'}}<br>
+              Deployment Groups Count: {{modelDeploymentStatusReport?.DeploymentGroups?.length || 0}}<br>
+              Total Records: {{modelDeploymentStatusReport?.Summary?.TotalRecords || 0}}
+            </div>
+            
+            <div class="report-header">
+              <h2>Model Deployment Status Report</h2>
+              <div class="report-stats">
+                <div class="stat-item">
+                  <span class="stat-number">{{modelDeploymentStatusReport?.Summary?.TotalRecords || 0}}</span>
+                  <span class="stat-label">Total Deployments</span>
+                </div>
+              </div>
+            </div>
+            <div class="report-body">
+              <!-- Debug: Show raw data -->
+              <div style="background: #fff3cd; padding: 10px; margin: 10px; border-radius: 5px; font-family: monospace; font-size: 11px; max-height: 200px; overflow-y: auto;">
+                <strong>Raw Data:</strong><br>
+                <pre>{{modelDeploymentStatusReport | json}}</pre>
+              </div>
+              
+              <div *ngFor="let group of modelDeploymentStatusReport?.DeploymentGroups || []" class="deployment-group">
+                <div class="group-header">
+                  <h3>{{group.Status}}</h3>
+                  <div class="group-stats">
+                    <span>Subtotal: {{group.Subtotal}}</span>
+                  </div>
+                </div>
+                
+                <div class="models-list">
+                  <div class="data-table">
+                    <div class="table-header">
+                      <div class="header-cell">Model Name</div>
+                      <div class="header-cell">Environment</div>
+                      <div class="header-cell">Deployed By</div>
+                      <div class="header-cell">Deployed Date</div>
+                      <div class="header-cell">Version</div>
+                      <div class="header-cell">Status</div>
+                    </div>
+                    <div class="table-body">
+                      <div *ngFor="let deployment of group?.Deployments || []" class="table-row">
+                        <div class="table-cell">
+                          <div class="user-info">
+                            <div class="user-avatar">
+                              <ion-icon name="server"></ion-icon>
+                            </div>
+                            <span>{{deployment.ModelName}}</span>
+                          </div>
+                        </div>
+                        <div class="table-cell">{{deployment.Environment}}</div>
+                        <div class="table-cell">{{deployment.DeployedBy}}</div>
+                        <div class="table-cell">{{formatDateTime(deployment.DeployedDate)}}</div>
+                        <div class="table-cell">{{deployment.Version}}</div>
+                        <div class="table-cell">
+                          <span class="status-badge" [class]="getDeploymentStatusColor(deployment.Status)">
+                            {{deployment.Status}}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fallback for Model Deployment Status Report -->
+          <div *ngIf="isModelDeploymentStatusReport() && !modelDeploymentStatusReport" class="report-content">
+            <div class="report-header">
+              <h2>Model Deployment Status Report</h2>
+            </div>
+            <div class="report-body">
+              <div style="text-align: center; padding: 50px;">
+                <ion-icon name="server-outline" style="font-size: 48px; color: #ccc;"></ion-icon>
+                <h3>Loading Report Data...</h3>
+                <p *ngIf="isLoading">Please wait while we fetch the deployment data...</p>
+                <p *ngIf="!isLoading && errorMessage">{{errorMessage}}</p>
+                <p *ngIf="!isLoading && !errorMessage">No data available for this report.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

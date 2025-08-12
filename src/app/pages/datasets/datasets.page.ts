@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatasetService, Dataset } from '../../services/dataset.service';
 import { DatasetCardComponent } from '../../components/dataset-card/dataset-card.component';
+import { ThumbnailService } from '../../services/thumbnail.service';
 
 @Component({
   selector: 'app-datasets',
@@ -26,7 +27,10 @@ export class DatasetsComponent implements OnInit {
   error: string | null = null;
   searchTerm: string = '';
 
-  constructor(private datasetService: DatasetService) {}
+  constructor(
+    private datasetService: DatasetService,
+    private thumbnailService: ThumbnailService
+  ) {}
 
   ngOnInit() {
     this.loadDatasets();
@@ -37,7 +41,7 @@ export class DatasetsComponent implements OnInit {
     this.error = null;
     
     this.datasetService.getAllDatasets().subscribe({
-      next: (data) => {
+      next: async (data) => {
         console.log('Received datasets:', data);
         // Process each dataset to ensure thumbnail URLs are properly formatted
         this.datasets = data.map(dataset => ({
@@ -47,6 +51,21 @@ export class DatasetsComponent implements OnInit {
         }));
         this.filteredDatasets = [...this.datasets];
         this.loading = false;
+
+        // Preload thumbnails for visible datasets (first 10)
+        const visibleDatasetIds = this.datasets
+          .slice(0, 10)
+          .map(dataset => dataset.datasetId)
+          .filter(id => id);
+        
+        if (visibleDatasetIds.length > 0) {
+          try {
+            await this.thumbnailService.preloadThumbnails(visibleDatasetIds);
+            console.log('Preloaded thumbnails for first 10 datasets');
+          } catch (error) {
+            console.warn('Failed to preload some thumbnails:', error);
+          }
+        }
       },
       error: (err) => {
         console.error('Error loading datasets:', err);
@@ -77,5 +96,11 @@ export class DatasetsComponent implements OnInit {
         searchableFields.some(field => field.includes(term))
       );
     });
+  }
+
+  // Method to clear thumbnail cache if needed
+  clearThumbnailCache() {
+    this.thumbnailService.clearCache();
+    console.log('Thumbnail cache cleared');
   }
 } 

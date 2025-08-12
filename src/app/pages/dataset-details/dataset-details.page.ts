@@ -20,7 +20,8 @@ import {
   IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle,
   IonContent, IonList, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader,
   IonCardTitle, IonCardContent, IonBadge, IonText, IonNote, IonGrid,
-  IonRow, IonCol, IonAccordionGroup, IonAccordion, IonInput, IonSegment, IonSegmentButton, IonBackButton
+  IonRow, IonCol, IonAccordionGroup, IonAccordion, IonInput, IonSegment, IonSegmentButton, IonBackButton,
+  IonToggle, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
 interface DatasetSchemaField {
@@ -53,7 +54,8 @@ interface PreviewData {
     IonContent, IonItem, IonLabel, IonSpinner, IonCard, IonCardHeader,
     IonCardTitle, IonCardContent, IonText, IonGrid,
     IonRow, IonCol, IonAccordionGroup, IonAccordion,
-    IonInput, IonSegment, IonSegmentButton, IonBackButton
+    IonInput, IonSegment, IonSegmentButton, IonBackButton,
+    IonToggle, IonSelect, IonSelectOption
   ]
 })
 export class DatasetDetailsPage implements OnInit {
@@ -454,6 +456,15 @@ splitDataset(train?: number, test?: number): void {
   }
 
   latestValidationResult: any = null;
+  
+  // Preprocessing properties
+  preprocessOptions = {
+    handleMissingValues: true,
+    removeDuplicates: true,
+    fixDataTypes: true,
+    scalingMethod: ''
+  };
+  latestPreprocessResult: any = null;
 
   validateDataset(): void {
     this.error = null;
@@ -508,6 +519,39 @@ splitDataset(train?: number, test?: number): void {
     } catch (error) {
       this.toastService.presentToast('error', '❌ Failed to download logs.', 3500);
     }
+  }
+
+  preprocessDataset(): void {
+    this.error = null;
+    this.latestPreprocessResult = null;
+    if (!this.datasetId) {
+      this.error = 'No dataset ID found.';
+      return;
+    }
+    
+    this.isLoading = true;
+    
+    // Prepare the preprocessing options
+    const options = {
+      handleMissingValues: this.preprocessOptions.handleMissingValues,
+      removeDuplicates: this.preprocessOptions.removeDuplicates,
+      fixDataTypes: this.preprocessOptions.fixDataTypes,
+      scalingMethod: this.preprocessOptions.scalingMethod || undefined
+    };
+    
+    // Use the DatasetOperationsService to call the preprocessing endpoint
+    this.datasetOps.preprocessDataset(this.datasetId, options)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (result: any) => {
+          this.latestPreprocessResult = result;
+          this.toastService.presentToast('success', '✅ Preprocessing request accepted and is being processed asynchronously!', 3500);
+        },
+        error: (err) => {
+          this.error = 'Preprocessing failed: ' + (err?.message || err);
+          this.toastService.presentToast('error', '❌ Preprocessing failed: ' + (err?.message || err), 3500);
+        }
+      });
   }
 
  

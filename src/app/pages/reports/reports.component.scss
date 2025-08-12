@@ -12,6 +12,237 @@
   --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+// New Dataset Transaction Report Styles
+.dataset-group {
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  
+  .dataset-header {
+    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    color: white;
+    padding: 1.5rem;
+    
+    .dataset-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      
+      .dataset-icon {
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      
+      h3 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: white;
+      }
+    }
+    
+    .dataset-summary {
+      display: flex;
+      gap: 2rem;
+      
+      .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        opacity: 0.9;
+        
+        ion-icon {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+  
+  .action-groups-container {
+    background: white;
+    
+    .action-group {
+      border-bottom: 1px solid var(--border-color);
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      .action-header {
+        background: var(--secondary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        
+        .action-title {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+          
+          .action-icon {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+          }
+          
+          h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+          }
+        }
+        
+        .action-summary {
+          display: flex;
+          gap: 1.5rem;
+          
+          .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            
+            ion-icon {
+              font-size: 0.9rem;
+            }
+          }
+        }
+      }
+      
+      .transactions-table {
+        .table-header {
+          display: grid;
+          grid-template-columns: 1fr 2fr 1fr 1.5fr;
+          gap: 1rem;
+          padding: 0.75rem 1.5rem;
+          background: #f8f9fa;
+          border-bottom: 1px solid var(--border-color);
+          font-weight: 600;
+          font-size: 0.9rem;
+          color: var(--text-primary);
+          
+          .header-cell {
+            padding: 0.5rem 0;
+          }
+        }
+        
+        .table-body {
+          .transaction-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr 1.5fr;
+            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            
+            &:last-child {
+              border-bottom: none;
+            }
+            
+            &:hover {
+              background: #f8f9fa;
+            }
+            
+            .table-cell {
+              display: flex;
+              align-items: center;
+              
+              .action-badge {
+                background: var(--primary-color);
+                color: white;
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              .transaction-details {
+                color: var(--text-secondary);
+                line-height: 1.4;
+              }
+              
+              .file-name {
+                font-family: monospace;
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+                background: #f8f9fa;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+              }
+              
+              .timestamp {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// No Data Message
+.no-data-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  
+  .no-data-icon {
+    font-size: 4rem;
+    color: var(--border-color);
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+// Responsive adjustments for dataset groups
+@media (max-width: 768px) {
+  .dataset-group {
+    .dataset-header {
+      .dataset-summary {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+    
+    .action-groups-container {
+      .action-group {
+        .action-header {
+          .action-summary {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+        }
+        
+        .transactions-table {
+          .table-header,
+          .table-body .transaction-row {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+          }
+        }
+      }
+    }
+  }
+}
+
 // Global styles for export buttons
 ion-button.export-btn {
   --color: #333 !important;
@@ -106,7 +337,7 @@ ion-header {
         --padding-bottom: 0.5rem;
         height: 36px;
         min-width: 80px;
-  display: flex;
+        display: flex;
         align-items: center;
         justify-content: center;
         margin: 0;
@@ -171,10 +402,10 @@ ion-header {
     p {
       margin: 0;
       color: var(--text-secondary);
-    font-size: 0.9rem;
+      font-size: 0.9rem;
+    }
   }
-}
-
+  
   .report-categories {
     padding: 1rem;
     
@@ -245,17 +476,17 @@ ion-header {
             
             p {
               margin: 0;
-    font-size: 0.8rem;
+              font-size: 0.8rem;
               color: var(--text-secondary);
               line-height: 1.3;
             }
-  }
-
+          }
+          
           .report-badge {
             .badge {
               padding: 0.25rem 0.5rem;
               border-radius: 12px;
-    font-size: 0.7rem;
+              font-size: 0.7rem;
               font-weight: 500;
               text-transform: uppercase;
               
@@ -300,8 +531,8 @@ ion-header {
     
     .loading-spinner {
       text-align: center;
-
-  ion-spinner {
+      
+      ion-spinner {
         width: 3rem;
         height: 3rem;
         color: var(--primary-color);
@@ -320,8 +551,8 @@ ion-header {
     justify-content: center;
     align-items: center;
     height: 400px;
-
-.error-card {
+    
+    .error-card {
       text-align: center;
       padding: 2rem;
       background: white;
@@ -329,11 +560,11 @@ ion-header {
       box-shadow: var(--shadow-lg);
       border-left: 4px solid var(--danger-color);
       
-  ion-icon {
+      ion-icon {
         font-size: 3rem;
         color: var(--danger-color);
-    margin-bottom: 1rem;
-  }
+        margin-bottom: 1rem;
+      }
       
       h3 {
         margin: 0 0 1rem 0;
@@ -386,7 +617,7 @@ ion-header {
               font-size: 0.9rem;
               color: var(--text-secondary);
               text-transform: uppercase;
-  font-weight: 500;
+              font-weight: 500;
             }
           }
         }
@@ -436,7 +667,7 @@ ion-header {
       }
       
       .table-cell {
-  padding: 1rem;
+        padding: 1rem;
         display: flex;
         align-items: center;
         
@@ -456,9 +687,9 @@ ion-header {
             
             ion-icon {
               color: white;
-    font-size: 1rem;
-  }
-}
+              font-size: 1rem;
+            }
+          }
         }
         
         .status-badge {
@@ -563,7 +794,7 @@ ion-header {
               }
               
               ion-icon {
-    font-size: 0.8rem;
+                font-size: 0.8rem;
                 color: var(--text-secondary);
               }
             }
@@ -731,8 +962,8 @@ ion-header {
             background: #0056b3;
             transform: translateY(-1px);
           }
-    
-    ion-icon {
+          
+          ion-icon {
             font-size: 0.9rem;
           }
         }
@@ -747,7 +978,7 @@ ion-header {
       
       .chart-info {
         margin-top: 1rem;
-  padding: 1rem;
+        padding: 1rem;
         background: #f8f9fa;
         border-radius: 8px;
         border-left: 4px solid var(--primary-color);
@@ -770,7 +1001,7 @@ ion-header {
           .info-value {
             font-weight: 600;
             color: var(--text-primary);
-    font-size: 0.9rem;
+            font-size: 0.9rem;
           }
         }
       }
@@ -827,7 +1058,7 @@ ion-header {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
-  margin-bottom: 1rem;
+        margin-bottom: 1rem;
         
         .stat {
           text-align: center;
@@ -870,16 +1101,16 @@ ion-header {
   }
   
   .no-data {
-  text-align: center;
+    text-align: center;
     padding: 3rem;
     background: white;
     border-radius: 12px;
     box-shadow: var(--shadow);
-  
-  ion-icon {
-    font-size: 3rem;
+    
+    ion-icon {
+      font-size: 3rem;
       color: var(--text-secondary);
-    margin-bottom: 1rem;
+      margin-bottom: 1rem;
     }
     
     p {
@@ -924,84 +1155,84 @@ ion-header {
         font-weight: 500;
       }
     }
+  }
 }
 
 .dataset-action {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 3px solid var(--primary-color);
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid var(--primary-color);
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  .dataset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
     
-    &:last-child {
-      margin-bottom: 0;
+    h4 {
+      margin: 0;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 1rem;
     }
     
-    .dataset-header {
+    .dataset-stats {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-  margin-bottom: 1rem;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
       
-      h4 {
-        margin: 0;
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 1rem;
-      }
-      
-      .dataset-stats {
-        display: flex;
-        gap: 1rem;
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        
-        span {
-          font-weight: 500;
-        }
+      span {
+        font-weight: 500;
       }
     }
-    
-    .transactions-list {
-      .transaction-item {
-        padding: 0.75rem;
-        background: white;
-        border-radius: 6px;
-        margin-bottom: 0.5rem;
-        border: 1px solid var(--border-color);
+  }
+  
+  .transactions-list {
+    .transaction-item {
+      padding: 0.75rem;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      border: 1px solid var(--border-color);
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      .transaction-info {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr 1fr;
+        gap: 1rem;
+        align-items: center;
         
-        &:last-child {
-          margin-bottom: 0;
+        .transaction-action {
+          font-weight: 600;
+          color: var(--primary-color);
+          font-size: 0.9rem;
         }
         
-        .transaction-info {
-          display: grid;
-          grid-template-columns: 1fr 2fr 1fr 1fr;
-          gap: 1rem;
-          align-items: center;
-          
-          .transaction-action {
-            font-weight: 600;
-            color: var(--primary-color);
-            font-size: 0.9rem;
-          }
-          
-          .transaction-details {
-            color: var(--text-primary);
-            font-size: 0.9rem;
-          }
-          
-          .transaction-file {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            font-style: italic;
-          }
-          
-          .transaction-time {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            text-align: right;
-          }
+        .transaction-details {
+          color: var(--text-primary);
+          font-size: 0.9rem;
+        }
+        
+        .transaction-file {
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+          font-style: italic;
+        }
+        
+        .transaction-time {
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+          text-align: right;
         }
       }
     }
@@ -1020,6 +1251,91 @@ ion-header {
   color: var(--text-secondary);
   display: block;
   margin-top: 0.25rem;
+}
+
+// Experiment Group Styles
+.experiment-group {
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: var(--shadow);
+
+  .group-header {
+    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    color: white;
+    padding: 1rem 1.5rem;
+    
+    h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    .group-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.9rem;
+      opacity: 0.9;
+      
+      span {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+    }
+  }
+  
+  .experiments-list {
+    padding: 1rem;
+    
+    .data-table {
+      .table-header {
+        grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1fr;
+      }
+      
+      .table-body .table-row {
+        grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1fr;
+      }
+    }
+  }
+}
+
+// Responsive design for experiment groups
+@media (max-width: 1200px) {
+  .experiment-group {
+    .experiments-list {
+      .data-table {
+        .table-header,
+        .table-body .table-row {
+          grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .experiment-group {
+    .group-header {
+      .group-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+    
+    .experiments-list {
+      .data-table {
+        .table-header,
+        .table-body .table-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+  }
 }
 
 // Responsive design
@@ -1112,8 +1428,8 @@ ion-header {
           .btn-text {
             display: none;
           }
-  
-  ion-icon {
+          
+          ion-icon {
             margin-right: 0;
             font-size: 1rem;
           }
@@ -1121,4 +1437,308 @@ ion-header {
       }
     }
   }
-} 
+}
+
+// Model Deployment Status Report styles
+.deployment-group {
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: white;
+
+  .group-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .group-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+
+      span {
+        background: rgba(0, 102, 204, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .models-list {
+    padding: 1rem;
+
+    .data-table {
+      .table-header {
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+      }
+
+      .table-body .table-row {
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+      }
+    }
+  }
+}
+
+// Responsive adjustments for deployment groups
+@media (max-width: 768px) {
+  .deployment-group {
+    .group-header {
+      .group-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+
+    .models-list {
+      .data-table {
+        .table-header,
+        .table-body .table-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+  }
+}
+
+// New Dataset Transaction Report Styles
+.dataset-group {
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  
+  .dataset-header {
+    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    color: white;
+    padding: 1.5rem;
+    
+    .dataset-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      
+      .dataset-icon {
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      
+      h3 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: white;
+      }
+    }
+    
+    .dataset-summary {
+      display: flex;
+      gap: 2rem;
+      
+      .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        opacity: 0.9;
+        
+        ion-icon {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+  
+  .action-groups-container {
+    background: white;
+    
+    .action-group {
+      border-bottom: 1px solid var(--border-color);
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      .action-header {
+        background: var(--secondary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        
+        .action-title {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+          
+          .action-icon {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+          }
+          
+          h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+          }
+        }
+        
+        .action-summary {
+          display: flex;
+          gap: 1.5rem;
+          
+          .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            
+            ion-icon {
+              font-size: 0.9rem;
+            }
+          }
+        }
+      }
+      
+      .transactions-table {
+        .table-header {
+          display: grid;
+          grid-template-columns: 1fr 2fr 1fr 1.5fr;
+          gap: 1rem;
+          padding: 0.75rem 1.5rem;
+          background: #f8f9fa;
+          border-bottom: 1px solid var(--border-color);
+          font-weight: 600;
+          font-size: 0.9rem;
+          color: var(--text-primary);
+          
+          .header-cell {
+            padding: 0.5rem 0;
+          }
+        }
+        
+        .table-body {
+          .transaction-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr 1.5fr;
+            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            
+            &:last-child {
+              border-bottom: none;
+            }
+            
+            &:hover {
+              background: #f8f9fa;
+            }
+            
+            .table-cell {
+              display: flex;
+              align-items: center;
+              
+              .action-badge {
+                background: var(--primary-color);
+                color: white;
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              .transaction-details {
+                color: var(--text-secondary);
+                line-height: 1.4;
+              }
+              
+              .file-name {
+                font-family: monospace;
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+                background: #f8f9fa;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+              }
+              
+              .timestamp {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// No Data Message
+.no-data-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  
+  .no-data-icon {
+    font-size: 4rem;
+    color: var(--border-color);
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+// Responsive adjustments for dataset groups
+@media (max-width: 768px) {
+  .dataset-group {
+    .dataset-header {
+      .dataset-summary {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+    
+    .action-groups-container {
+      .action-group {
+        .action-header {
+          .action-summary {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+        }
+        
+        .transactions-table {
+          .table-header,
+          .table-body .transaction-row {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-title>Model Upload Calendar</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="prevMonth()" fill="clear" color="primary">
@@ -14,41 +14,159 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="calendar-container">
-    <div class="calendar-grid">
-      <div class="calendar-row calendar-header">
-        <div *ngFor="let day of weekDays" class="calendar-cell header-cell">{{ day }}</div>
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading calendar data...</p>
+  </div>
+
+  <!-- Main Calendar Container -->
+  <div class="calendar-wrapper" *ngIf="!isLoading">
+    <div class="calendar-container">
+      <!-- Calendar Header -->
+      <div class="calendar-header">
+        <div class="month-year">
+          <span class="year">{{ currentYear - 1 }}</span>
+          <h1>{{ monthNames[currentMonth] }}, {{ currentYear }}</h1>
+          <span class="year">{{ currentYear + 1 }}</span>
+        </div>
+        
+        <!-- Navigation Controls -->
+        <div class="calendar-controls">
+          <ion-button (click)="prevMonth()" fill="clear" size="small">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+          </ion-button>
+          <ion-button (click)="goToToday()" fill="outline" size="small">
+            Today
+          </ion-button>
+          <ion-button (click)="nextMonth()" fill="clear" size="small">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </div>
       </div>
-      <div class="calendar-row" *ngFor="let week of getWeeks()">
-        <div *ngFor="let day of week" class="calendar-cell" [ngClass]="{'has-upload': day?.hasUpload, 'selected': day?.date === selectedDate}" (click)="selectDate(day)">
-          <span *ngIf="day">{{ day.day }}</span>
-          <span *ngIf="day?.hasUpload" class="upload-dot"></span>
+
+      <!-- Calendar Grid -->
+      <div class="calendar-grid">
+        <!-- Week day headers -->
+        <div class="calendar-row header-row">
+          <div *ngFor="let day of weekDays" class="calendar-cell header-cell">{{ day }}</div>
+        </div>
+        
+        <!-- Calendar weeks -->
+        <div class="calendar-row" *ngFor="let week of getWeeks()">
+          <div 
+            *ngFor="let day of week" 
+            class="calendar-cell day-cell" 
+            [ngClass]="{
+              'current-month': day.isCurrentMonth,
+              'other-month': !day.isCurrentMonth,
+              'today': day.isToday,
+              'selected': day.isSelected,
+              'has-models': day.modelCount > 0
+            }"
+            (click)="selectDate(day)"
+            [title]="getDayTooltip(day)"
+          >
+            <!-- Day number -->
+            <div class="day-number">{{ day.day || '' }}</div>
+            
+            <!-- Model indicators -->
+            <div *ngIf="day.modelCount > 0" class="model-indicators">
+              <!-- Model count badge -->
+              <div class="model-count" [ngClass]="getModelCountClass(day.modelCount)">
+                {{ day.modelCount }}
+              </div>
+              
+              <!-- Status indicators -->
+              <div class="status-indicators">
+                <div 
+                  *ngFor="let model of day.models.slice(0, 3)" 
+                  class="status-dot"
+                  [style.background-color]="getStatusColor(model.status)"
+                  [title]="model.modelName + ' (' + model.status + ')'"
+                ></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Debug info -->
-  <div class="debug-info" style="background: #333; color: #fff; padding: 10px; margin: 10px;">
-    <p>Selected Date: {{ selectedDate }}</p>
-    <p>Selected Models Count: {{ selectedDateModels.length }}</p>
-    <p>Total Models: {{ modelUploads.length }}</p>
-    <p>Selected Models: {{ selectedDateModels | json }}</p>
-  </div>
+    <!-- Right Sidebar - Selected Date Details -->
+    <div class="calendar-sidebar">
+      <div class="sidebar-header">
+        <h3>Selected Date</h3>
+        <p class="selected-date">{{ selectedDate ? (selectedDate | date:'fullDate') : 'No date selected' }}</p>
+      </div>
 
-  <div *ngIf="selectedDateModels.length > 0" class="models-list futuristic-card">
-    <h2>Models uploaded on {{ selectedDate }}</h2>
-    <ion-list>
-      <ion-item *ngFor="let model of selectedDateModels" [routerLink]="['/model-details', model.id]">
-        <ion-label>
-          <h3>{{ model.title }}</h3>
-          <p>{{ model.date | date:'shortTime' }}</p>
-        </ion-label>
-        <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
-      </ion-item>
-    </ion-list>
-  </div>
-  <div *ngIf="selectedDate && selectedDateModels.length === 0" class="no-models futuristic-card">
-    <p>No models uploaded on this day.</p>
+      <!-- Models for selected date -->
+      <div *ngIf="selectedDate && selectedDateModels.length > 0" class="models-section">
+        <div class="section-header">
+          <h4>Models Created on {{ selectedDate | date:'MMM dd' }}</h4>
+          <span class="model-count">{{ selectedDateModels.length }} model{{ selectedDateModels.length > 1 ? 's' : '' }}</span>
+        </div>
+        
+        <div class="models-list">
+          <div 
+            *ngFor="let model of selectedDateModels" 
+            class="model-item"
+            [ngClass]="'status-' + model.status"
+          >
+            <div class="model-header">
+              <div class="status-indicator" [style.background-color]="getStatusColor(model.status)"></div>
+              <div class="model-info">
+                <h5>{{ model.modelName }}</h5>
+                <span class="model-version">{{ model.version }}</span>
+              </div>
+            </div>
+            <div class="model-details">
+              <p class="update-time">{{ model.updatedAt | date:'shortTime' }}</p>
+              <span class="status-badge">{{ model.status | titlecase }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No models message -->
+      <div *ngIf="selectedDate && selectedDateModels.length === 0" class="no-models">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <h4>No Models Created</h4>
+        <p>No models were created on {{ selectedDate | date:'fullDate' }}</p>
+      </div>
+
+      <!-- Month Statistics -->
+      <div class="month-stats">
+        <h4>Month Overview</h4>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Total Models</span>
+            <span class="stat-value">{{ getTotalModelsCount() }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Days with Models</span>
+            <span class="stat-value">{{ getDaysWithModels() }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend-section">
+        <h4>Status Legend</h4>
+        <div class="legend-items">
+          <div class="legend-item">
+            <div class="legend-dot status-new"></div>
+            <span>New Models</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot status-updated"></div>
+            <span>Updated Models</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot status-deprecated"></div>
+            <span>Deprecated Models</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </ion-content>

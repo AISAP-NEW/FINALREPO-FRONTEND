@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ToastService } from '../../services/toast.service';
 import { finalize } from 'rxjs/operators';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import {
   IonHeader,
   IonToolbar,
@@ -32,6 +33,19 @@ import {
 import { addIcons } from 'ionicons';
 import { cloudUploadOutline, trashOutline, folderOpenOutline } from 'ionicons/icons';
 
+// Define interfaces to match API response structure
+interface Category {
+  Category_ID: number;
+  CategoryName: string;
+  Description?: string;
+}
+
+interface Topic {
+  Topic_ID: number;
+  TopicName: string;
+  Description?: string;
+}
+
 @Component({
   selector: 'app-model-upload',
   templateUrl: './model-upload.page.html',
@@ -40,6 +54,7 @@ import { cloudUploadOutline, trashOutline, folderOpenOutline } from 'ionicons/ic
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    HttpClientModule,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -67,50 +82,105 @@ export class ModelUploadPage implements OnInit {
   uploadForm: FormGroup;
   isDragging = false;
   selectedFile: File | null = null;
-  frameworks = ['TensorFlow', 'PyTorch', 'Scikit-learn', 'ONNX', 'Other'];
   isLoading = false;
-  datasets: Dataset[] = [];
-  isDatasetsLoading = false;
+  categories: Category[] = [];
+  topics: Topic[] = [];
+  isCategoriesLoading = false;
+  isTopicsLoading = false;
+  selectedTopicDescription = '';
 
   constructor(
     private fb: FormBuilder,
     private modelService: ModelService,
     private datasetService: DatasetService,
     private router: Router,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private http: HttpClient
   ) {
     addIcons({ cloudUploadOutline, trashOutline, folderOpenOutline });
 
     this.uploadForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(3)]],
+      modelName: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
-      framework: ['', [Validators.required]],
-      version: [''],
-      datasetId: [''],
-      tags: ['']
+      categoryId: ['', [Validators.required]],
+      topicId: ['', [Validators.required]]
     });
   }
 
   ngOnInit() {
     console.log('Model upload page initialized');
-    this.loadDatasets();
+    this.loadCategories();
+    
+    // Watch for category changes to load topics
+    this.uploadForm.get('categoryId')?.valueChanges.subscribe(categoryId => {
+      if (categoryId) {
+        this.loadTopicsByCategory(categoryId);
+      } else {
+        this.topics = [];
+        this.uploadForm.patchValue({ topicId: '' });
+      }
+    });
+
+    // Watch for topic changes to show description
+    this.uploadForm.get('topicId')?.valueChanges.subscribe(topicId => {
+      const topic = this.topics.find(t => t.Topic_ID === topicId);
+      this.selectedTopicDescription = topic?.Description || '';
+    });
   }
 
-  private loadDatasets() {
-    console.log('Loading datasets...');
-    this.isDatasetsLoading = true;
-    this.datasetService.getAllDatasets().pipe(
-      finalize(() => {
-        this.isDatasetsLoading = false;
-        console.log('Datasets loaded:', this.datasets);
-      })
+  private loadCategories() {
+    this.isCategoriesLoading = true;
+    console.log('Fetching categories from API...');
+    
+    this.http.get<Category[]>('http://localhost:5183/api/Category/all').pipe(
+      finalize(() => this.isCategoriesLoading = false)
     ).subscribe({
-      next: (datasets: Dataset[]) => {
-        this.datasets = datasets || [];
+      next: (categories) => {
+        console.log('Categories loaded:', categories);
+        this.categories = Array.isArray(categories) ? categories : [];
+        
+        if (this.categories.length === 0) {
+          console.warn('No categories found in the response');
+          this.toastService.presentToast('warning' as any, 'No categories available');
+        } else {
+          console.log(`Successfully loaded ${this.categories.length} categories`);
+        }
       },
-      error: (error: any) => {
-        console.error('Error loading datasets:', error);
-        this.toastService.presentToast('error' as any, 'Failed to load datasets. Please try again.');
+      error: (error) => {
+        console.error('Error loading categories:', error);
+        this.toastService.presentToast('error' as any, 'Failed to load categories. Please try again.');
+      }
+    });
+  }
+
+  private loadTopicsByCategory(categoryId: number | string) {
+    // Ensure categoryId is a number
+    const categoryIdNum = Number(categoryId);
+    if (isNaN(categoryIdNum)) {
+      console.error('Invalid category ID:', categoryId);
+      this.toastService.presentToast('error' as any, 'Invalid category selected');
+      return;
+    }
+
+    this.isTopicsLoading = true;
+    this.uploadForm.get('topicId')?.reset();
+    this.selectedTopicDescription = '';
+    
+    console.log('Loading topics for category ID:', categoryIdNum);
+    this.http.get<Topic[]>(`http://localhost:5183/api/Category/topics-by-category/${categoryIdNum}`).pipe(
+      finalize(() => this.isTopicsLoading = false)
+    ).subscribe({
+      next: (topics) => {
+        console.log('Loaded topics:', topics);
+        this.topics = Array.isArray(topics) ? topics : [];
+        if (this.topics.length === 0) {
+          console.warn('No topics found for category ID:', categoryIdNum);
+          this.toastService.presentToast('info' as any, 'No topics available for this category');
+        }
+      },
+      error: (error) => {
+        console.error('Error loading topics:', error);
+        this.toastService.presentToast('error' as any, 'Failed to load topics. Please try again.');
       }
     });
   }
@@ -180,9 +250,9 @@ export class ModelUploadPage implements OnInit {
 
     const formValue = this.uploadForm.value;
     const formData = new FormData();
-    formData.append('modelName', formValue.name);
+    formData.append('modelName', formValue.modelName);
     formData.append('description', formValue.description);
-    formData.append('topicId', '2'); // Hardcoded for now, or make dynamic if needed
+    formData.append('topicId', formValue.topicId);
     formData.append('codeFile', this.selectedFile!);
 
     fetch('http://localhost:5183/api/ModelFile/create-model-with-file', {
