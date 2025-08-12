@@ -42,4 +42,21 @@ export class ToastService {
         return 'primary';
     }
   }
+
+  // Convenience methods
+  async showSuccess(message: string, duration: number = 3000): Promise<void> {
+    return this.presentToast('success', message, duration);
+  }
+
+  async showError(message: string, duration: number = 3000): Promise<void> {
+    return this.presentToast('error', message, duration);
+  }
+
+  async showWarning(message: string, duration: number = 3000): Promise<void> {
+    return this.presentToast('warning', message, duration);
+  }
+
+  async showInfo(message: string, duration: number = 3000): Promise<void> {
+    return this.presentToast('info', message, duration);
+  }
 }

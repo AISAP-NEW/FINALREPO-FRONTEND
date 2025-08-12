@@ -17,6 +17,11 @@ export interface RegisterDTO {
   Password: string;
   ConfirmPassword: string;
   Role: string;
+  FirstName?: string;
+  LastName?: string;
+  PhoneNumber?: string;
+  Bio?: string;
+  DateOfBirth?: string;
 }
 
 export interface ForgotPasswordDTO {
@@ -41,6 +46,7 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  profilePictureUrl?: string;
   // Add these for API response compatibility
   UserId?: number;
   Username?: string;

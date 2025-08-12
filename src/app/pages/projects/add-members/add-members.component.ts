@@ -236,6 +236,7 @@ export class AddMembersComponent implements OnInit {
       // Process users sequentially to better handle errors
       for (const user of selectedUsers) {
         try {
+          console.log(`Adding user ${user.username || user.Username} to project ${this.project.projectId}`);
           const result = await firstValueFrom(
             this.userService.directAssignToProject(
               this.project.projectId,
@@ -250,7 +251,23 @@ export class AddMembersComponent implements OnInit {
           console.log(`Successfully added user ${user.username || user.Username}:`, result);
         } catch (error: any) {
           console.error(`Error adding user ${user.username || user.Username}:`, error);
-          errorMessages.push(`Failed to add ${user.username || user.Username}: ${error.message}`);
+          console.error('Error details:', {
+            status: error?.status,
+            statusText: error?.statusText,
+            message: error?.message,
+            error: error?.error
+          });
+          
+          // Check if this is actually a successful response that Angular treated as an error
+          if (error?.status >= 200 && error?.status < 300) {
+            console.log(`Treating as success for user ${user.username || user.Username} - received ${error.status} status`);
+            successCount++;
+          } else if (error?.message === 'SUCCESS') {
+            console.log(`Treating as success for user ${user.username || user.Username} - received SUCCESS message`);
+            successCount++;
+          } else {
+            errorMessages.push(`Failed to add ${user.username || user.Username}: ${error.message}`);
+          }
         }
       }
 

@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { 
   IonIcon,
   IonSpinner,
+  IonButton,
   ToastController,
   LoadingController
 } from '@ionic/angular/standalone';
@@ -20,12 +21,14 @@ import { AuthService } from '../../services/auth.service';
     ReactiveFormsModule,
     RouterModule,
     IonIcon,
-    IonSpinner
+    IonSpinner,
+    IonButton
   ]
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   isLoading = false;
+  showPassword = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -100,5 +103,9 @@ export class LoginComponent implements OnInit {
 
   navigateToRegister() {
     this.router.navigate(['/register']);
+  }
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
   }
 } 

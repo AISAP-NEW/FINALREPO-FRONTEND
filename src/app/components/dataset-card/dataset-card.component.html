@@ -56,12 +56,22 @@
       </div>
     </div>
   </div>
-  <div class="card-actions">
-    <button class="options-btn" (click)="$event.stopPropagation(); openOperationsModal()">
-      <ion-icon name="ellipsis-vertical"></ion-icon>
-    </button>
-    <a [routerLink]="['/datasets', dataset.datasetId, 'details']" class="action-button" (click)="$event.stopPropagation()">
-      <ion-icon name="eye"></ion-icon>
-    </a>
+  <div class="card-actions-bottom">
+    <ion-button fill="outline" size="small" color="primary" class="view-btn" [routerLink]="['/datasets', dataset.datasetId, 'details']" (click)="$event.stopPropagation()">
+      <ion-icon name="eye" slot="start"></ion-icon>
+      View
+    </ion-button>
+    <ion-button fill="outline" size="small" color="secondary" class="edit-btn" (click)="$event.stopPropagation(); editDataset()">
+      <ion-icon name="create-outline" slot="start"></ion-icon>
+      Edit
+    </ion-button>
+    <ion-button fill="outline" size="small" color="danger" class="delete-btn" (click)="$event.stopPropagation(); deleteDataset()">
+      <ion-icon name="trash-outline" slot="start"></ion-icon>
+      Delete
+    </ion-button>
+    <ion-button fill="outline" size="small" color="medium" class="options-btn" (click)="$event.stopPropagation(); openOperationsModal()">
+      <ion-icon name="ellipsis-vertical" slot="start"></ion-icon>
+      More
+    </ion-button>
   </div>
 </div>

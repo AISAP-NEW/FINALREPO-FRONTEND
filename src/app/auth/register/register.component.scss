@@ -174,6 +174,12 @@
   margin-bottom: 24px;
 }
 
+.form-row.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 .form-group {
   width: 100%;
 }
@@ -190,6 +196,39 @@
   position: relative;
   display: flex;
   align-items: center;
+  
+  input {
+    padding-right: 60px; /* Make space for the toggle button */
+  }
+}
+
+.toggle-password {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --color: var(--primary-color);
+  --color-hover: var(--secondary-color);
+  --background-hover: transparent;
+  margin: 0;
+  transition: all 0.2s ease;
+  z-index: 10;
+  min-width: 50px;
+  
+  ion-icon {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+  }
+  
+  &:hover {
+    --color: var(--secondary-color);
+    
+    ion-icon {
+      color: var(--secondary-color);
+    }
+  }
 }
 
 .input-icon {
@@ -202,7 +241,7 @@
 
 .form-input, .form-select {
   width: 100%;
-  padding: 16px 16px 16px 48px;
+  padding: 16px 48px 16px 48px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
@@ -212,10 +251,26 @@
   font-family: inherit;
 }
 
-.form-input:focus, .form-select:focus {
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.form-input.error, .form-select.error, .form-textarea.error {
+  border-color: var(--error-color);
+}
+
+.form-input.error:focus, .form-select.error:focus, .form-textarea.error:focus {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
 }
 
 .form-input:disabled, .form-select:disabled {
@@ -277,6 +332,17 @@
 
 .validation-error ion-icon {
   font-size: 1rem;
+}
+
+.character-count {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.character-count.over-limit {
+  color: var(--error-color);
 }
 
 .form-actions {
@@ -392,6 +458,11 @@
     flex-wrap: wrap;
     gap: 24px;
     margin-bottom: 24px;
+  }
+
+  .form-row.two-columns {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
   
   .stats-section {

@@ -4,6 +4,7 @@ import { IonicModule } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DatasetService, CreateDatasetDTO } from '../../services/dataset.service';
 import { Router } from '@angular/router';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-dataset-form',
@@ -60,8 +61,10 @@ import { Router } from '@angular/router';
         </div>
 
         <div class="ion-padding-top">
-          <ion-button expand="block" type="submit" [disabled]="!datasetForm.valid || selectedFiles.length === 0">
-            Create Dataset
+          <ion-button expand="block" type="submit" [disabled]="!datasetForm.valid || selectedFiles.length === 0 || submitting">
+            <ion-spinner *ngIf="submitting" name="dots"></ion-spinner>
+            <span *ngIf="!submitting">Create Dataset</span>
+            <span *ngIf="submitting">Creating Dataset...</span>
           </ion-button>
         </div>
       </form>
@@ -107,11 +110,13 @@ export class DatasetFormPage {
   selectedFiles: File[] = [];
   thumbnailFile: File | undefined;
   thumbnailPreview: string | null = null;
+  submitting = false;
 
   constructor(
     private formBuilder: FormBuilder,
     private datasetService: DatasetService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.datasetForm = this.formBuilder.group({
       datasetName: ['', [Validators.required]],
@@ -142,6 +147,7 @@ export class DatasetFormPage {
 
   onSubmit() {
     if (this.datasetForm.valid && this.selectedFiles.length > 0) {
+      this.submitting = true;
       const formValue = this.datasetForm.value;
       
       const data: CreateDatasetDTO = {
@@ -154,11 +160,16 @@ export class DatasetFormPage {
       this.datasetService.createDataset(data).subscribe({
         next: (response) => {
           console.log('Dataset created:', response);
+          this.toastService.presentToast('success', 'Dataset created successfully!');
+          // Navigate back to datasets page
           this.router.navigate(['/datasets']);
         },
         error: (error) => {
           console.error('Error creating dataset:', error);
-          // Handle error (show toast/alert)
+          this.toastService.presentToast('error', 'Failed to create dataset. Please try again.');
+        },
+        complete: () => {
+          this.submitting = false;
         }
       });
     }

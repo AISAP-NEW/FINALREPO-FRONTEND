@@ -56,8 +56,8 @@
             mode="md"
             required>
           </ion-input>
-          <ion-button fill="clear" class="toggle-password" (click)="togglePassword()">
-            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" slot="icon-only"></ion-icon>
+          <ion-button fill="clear" class="toggle-password" (click)="togglePassword()" title="Show password">
+            <ion-icon [name]="showPassword ? 'eye-off' : 'eye'"></ion-icon>
           </ion-button>
         </div>
         <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']" class="error-message">

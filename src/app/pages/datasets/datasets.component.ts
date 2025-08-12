@@ -141,6 +141,10 @@ export class DatasetsComponent implements OnInit {
     this.loadDatasets();
   }
 
+  ionViewWillEnter() {
+    this.loadDatasets();
+  }
+
   private loadDatasets() {
     this.loading = true;
     this.error = null;
@@ -201,5 +205,11 @@ export class DatasetsComponent implements OnInit {
     } catch (error) {
       this.toastService.presentToast('error', '❌ Failed to download logs.', 3500);
     }
+  }
+
+  onDatasetDeleted(datasetId: string) {
+    // Remove the deleted dataset from the arrays
+    this.datasets = this.datasets.filter(dataset => dataset.datasetId !== datasetId);
+    this.filteredDatasets = this.filteredDatasets.filter(dataset => dataset.datasetId !== datasetId);
   }
 } 

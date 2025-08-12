@@ -53,9 +53,10 @@
       </div>
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
-        <div class="form-row">
+        <!-- Username & Email Row -->
+        <div class="form-row two-columns">
           <div class="form-group">
-            <label class="form-label">Username</label>
+            <label class="form-label">Username *</label>
             <div class="input-wrapper">
               <ion-icon name="person-outline" class="input-icon"></ion-icon>
               <input 
@@ -64,6 +65,7 @@
                 class="form-input"
                 [class.error]="hasFieldError('Username')"
                 placeholder="Enter your username"
+                required
               />
             </div>
             <div class="validation-error" *ngIf="hasFieldError('Username')">
@@ -71,11 +73,9 @@
               {{ getValidationMessage('Username') }}
             </div>
           </div>
-        </div>
 
-        <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Email</label>
+            <label class="form-label">Email *</label>
             <div class="input-wrapper">
               <ion-icon name="mail-outline" class="input-icon"></ion-icon>
               <input 
@@ -89,6 +89,82 @@
             <div class="validation-error" *ngIf="hasFieldError('Email')">
               <ion-icon name="alert-circle-outline"></ion-icon>
               {{ getValidationMessage('Email') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row two-columns">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <div class="input-wrapper">
+              <ion-icon name="person-outline" class="input-icon"></ion-icon>
+              <input 
+                type="text" 
+                formControlName="FirstName" 
+                class="form-input"
+                [class.error]="hasFieldError('FirstName')"
+                placeholder="Enter your first name"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('FirstName')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('FirstName') }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <div class="input-wrapper">
+              <ion-icon name="person-outline" class="input-icon"></ion-icon>
+              <input 
+                type="text" 
+                formControlName="LastName" 
+                class="form-input"
+                [class.error]="hasFieldError('LastName')"
+                placeholder="Enter your last name"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('LastName')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('LastName') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone & Date of Birth Row -->
+        <div class="form-row two-columns">
+          <div class="form-group">
+            <label class="form-label">Phone Number (Optional)</label>
+            <div class="input-wrapper">
+              <ion-icon name="call-outline" class="input-icon"></ion-icon>
+              <input 
+                type="tel" 
+                formControlName="PhoneNumber" 
+                class="form-input"
+                [class.error]="hasFieldError('PhoneNumber')"
+                placeholder="Enter your phone number"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('PhoneNumber')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('PhoneNumber') }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Date of Birth (Optional)</label>
+            <div class="input-wrapper">
+              <ion-icon name="calendar-outline" class="input-icon"></ion-icon>
+              <input 
+                type="date" 
+                formControlName="DateOfBirth" 
+                class="form-input"
+                [class.error]="hasFieldError('DateOfBirth')"
+              />
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('DateOfBirth')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('DateOfBirth') }}
             </div>
           </div>
         </div>
@@ -116,46 +192,72 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Password</label>
+            <label class="form-label">Bio (Optional)</label>
+            <div class="input-wrapper">
+              <ion-icon name="document-text-outline" class="input-icon"></ion-icon>
+              <textarea 
+                formControlName="Bio" 
+                class="form-input form-textarea"
+                [class.error]="hasFieldError('Bio')"
+                placeholder="Tell us about yourself (max 500 characters)"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="character-count" 
+                 [class.over-limit]="isBioOverLimit()"
+                 *ngIf="registerForm.get('Bio')?.touched || getBioCharacterCount() > 0">
+              {{ getBioCharacterCount() }}/500 characters
+            </div>
+            <div class="validation-error" *ngIf="hasFieldError('Bio')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ getValidationMessage('Bio') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Password & Confirm Password Row -->
+        <div class="form-row two-columns">
+          <div class="form-group">
+            <label class="form-label">Password *</label>
             <div class="input-wrapper">
               <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
               <input 
-                type="password" 
+                [type]="showPassword ? 'text' : 'password'" 
                 formControlName="Password" 
                 class="form-input"
                 [class.error]="hasFieldError('Password')"
                 placeholder="Enter your password"
               />
+              <span 
+                class="toggle-password"
+                (click)="togglePassword()"
+                title="Show password">
+                {{ showPassword ? '👁️‍🗨️' : '👁️‍🗨️' }}
+              </span>
             </div>
             <div class="validation-error" *ngIf="hasFieldError('Password')">
               <ion-icon name="alert-circle-outline"></ion-icon>
               {{ getValidationMessage('Password') }}
             </div>
-            <div class="password-requirements" *ngIf="registerForm.get('Password')?.touched">
-              <p class="requirements-title">Password Requirements:</p>
-              <ul class="requirements-list">
-                <li>At least 8 characters</li>
-                <li>One uppercase letter</li>
-                <li>One lowercase letter</li>
-                <li>One number</li>
-                <li>One special character (&#64;$!%*?&)</li>
-              </ul>
-            </div>
           </div>
-        </div>
 
-        <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Confirm Password</label>
+            <label class="form-label">Confirm Password *</label>
             <div class="input-wrapper">
               <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
               <input 
-                type="password" 
+                [type]="showConfirmPassword ? 'text' : 'password'" 
                 formControlName="ConfirmPassword" 
                 class="form-input"
                 [class.error]="hasFieldError('ConfirmPassword')"
                 placeholder="Confirm your password"
               />
+              <span 
+                class="toggle-password"
+                (click)="toggleConfirmPassword()"
+                title="Show password">
+                {{ showConfirmPassword ? '👁️‍🗨️' : '👁️‍🗨️' }}
+              </span>
             </div>
             <div class="validation-error" *ngIf="hasFieldError('ConfirmPassword')">
               <ion-icon name="alert-circle-outline"></ion-icon>
@@ -166,6 +268,18 @@
               Passwords do not match
             </div>
           </div>
+        </div>
+
+        <!-- Password Requirements (shown below both password fields) -->
+        <div class="password-requirements" *ngIf="registerForm.get('Password')?.touched">
+          <p class="requirements-title">Password Requirements:</p>
+          <ul class="requirements-list">
+            <li>At least 8 characters</li>
+            <li>One uppercase letter</li>
+            <li>One lowercase letter</li>
+            <li>One number</li>
+            <li>One special character (&#64;$!%*?&)</li>
+          </ul>
         </div>
 
         <div class="form-actions">

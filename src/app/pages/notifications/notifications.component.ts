@@ -30,7 +30,7 @@ import {
 import { NotificationService, Notification } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
-import { interval, Subscription } from 'rxjs';
+import { interval, Subscription, firstValueFrom } from 'rxjs';
 import { MainLayoutComponent } from '../../layouts/main-layout/main-layout.component';
 
 @Component({
@@ -90,18 +90,23 @@ import { MainLayoutComponent } from '../../layouts/main-layout/main-layout.compo
               {{ notification.createdDate | date:'medium' }}
             </p>
           </ion-label>
-          <ion-button 
-            fill="clear" 
-            color="primary" 
-            slot="end"
-            [disabled]="notification.isRead"
-            (click)="markAsRead(notification)">
-            <ion-spinner *ngIf="processingNotificationId === notification.notificationId"></ion-spinner>
-            <ion-icon 
-              *ngIf="processingNotificationId !== notification.notificationId"
-              [name]="notification.isRead ? 'checkmark-done-outline' : 'checkmark-outline'">
-            </ion-icon>
-          </ion-button>
+          <div slot="end" class="notification-actions">
+            <ion-label *ngIf="notification.isRead" class="read-label">
+              <ion-icon name="checkmark-done-outline" color="success"></ion-icon>
+              Read
+            </ion-label>
+            <ion-button 
+              fill="clear" 
+              color="primary" 
+              [disabled]="notification.isRead"
+              (click)="markAsRead(notification)">
+              <ion-spinner *ngIf="processingNotificationId === notification.notificationId"></ion-spinner>
+              <ion-icon 
+                *ngIf="processingNotificationId !== notification.notificationId"
+                [name]="notification.isRead ? 'checkmark-done-outline' : 'checkmark-outline'">
+              </ion-icon>
+            </ion-button>
+          </div>
         </ion-item>
 
         <!-- Empty State -->
@@ -156,6 +161,25 @@ import { MainLayoutComponent } from '../../layouts/main-layout/main-layout.compo
     ion-spinner {
       width: 20px;
       height: 20px;
+    }
+    .notification-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .read-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--ion-color-success);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: rgba(var(--ion-color-success-rgb), 0.1);
+    }
+    .read-label ion-icon {
+      font-size: 14px;
     }
   `],
   standalone: true,
@@ -240,7 +264,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       this.loading = true;
       this.error = null;
       const userId = currentUser.userId || currentUser.UserId || 0;
-      this.notifications = await this.notificationService.getNotifications(userId).toPromise() || [];
+      this.notifications = await firstValueFrom(this.notificationService.getNotifications(userId)) || [];
       this.mainLayout.updateNotifications(); // Update the notification count in the layout
       this.loading = false;
     } catch (error: any) {
@@ -294,7 +318,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   hasUnreadNotifications(): boolean {
-    return this.notifications.some(notification => !notification.isRead);
+    const hasUnread = this.notifications.some(notification => !notification.isRead);
+    console.debug('hasUnreadNotifications check:', hasUnread, 'Total notifications:', this.notifications.length, 'Unread count:', this.notifications.filter(n => !n.isRead).length);
+    return hasUnread;
   }
 
   async markAsRead(notification: Notification) {
@@ -303,10 +329,13 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.processingNotificationId = notification.notificationId;
 
     try {
-      await this.notificationService.markAsRead(notification.notificationId).toPromise();
+      const response = await firstValueFrom(this.notificationService.markAsRead(notification.notificationId));
       notification.isRead = true;
       this.mainLayout.updateNotifications(); // Update the notification count in the layout
-      this.showToast('Notification marked as read', 'success');
+      
+      // Show the success message from the backend or a default message
+      const successMessage = response?.message || 'Notification marked as read';
+      this.showToast(successMessage, 'success');
     } catch (error: any) {
       console.error('Error marking notification as read:', error);
       this.showToast(error.message || 'Failed to mark notification as read', 'danger');
@@ -316,18 +345,30 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   async markAllAsRead() {
+    console.debug('markAllAsRead called');
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
+      console.debug('No current user found');
       this.showToast('No user logged in', 'danger');
       return;
     }
 
+    console.debug('Current user:', currentUser);
+    console.debug('Notifications before marking as read:', this.notifications);
+
     try {
       this.loading = true;
-      await this.notificationService.markAllAsRead(currentUser.userId || currentUser.UserId || 0).toPromise();
+      const userId = currentUser.userId || currentUser.UserId || 0;
+      console.debug('Calling markAllAsRead with userId:', userId);
+      const response = await firstValueFrom(this.notificationService.markAllAsRead(userId));
+      console.debug('markAllAsRead response:', response);
+      
       this.notifications.forEach(notification => notification.isRead = true);
       this.mainLayout.updateNotifications(); // Update the notification count in the layout
-      this.showToast('All notifications marked as read', 'success');
+      
+      // Show the success message from the backend or a default message
+      const successMessage = response?.message || 'All notifications marked as read';
+      this.showToast(successMessage, 'success');
     } catch (error: any) {
       console.error('Error marking all notifications as read:', error);
       this.showToast(error.message || 'Failed to mark all notifications as read', 'danger');

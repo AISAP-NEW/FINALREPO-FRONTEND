@@ -1,0 +1,230 @@
+.profile-container {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.profile-picture-section {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 24px 0;
+  background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
+  border-radius: 16px;
+  color: white;
+  margin-top: 16px;
+
+  .profile-picture-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 16px;
+
+    .profile-picture {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+
+    .profile-picture-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+
+      &:hover {
+        opacity: 1;
+      }
+
+      .overlay-button {
+        --color: white;
+        --background: transparent;
+        --box-shadow: none;
+        font-size: 24px;
+      }
+    }
+  }
+
+  .profile-name {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 8px 0 4px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .profile-role {
+    font-size: 16px;
+    opacity: 0.9;
+    margin: 0;
+    font-weight: 300;
+  }
+}
+
+.profile-form {
+  .form-section {
+    margin-bottom: 32px;
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ion-color-primary);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--ion-color-primary-tint);
+    }
+
+    ion-item {
+      --border-radius: 8px;
+      --background: var(--ion-color-light);
+      margin-bottom: 12px;
+      border-radius: 8px;
+
+      &.item-has-focus {
+        --background: var(--ion-color-primary-tint);
+      }
+
+      ion-label {
+        font-weight: 500;
+        color: var(--ion-color-dark);
+      }
+
+      ion-input, ion-textarea, ion-datetime {
+        --color: var(--ion-color-dark);
+        font-size: 16px;
+
+        &[readonly] {
+          --color: var(--ion-color-medium);
+          opacity: 0.7;
+        }
+      }
+
+      ion-note {
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        margin-top: 4px;
+      }
+    }
+
+    .readonly-field {
+      --color: var(--ion-color-medium) !important;
+      opacity: 0.7;
+    }
+  }
+}
+
+.action-buttons {
+  margin: 24px 0;
+
+  ion-button {
+    margin-bottom: 12px;
+    --border-radius: 8px;
+    font-weight: 600;
+    height: 48px;
+
+    &[color="primary"] {
+      --background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
+    }
+  }
+}
+
+.additional-actions {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--ion-color-light-shade);
+
+  ion-button {
+    margin-bottom: 12px;
+    --border-radius: 8px;
+    font-weight: 500;
+    height: 44px;
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--ion-color-medium);
+
+  ion-spinner {
+    margin-bottom: 16px;
+    --color: var(--ion-color-primary);
+  }
+
+  p {
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 12px;
+  }
+
+  .profile-picture-section {
+    .profile-picture-wrapper .profile-picture {
+      width: 100px;
+      height: 100px;
+    }
+
+    .profile-name {
+      font-size: 20px;
+    }
+
+    .profile-role {
+      font-size: 14px;
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .profile-form .form-section ion-item {
+    --background: var(--ion-color-dark-tint);
+  }
+
+  .additional-actions {
+    border-top-color: var(--ion-color-dark-shade);
+  }
+}
+
+// Animation for form validation errors
+.form-section ion-item.ion-invalid.ion-touched {
+  --border-color: var(--ion-color-danger);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+// Profile picture hover effect
+.profile-picture-wrapper:hover .profile-picture-overlay {
+  opacity: 1;
+}
+
+// Button loading state
+ion-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
