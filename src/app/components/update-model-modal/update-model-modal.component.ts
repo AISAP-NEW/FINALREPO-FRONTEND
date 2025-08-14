@@ -22,6 +22,7 @@ export class UpdateModelModalComponent implements OnInit {
   error: string | null = null;
   categories: any[] = [];
   topics: any[] = [];
+  subtopics: any[] = [];
 
   constructor(
     private modalCtrl: ModalController,
@@ -31,7 +32,8 @@ export class UpdateModelModalComponent implements OnInit {
     this.updateForm = this.fb.group({
       modelName: ['', [Validators.required, Validators.maxLength(100)]],
       categoryId: ['', Validators.required],
-      topicId: ['', Validators.required]
+      topicId: ['', Validators.required],
+      subtopicId: ['']
     });
   }
 
@@ -41,7 +43,8 @@ export class UpdateModelModalComponent implements OnInit {
       this.updateForm.patchValue({
         modelName: this.model.modelName,
         topicId: this.model.topicId || '',
-        categoryId: this.model.categoryId || ''
+        categoryId: this.model.categoryId || '',
+        subtopicId: this.model.subtopicId || ''
       });
       this._initialDescription = this.model.description || '';
     }
@@ -65,7 +68,8 @@ export class UpdateModelModalComponent implements OnInit {
 
   loadTopicsByCategory(categoryId: number, prefill = false) {
     this.topics = [];
-    this.updateForm.patchValue({ topicId: '' });
+    this.subtopics = [];
+    this.updateForm.patchValue({ topicId: '', subtopicId: '' });
     if (!categoryId) return;
     this.http.get<any[]>(`http://localhost:5183/api/Category/topics-by-category/${categoryId}`).subscribe({
       next: (topics) => {
@@ -75,10 +79,28 @@ export class UpdateModelModalComponent implements OnInit {
             categoryId: this.model.categoryId,
             topicId: this.model.topicId
           });
+          this.loadSubtopicsByTopic(this.model.topicId, true);
         }
       },
       error: () => {
         this.error = 'Failed to load topics.';
+      }
+    });
+  }
+
+  loadSubtopicsByTopic(topicId: number, prefill = false) {
+    this.subtopics = [];
+    this.updateForm.patchValue({ subtopicId: '' });
+    if (!topicId) return;
+    this.http.get<any[]>(`http://localhost:5183/api/Topic/${topicId}/subtopics`).subscribe({
+      next: (subs) => {
+        this.subtopics = subs || [];
+        if (prefill && this.model && this.model.subtopicId) {
+          this.updateForm.patchValue({ subtopicId: this.model.subtopicId });
+        }
+      },
+      error: () => {
+        this.error = 'Failed to load subtopics.';
       }
     });
   }
@@ -89,7 +111,8 @@ export class UpdateModelModalComponent implements OnInit {
   }
 
   onTopicChange(event: any) {
-    // No need to update description in the form, just display it
+    const topicId = event.detail.value;
+    this.loadSubtopicsByTopic(topicId);
   }
 
   close() {
@@ -105,12 +128,14 @@ export class UpdateModelModalComponent implements OnInit {
     this.isLoading = true;
     this.error = null;
     const formValue = this.updateForm.value;
-    const payload = {
+    const payload: any = {
       Id: this.model.modelId,
       ModelName: formValue.modelName,
       Description: this._initialDescription,
       TopicId: formValue.topicId
     };
+    if (formValue.subtopicId) payload.SubtopicId = formValue.subtopicId;
+
     this.http.put(`http://localhost:5183/api/ModelFile/update-model/${this.model.modelId}`, payload).subscribe({
       next: (res: any) => {
         this.isLoading = false;
@@ -126,7 +151,7 @@ export class UpdateModelModalComponent implements OnInit {
 
   get selectedTopicDescription(): string {
     const topicId = this.updateForm.value.topicId;
-    const topic = this.topics.find(t => t.Topic_ID === topicId);
+    const topic = this.topics.find((t: any) => t.Topic_ID === topicId);
     return topic?.Description || '';
   }
 }

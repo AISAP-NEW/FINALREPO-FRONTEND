@@ -1,0 +1,68 @@
+.pad {
+	padding: 12px;
+}
+
+.inline-form {
+	background: var(--ion-color-light, #f4f5f8);
+	border-radius: 8px;
+	padding: 8px 8px 12px;
+	margin: 8px 0 12px;
+}
+
+.row-end {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 8px 0 0;
+}
+
+.subtopics {
+	margin-left: 8px;
+}
+
+.topic-item, .subtopic-item {
+	margin: 6px 0;
+}
+
+.fab-container {
+	position: sticky;
+	bottom: 0;
+	background: var(--ion-background-color, #fff);
+	padding: 12px;
+	border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+/* New split layout */
+.layout {
+	display: grid;
+	grid-template-columns: 220px 1fr 420px;
+	gap: 16px;
+	padding: 8px 12px 80px;
+}
+.sidebar ion-card {
+	position: sticky;
+	top: 8px;
+}
+
+.sidebar .active {
+	--background: rgba(var(--ion-color-primary-rgb), 0.14);
+	--color: var(--ion-color-primary);
+}
+
+
+.left {
+	min-width: 0;
+}
+
+.right ion-card {
+	position: sticky;
+	top: 8px;
+}
+
+.quick-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+

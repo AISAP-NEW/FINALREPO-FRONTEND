@@ -80,6 +80,21 @@
           </ion-note>
         </ion-item>
 
+        <!-- Subtopic (optional) -->
+        <ion-item>
+          <ion-label position="stacked">Subtopic</ion-label>
+          <ion-select 
+            formControlName="subtopicId" 
+            placeholder="Select subtopic"
+            [disabled]="isSubtopicsLoading || !uploadForm.get('topicId')?.value"
+          >
+            <ion-select-option *ngFor="let sub of subtopics" [value]="sub.Subtopic_ID">
+              {{ sub.SubtopicName }}
+            </ion-select-option>
+          </ion-select>
+          <ion-spinner *ngIf="isSubtopicsLoading" name="crescent"></ion-spinner>
+        </ion-item>
+
         <!-- Display selected topic description -->
         <ion-item *ngIf="selectedTopicDescription">
           <ion-label position="stacked">Topic Description</ion-label>

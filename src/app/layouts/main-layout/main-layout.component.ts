@@ -48,7 +48,9 @@ import {
   barChartOutline,
   chevronUp,
   chevronDown,
-  listOutline
+  listOutline,
+  bookOutline,
+  settingsOutline
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -138,6 +140,20 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
                 <ion-item routerLink="/developers" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
                   <ion-icon slot="start" name="people-outline"></ion-icon>
                   <ion-label>Developers</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
+                <ion-item routerLink="/taxonomy-management" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon slot="start" name="book-outline"></ion-icon>
+                  <ion-label>Knowledge Management</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+
+              <ion-menu-toggle auto-hide="false">
+                <ion-item routerLink="/db-maintenance" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon slot="start" name="settings-outline"></ion-icon>
+                  <ion-label>DB Maintenance</ion-label>
                 </ion-item>
               </ion-menu-toggle>
 
@@ -553,7 +569,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       barChartOutline,
       chevronUp,
       chevronDown,
-      listOutline
+      listOutline,
+      bookOutline,
+      settingsOutline
     });
   }
 

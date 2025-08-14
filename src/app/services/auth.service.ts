@@ -52,6 +52,8 @@ export interface User {
   Username?: string;
   Email?: string;
   Role?: string;
+  Token?: string;
+  token?: string;
 }
 
 export interface LoginResponse {
@@ -59,6 +61,7 @@ export interface LoginResponse {
   Username: string;
   Email: string;
   Role: string;
+  Token?: string;
   // Add these for backward compatibility
   userId?: number;
   username?: string;
@@ -85,18 +88,13 @@ export class AuthService {
   isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
   private httpOptions = {
-    headers: new HttpHeaders({
-      'Content-Type': 'application/json'
-    })
+    headers: new HttpHeaders({ 'Content-Type': 'application/json' })
   };
 
   constructor(private http: HttpClient, private router: Router) {
-    // Check for stored user data on initialization
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-      const user = JSON.parse(storedUser);
-      // Ensure both camelCase and PascalCase properties exist
-      this.normalizeUser(user);
+      const user = this.normalizeUser(JSON.parse(storedUser));
       this.currentUserSubject.next(user);
       this.isAuthenticatedSubject.next(true);
     }
@@ -108,7 +106,10 @@ export class AuthService {
       username: user.username || user.Username || '',
       email: user.email || user.Email || '',
       role: user.role || user.Role || 'user',
-      // Keep original properties for API compatibility
+      // Preserve token if present
+      Token: user.Token || user.token,
+      token: user.Token || user.token,
+      // Keep original properties
       UserId: user.userId || user.UserId || 0,
       Username: user.username || user.Username || '',
       Email: user.email || user.Email || '',
@@ -117,171 +118,80 @@ export class AuthService {
   }
 
   private handleError(error: HttpErrorResponse) {
-    console.error('API Error:', {
-      status: error.status,
-      statusText: error.statusText,
-      error: error.error,
-      message: error.message,
-      url: error.url,
-      headers: error.headers,
-      name: error.name
-    });
-
-    if (error.status === 0) {
-      return throwError(() => new Error('Unable to connect to the server. Please check your internet connection.'));
-    }
-    
-    if (error.status === 401) {
-      const serverMessage = error.error?.message || 'Invalid credentials';
-      return throwError(() => new Error(`Authentication failed: ${serverMessage}`));
-    }
-    
-    if (error.status === 404) {
-      return throwError(() => new Error('The requested resource was not found.'));
-    }
-    
-    if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      return throwError(() => new Error(`Client error: ${error.error.message}`));
-    }
-    
-    // Server-side error
-    let message = 'An unexpected error occurred';
-    if (error.error?.message) {
-      message = error.error.message;
-    } else if (error.message) {
-      message = error.message;
-    }
-    
-    return throwError(() => new Error(message));
+    console.error('API Error:', { status: error.status, statusText: error.statusText, error: error.error, message: error.message, url: error.url, headers: error.headers, name: error.name });
+    if (error.status === 0) return throwError(() => new Error('Unable to connect to the server.'));
+    if (error.status === 401) return throwError(() => new Error(`Authentication failed: ${error.error?.message || 'Invalid credentials'}`));
+    if (error.status === 404) return throwError(() => new Error('The requested resource was not found.'));
+    if (error.error instanceof ErrorEvent) return throwError(() => new Error(`Client error: ${error.error.message}`));
+    return throwError(() => new Error(error.error?.message || error.message || 'An unexpected error occurred'));
   }
 
   login(credentials: LoginDTO): Observable<LoginResponse> {
     console.log('Attempting login for user:', credentials.Username);
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, this.httpOptions)
-      .pipe(
-        tap((response: LoginResponse) => {
-          console.log('Login successful:', response);
-          const user = this.normalizeUser(response);
-          this.currentUserSubject.next(user);
-          this.isAuthenticatedSubject.next(true);
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          
-          // Navigate to home page
-          this.router.navigate(['/home']);
-        }),
-        catchError(this.handleError)
-      );
-  }
-
-  register(userData: RegisterDTO): Observable<any> {
-    console.log('Attempting registration for user:', userData.Username);
-    return this.http.post(`${this.apiUrl}/register`, userData, this.httpOptions)
-      .pipe(
-        tap(response => {
-          console.log('Registration successful:', response);
-        }),
-        catchError(this.handleError)
-      );
-  }
-
-  forgotPassword(email: ForgotPasswordDTO): Observable<any> {
-    console.log('Sending forgot password request for email:', email.email);
-    const url = `${this.apiUrl}/forgot-password`;
-    console.log('Request URL:', url);
-    
-    return this.http.post(url, email, this.httpOptions)
-      .pipe(
-        tap(response => {
-          console.log('Forgot password request successful:', response);
-        }),
-        catchError(error => {
-          console.error('Forgot password request failed:', {
-            error,
-            status: error.status,
-            statusText: error.statusText,
-            url: error.url,
-            message: error.message,
-            errorObject: error.error
-          });
-          return this.handleError(error);
-        })
-      );
-  }
-
-  validateResetCode(resetCode: string): Observable<any> {
-    console.log('Validating reset code:', resetCode);
-    // The backend expects the reset code in the request body as a JSON string
-    return this.http.post(`${this.apiUrl}/validate-reset-code`, JSON.stringify(resetCode), {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    }).pipe(
-      tap(response => {
-        console.log('Reset code validation successful:', response);
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, this.httpOptions).pipe(
+      tap((response: LoginResponse) => {
+        console.log('Login successful:', response);
+        // Persist token for downstream services
+        const token = (response as any)?.Token || (response as any)?.token;
+        if (token) {
+          try { localStorage.setItem('token', token); } catch {}
+        }
+        const user = this.normalizeUser(response);
+        this.currentUserSubject.next(user);
+        this.isAuthenticatedSubject.next(true);
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.router.navigate(['/home']);
       }),
       catchError(this.handleError)
     );
   }
 
+  register(userData: RegisterDTO): Observable<any> {
+    console.log('Attempting registration for user:', userData.Username);
+    return this.http.post(`${this.apiUrl}/register`, userData, this.httpOptions).pipe(
+      tap(response => { console.log('Registration successful:', response); }),
+      catchError(this.handleError)
+    );
+  }
+
+  forgotPassword(email: ForgotPasswordDTO): Observable<any> {
+    console.log('Sending forgot password request for email:', email.email);
+    const url = `${this.apiUrl}/forgot-password`;
+    return this.http.post(url, email, this.httpOptions).pipe(
+      tap(response => { console.log('Forgot password request successful:', response); }),
+      catchError(error => this.handleError(error))
+    );
+  }
+
+  validateResetCode(resetCode: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/validate-reset-code`, JSON.stringify(resetCode), { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) }).pipe(
+      tap(response => { console.log('Reset code validation successful:', response); }),
+      catchError(this.handleError)
+    );
+  }
+
   resetPassword(resetData: ResetPasswordDTO): Observable<any> {
-    console.log('Attempting to reset password');
-    return this.http.post(`${this.apiUrl}/reset-password`, resetData, this.httpOptions)
-      .pipe(
-        tap(response => {
-          console.log('Password reset successful:', response);
-        }),
-        catchError(this.handleError)
-      );
+    return this.http.post(`${this.apiUrl}/reset-password`, resetData, this.httpOptions).pipe(
+      tap(response => { console.log('Password reset successful:', response); }),
+      catchError(this.handleError)
+    );
   }
 
   logout(): void {
-    console.log('Logging out user');
-    
-    // Clear authentication state
+    try { localStorage.removeItem('token'); } catch {}
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
-    
-    // Use window.location for more reliable navigation
-    console.log('Redirecting to login page...');
-    
-    // Force a complete page reload to login to avoid routing issues
     if (typeof window !== 'undefined') {
       window.location.replace('/login');
     } else {
-      // Fallback for server-side rendering
       this.router.navigate(['/login']);
     }
   }
 
-  /**
-   * Start session monitoring after successful login
-   */
-  startSessionMonitoring(): void {
-    // This will be called by the main layout component
-    // We can't inject SessionTimeoutService here due to circular dependency
-    console.log('Session monitoring should be started by main layout');
-  }
-
-  getCurrentUser(): User | null {
-    const user = this.currentUserSubject.value;
-    return user ? this.normalizeUser(user) : null;
-  }
-
-  isAuthenticated(): boolean {
-    return this.isAuthenticatedSubject.value;
-  }
-
-  isLoggedIn(): boolean {
-    return this.isAuthenticated();
-  }
-
-  getCurrentUserId(): number {
-    const user = this.getCurrentUser();
-    if (!user) {
-      throw new Error('No user logged in');
-    }
-    return user.userId || user.UserId || 0;
-  }
+  startSessionMonitoring(): void { console.log('Session monitoring should be started by main layout'); }
+  getCurrentUser(): User | null { const user = this.currentUserSubject.value; return user ? this.normalizeUser(user) : null; }
+  isAuthenticated(): boolean { return this.isAuthenticatedSubject.value; }
+  isLoggedIn(): boolean { return this.isAuthenticated(); }
+  getCurrentUserId(): number { const user = this.getCurrentUser(); if (!user) throw new Error('No user logged in'); return user.userId || user.UserId || 0; }
 } 

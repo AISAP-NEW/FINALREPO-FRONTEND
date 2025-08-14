@@ -103,4 +103,10 @@ export class DatasetsComponent implements OnInit {
     this.thumbnailService.clearCache();
     console.log('Thumbnail cache cleared');
   }
+
+  onDatasetDeleted(datasetId: string) {
+    // Optimistically remove from current lists
+    this.datasets = this.datasets.filter(d => d.datasetId !== datasetId);
+    this.filteredDatasets = this.filteredDatasets.filter(d => d.datasetId !== datasetId);
+  }
 } 

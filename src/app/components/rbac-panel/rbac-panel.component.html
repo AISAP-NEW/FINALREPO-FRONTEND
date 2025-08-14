@@ -1,0 +1,66 @@
+<ion-card>
+  <ion-card-header>
+    <ion-card-title>Users</ion-card-title>
+  </ion-card-header>
+  <ion-card-content>
+    <div class="row between">
+      <ion-searchbar placeholder="Search users" (ionInput)="search.set($any($event.detail).value || '')"></ion-searchbar>
+      <ion-select label="Role" [value]="filterRole()" (ionChange)="filterRole.set($any($event.detail).value)">
+        <ion-select-option value="All">All</ion-select-option>
+        <ion-select-option *ngFor="let r of roles()" [value]="r">{{ r }}</ion-select-option>
+      </ion-select>
+    </div>
+
+    <ion-list>
+      <ion-item *ngFor="let u of filteredUsers()">
+        <ion-label>
+          <h2>{{ u.username }}</h2>
+          <p>{{ u.email }}</p>
+          <p>Role: {{ u.role }}</p>
+        </ion-label>
+        <div slot="end" class="row">
+          <ion-select [value]="u.role" (ionChange)="assignRole(u, $any($event.detail).value)" [disabled]="!isItAdmin && canAssignDeveloperOnly">
+            <ion-select-option *ngFor="let r of roles()" [value]="r">{{ r }}</ion-select-option>
+          </ion-select>
+          <ion-button fill="clear" color="danger" (click)="deleteUser(u)" [disabled]="!canManageUsers"><ion-icon name="trash-outline"></ion-icon></ion-button>
+        </div>
+      </ion-item>
+    </ion-list>
+
+    <div class="section" *ngIf="canManageUsers" [formGroup]="createForm">
+      <h3>Create User</h3>
+      <div class="grid">
+        <ion-input label="Username" labelPlacement="stacked" formControlName="username"></ion-input>
+        <ion-input label="Email" labelPlacement="stacked" formControlName="email"></ion-input>
+        <ion-input label="Password" labelPlacement="stacked" type="password" formControlName="password"></ion-input>
+        <ion-select label="Role" labelPlacement="stacked" formControlName="role">
+          <ion-select-option *ngFor="let r of roles()" [value]="r">{{ r }}</ion-select-option>
+        </ion-select>
+      </div>
+      <div class="row end"><ion-button (click)="createUser()"><ion-icon name="add-outline"></ion-icon>Create</ion-button></div>
+    </div>
+  </ion-card-content>
+</ion-card>
+
+<ion-card>
+  <ion-card-header>
+    <ion-card-title>Role Permissions</ion-card-title>
+  </ion-card-header>
+  <ion-card-content>
+    <ion-segment [value]="selectedRoleForPermissions()" (ionChange)="loadRolePermissions($any($event.detail).value)">
+      <ion-segment-button *ngFor="let r of roles()" [value]="r">{{ r }}</ion-segment-button>
+    </ion-segment>
+    <div class="permissions">
+      <div class="perm-row" *ngFor="let p of permissions(); let i = index">
+        <div class="resource">{{ p.resource }}</div>
+        <ion-toggle [checked]="p.create" (ionChange)="onPermToggle(i, 'create', $any($event.detail).checked)" [disabled]="!isItAdmin">Create</ion-toggle>
+        <ion-toggle [checked]="p.read" (ionChange)="onPermToggle(i, 'read', $any($event.detail).checked)" [disabled]="!isItAdmin">Read</ion-toggle>
+        <ion-toggle [checked]="p.update" (ionChange)="onPermToggle(i, 'update', $any($event.detail).checked)" [disabled]="!isItAdmin">Update</ion-toggle>
+        <ion-toggle [checked]="p.delete" (ionChange)="onPermToggle(i, 'delete', $any($event.detail).checked)" [disabled]="!isItAdmin">Delete</ion-toggle>
+      </div>
+    </div>
+    <div class="row end"><ion-button (click)="savePermissions()" [disabled]="!isItAdmin"><ion-icon name="save-outline"></ion-icon>Save</ion-button></div>
+  </ion-card-content>
+</ion-card>
+
+

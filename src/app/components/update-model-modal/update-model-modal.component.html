@@ -42,6 +42,13 @@
       </ion-note>
     </ion-item>
 
+    <ion-item>
+      <ion-label position="stacked">Subtopic</ion-label>
+      <ion-select formControlName="subtopicId">
+        <ion-select-option *ngFor="let sub of subtopics" [value]="sub.Subtopic_ID">{{ sub.SubtopicName }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
     <ion-item *ngIf="updateForm.value.topicId">
       <ion-label position="stacked">Topic Description</ion-label>
       <ion-textarea [value]="selectedTopicDescription" readonly autoGrow="true"></ion-textarea>

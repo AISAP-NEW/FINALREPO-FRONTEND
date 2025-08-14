@@ -1,0 +1,13 @@
+.row { display: flex; gap: 8px; align-items: center; }
+.row.between { justify-content: space-between; }
+.row.end { justify-content: flex-end; }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 12px; margin-top: 8px; }
+
+.section { margin-top: 16px; }
+
+.permissions { margin-top: 12px; display: grid; gap: 8px; }
+.perm-row { display: grid; grid-template-columns: 1fr repeat(4, max-content); gap: 12px; align-items: center; }
+.resource { text-transform: capitalize; font-weight: 500; }
+
+

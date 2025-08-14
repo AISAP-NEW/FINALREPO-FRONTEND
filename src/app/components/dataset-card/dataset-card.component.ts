@@ -1,9 +1,9 @@
-import { Component, Input, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { RouterModule, Router } from '@angular/router';
 import { Dataset } from '../../services/dataset.service';
-import { IonIcon, IonSpinner } from '@ionic/angular/standalone';
+import { IonIcon, IonSpinner, IonButton } from '@ionic/angular/standalone';
 import { environment } from '../../../environments/environment';
 import { DatasetActionsModalComponent } from '../dataset-actions-modal/dataset-actions-modal.component';
 import { ModalController } from '@ionic/angular';
@@ -20,12 +20,14 @@ import { ThumbnailService } from '../../services/thumbnail.service';
     NgClass,
     RouterModule,
     IonIcon,
-    IonSpinner
+    IonSpinner,
+    IonButton
   ]
 })
 export class DatasetCardComponent implements OnChanges, OnInit, OnDestroy {
   @Input() dataset!: Dataset;
   @Input() isSelected = false;
+  @Output() datasetDeleted = new EventEmitter<string>();
   
   hasImageError = false;
   isLoading = true;
@@ -162,6 +164,22 @@ export class DatasetCardComponent implements OnChanges, OnInit, OnDestroy {
     });
 
     return modal.present();
+  }
+
+  editDataset() {
+    // Navigate to details or edit route (fallback to details if edit not available)
+    const id = this.dataset?.datasetId;
+    if (id) {
+      this.router.navigate(['/datasets', id, 'details']);
+    }
+  }
+
+  deleteDataset() {
+    // Emit deletion event for parent to handle actual deletion
+    const id = this.dataset?.datasetId;
+    if (id) {
+      this.datasetDeleted.emit(id);
+    }
   }
 
   getStatusClass(): string {

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 
 export const routes: Routes = [
@@ -113,9 +114,19 @@ export const routes: Routes = [
           .then(m => m.ReportsComponent)
       },
       {
+        path: 'db-maintenance',
+        loadComponent: () => import('./pages/database-maintenance.page').then(m => m.DatabaseMaintenancePage)
+      },
+      {
         path: 'access-levels',
         loadComponent: () => import('./pages/access-levels/access-levels.component')
           .then(m => m.AccessLevelsComponent)
+      },
+      {
+        path: 'taxonomy-management',
+        loadComponent: () => import('./pages/taxonomy-management/taxonomy-management.page').then(m => m.TaxonomyManagementPage),
+        canActivate: [RolesGuard],
+        data: { roles: ['IT Admin', 'Lead Developer'] }
       },
       {
         path: 'notifications',

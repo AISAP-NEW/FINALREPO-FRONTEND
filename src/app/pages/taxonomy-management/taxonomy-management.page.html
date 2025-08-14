@@ -1,0 +1,164 @@
+<ion-header>
+	<ion-toolbar>
+		<ion-title>
+			<ion-icon name="book-outline"></ion-icon>
+			Knowledge Management
+		</ion-title>
+	</ion-toolbar>
+</ion-header>
+
+<ion-content>
+    <ion-searchbar placeholder="Search categories, topics, subtopics" (ionInput)="onSearchInput($event)"></ion-searchbar>
+
+    <div class="layout">
+        <div class="sidebar">
+            <ion-card>
+                <ion-card-header>
+                    <ion-card-title>Admin Panel</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+                    <ion-list>
+                        <ion-item button [class.active]="selectedSection() === 'dashboard'" (click)="selectedSection.set('dashboard')">Dashboard</ion-item>
+                        <ion-item button [class.active]="selectedSection() === 'categories'" (click)="selectedSection.set('categories')">Categories</ion-item>
+                        <ion-item button [class.active]="selectedSection() === 'topics'" (click)="selectedSection.set('topics')">Topics</ion-item>
+                        <ion-item button [class.active]="selectedSection() === 'subtopics'" (click)="selectedSection.set('subtopics')">Subtopics</ion-item>
+                        <ion-item button [class.active]="selectedSection() === 'user-management'" (click)="selectedSection.set('user-management')">User Management</ion-item>
+                    </ion-list>
+                </ion-card-content>
+            </ion-card>
+        </div>
+        <div class="left" *ngIf="selectedSection() !== 'user-management'">
+            <ion-list>
+                <ion-accordion-group>
+                    <ion-accordion *ngFor="let c of filteredCategories()" [value]="c.Category_ID">
+                        <ion-item slot="header" (click)="selectCategory(c)">
+                            <ion-label>
+                                <h2>{{ c.CategoryName }}</h2>
+                                <p>{{ c.Description }}</p>
+                            </ion-label>
+                            <div slot="end" *ngIf="canCreateOrUpdate">
+                                <ion-button fill="clear" size="small" (click)="$event.stopPropagation(); startEditCategory(c)"><ion-icon name="create-outline"></ion-icon></ion-button>
+                                <ion-button fill="clear" size="small" color="danger" *ngIf="canDelete" (click)="$event.stopPropagation(); confirmDeleteCategory(c)"><ion-icon name="trash-outline"></ion-icon></ion-button>
+                            </div>
+                        </ion-item>
+
+                        <div class="pad" slot="content">
+                            <ion-item-divider color="light">Topics</ion-item-divider>
+                            <div *ngFor="let t of (topicsByCategory()[c.Category_ID] || [])" class="topic-item">
+                                <ion-item (click)="selectTopic(t, c.Category_ID)">
+                                    <ion-label>
+                                        <strong>{{ t.TopicName }}</strong>
+                                        <p>{{ t.Description }}</p>
+                                    </ion-label>
+                                    <div slot="end" *ngIf="canCreateOrUpdate">
+                                        <ion-button fill="clear" size="small" (click)="$event.stopPropagation(); startEditTopic(t, c.Category_ID)"><ion-icon name="create-outline"></ion-icon></ion-button>
+                                        <ion-button fill="clear" size="small" color="danger" *ngIf="canDelete" (click)="$event.stopPropagation(); confirmDeleteTopic(t, c.Category_ID)"><ion-icon name="trash-outline"></ion-icon></ion-button>
+                                    </div>
+                                </ion-item>
+
+                                <div class="subtopics">
+                                    <ion-item-divider color="light">Subtopics</ion-item-divider>
+                                    <div *ngFor="let s of (subtopicsByTopic()[t.Topic_ID] || [])" class="subtopic-item">
+                                        <ion-item (click)="selectSubtopic(s, t.Topic_ID)">
+                                            <ion-label>
+                                                {{ s.SubtopicName }}
+                                                <p>{{ s.Description }}</p>
+                                            </ion-label>
+                                            <div slot="end" *ngIf="canCreateOrUpdate">
+                                                <ion-button fill="clear" size="small" (click)="$event.stopPropagation(); startEditSubtopic(s, t.Topic_ID)"><ion-icon name="create-outline"></ion-icon></ion-button>
+                                                <ion-button fill="clear" size="small" color="danger" *ngIf="canDelete" (click)="$event.stopPropagation(); confirmDeleteSubtopic(s, t.Topic_ID)"><ion-icon name="trash-outline"></ion-icon></ion-button>
+                                            </div>
+                                        </ion-item>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ion-accordion>
+                </ion-accordion-group>
+            </ion-list>
+        </div>
+
+        <div class="right" *ngIf="selectedSection() !== 'user-management'">
+            <ion-card>
+                <ion-card-header>
+                    <ion-card-title>Editor</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+                    <div *ngIf="selectedCategory() as sc" [formGroup]="categoryForm">
+                        <h3>Category</h3>
+                        <ion-item>
+                            <ion-label position="stacked">Name</ion-label>
+                            <ion-input formControlName="CategoryName"></ion-input>
+                        </ion-item>
+                        <ion-item>
+                            <ion-label position="stacked">Description</ion-label>
+                            <ion-textarea formControlName="Description"></ion-textarea>
+                        </ion-item>
+                        <div class="row-end" *ngIf="canCreateOrUpdate">
+                            <ion-button size="small" (click)="saveCategory(sc)"><ion-icon name="save-outline"></ion-icon>Save</ion-button>
+                            <ion-button size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteCategory(sc)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
+                        </div>
+                    </div>
+
+                    <div *ngIf="selectedTopic() as st" [formGroup]="topicForm">
+                        <h3>Topic</h3>
+                        <ion-item>
+                            <ion-label position="stacked">Name</ion-label>
+                            <ion-input formControlName="TopicName"></ion-input>
+                        </ion-item>
+                        <ion-item>
+                            <ion-label position="stacked">Description</ion-label>
+                            <ion-textarea formControlName="Description"></ion-textarea>
+                        </ion-item>
+                        <ion-item>
+                            <ion-label position="stacked">Category</ion-label>
+                            <ion-select formControlName="Category_ID">
+                                <ion-select-option *ngFor="let cat of categories()" [value]="cat.Category_ID">{{ cat.CategoryName }}</ion-select-option>
+                            </ion-select>
+                        </ion-item>
+                        <div class="row-end" *ngIf="canCreateOrUpdate">
+                            <ion-button size="small" (click)="saveTopic(st)"><ion-icon name="save-outline"></ion-icon>Save</ion-button>
+                            <ion-button size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteTopic(st, selectedCategoryId()!)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
+                        </div>
+                    </div>
+
+                    <div *ngIf="selectedSubtopic() as ss" [formGroup]="subtopicForm">
+                        <h3>Subtopic</h3>
+                        <ion-item>
+                            <ion-label position="stacked">Name</ion-label>
+                            <ion-input formControlName="SubtopicName"></ion-input>
+                        </ion-item>
+                        <ion-item>
+                            <ion-label position="stacked">Description</ion-label>
+                            <ion-textarea formControlName="Description"></ion-textarea>
+                        </ion-item>
+                        <ion-item>
+                            <ion-label position="stacked">Topic</ion-label>
+                            <ion-select formControlName="Topic_ID">
+                                <ion-select-option *ngFor="let tp of allTopics()" [value]="tp.Topic_ID">{{ tp.TopicName }}</ion-select-option>
+                            </ion-select>
+                        </ion-item>
+                        <div class="row-end" *ngIf="canCreateOrUpdate">
+                            <ion-button size="small" (click)="saveSubtopic(ss)"><ion-icon name="save-outline"></ion-icon>Save</ion-button>
+                            <ion-button size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteSubtopic(ss, selectedTopicId()!)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
+                        </div>
+                    </div>
+
+                    <div *ngIf="canCreateOrUpdate" class="quick-actions">
+                        <ion-button size="small" (click)="startCreateCategory()"><ion-icon name="add-outline"></ion-icon>New Category</ion-button>
+                        <ion-button size="small" [disabled]="!selectedCategoryId()" (click)="startCreateTopicForSelectedCategory()"><ion-icon name="add-outline"></ion-icon>New Topic</ion-button>
+                        <ion-button size="small" [disabled]="!selectedTopicId()" (click)="startCreateSubtopicForSelectedTopic()"><ion-icon name="add-outline"></ion-icon>New Subtopic</ion-button>
+                    </div>
+                </ion-card-content>
+            </ion-card>
+        </div>
+
+        <!-- RBAC panel -->
+        <div class="rbac" *ngIf="selectedSection() === 'user-management'">
+            <app-rbac-panel></app-rbac-panel>
+        </div>
+    </div>
+
+</ion-content>
+
+

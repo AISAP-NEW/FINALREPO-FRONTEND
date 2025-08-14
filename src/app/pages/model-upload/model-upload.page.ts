@@ -46,6 +46,12 @@ interface Topic {
   Description?: string;
 }
 
+interface Subtopic {
+  Subtopic_ID: number;
+  SubtopicName: string;
+  Description?: string;
+}
+
 @Component({
   selector: 'app-model-upload',
   templateUrl: './model-upload.page.html',
@@ -85,8 +91,10 @@ export class ModelUploadPage implements OnInit {
   isLoading = false;
   categories: Category[] = [];
   topics: Topic[] = [];
+  subtopics: Subtopic[] = [];
   isCategoriesLoading = false;
   isTopicsLoading = false;
+  isSubtopicsLoading = false;
   selectedTopicDescription = '';
 
   constructor(
@@ -103,7 +111,8 @@ export class ModelUploadPage implements OnInit {
       modelName: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
       categoryId: ['', [Validators.required]],
-      topicId: ['', [Validators.required]]
+      topicId: ['', [Validators.required]],
+      subtopicId: ['']
     });
   }
 
@@ -117,14 +126,21 @@ export class ModelUploadPage implements OnInit {
         this.loadTopicsByCategory(categoryId);
       } else {
         this.topics = [];
-        this.uploadForm.patchValue({ topicId: '' });
+        this.subtopics = [];
+        this.uploadForm.patchValue({ topicId: '', subtopicId: '' });
       }
     });
 
-    // Watch for topic changes to show description
+    // Watch for topic changes to show description and load subtopics
     this.uploadForm.get('topicId')?.valueChanges.subscribe(topicId => {
-      const topic = this.topics.find(t => t.Topic_ID === topicId);
+      const topic = this.topics.find(t => t.Topic_ID === Number(topicId));
       this.selectedTopicDescription = topic?.Description || '';
+      if (topicId) {
+        this.loadSubtopicsByTopic(Number(topicId));
+      } else {
+        this.subtopics = [];
+        this.uploadForm.patchValue({ subtopicId: '' });
+      }
     });
   }
 
@@ -142,8 +158,6 @@ export class ModelUploadPage implements OnInit {
         if (this.categories.length === 0) {
           console.warn('No categories found in the response');
           this.toastService.presentToast('warning' as any, 'No categories available');
-        } else {
-          console.log(`Successfully loaded ${this.categories.length} categories`);
         }
       },
       error: (error) => {
@@ -154,7 +168,6 @@ export class ModelUploadPage implements OnInit {
   }
 
   private loadTopicsByCategory(categoryId: number | string) {
-    // Ensure categoryId is a number
     const categoryIdNum = Number(categoryId);
     if (isNaN(categoryIdNum)) {
       console.error('Invalid category ID:', categoryId);
@@ -164,7 +177,9 @@ export class ModelUploadPage implements OnInit {
 
     this.isTopicsLoading = true;
     this.uploadForm.get('topicId')?.reset();
+    this.uploadForm.get('subtopicId')?.reset();
     this.selectedTopicDescription = '';
+    this.subtopics = [];
     
     console.log('Loading topics for category ID:', categoryIdNum);
     this.http.get<Topic[]>(`http://localhost:5183/api/Category/topics-by-category/${categoryIdNum}`).pipe(
@@ -181,6 +196,25 @@ export class ModelUploadPage implements OnInit {
       error: (error) => {
         console.error('Error loading topics:', error);
         this.toastService.presentToast('error' as any, 'Failed to load topics. Please try again.');
+      }
+    });
+  }
+
+  private loadSubtopicsByTopic(topicId: number) {
+    if (!topicId) return;
+    this.isSubtopicsLoading = true;
+    this.uploadForm.get('subtopicId')?.reset();
+    console.log('Loading subtopics for topic ID:', topicId);
+
+    this.http.get<Subtopic[]>(`http://localhost:5183/api/Topic/${topicId}/subtopics`).pipe(
+      finalize(() => this.isSubtopicsLoading = false)
+    ).subscribe({
+      next: (subs) => {
+        this.subtopics = Array.isArray(subs) ? subs : [];
+      },
+      error: (error) => {
+        console.error('Error loading subtopics:', error);
+        this.toastService.presentToast('error' as any, 'Failed to load subtopics. Please try again.');
       }
     });
   }
@@ -214,13 +248,11 @@ export class ModelUploadPage implements OnInit {
 
   private handleFile(file: File) {
     console.log('Handling file:', file.name, 'Size:', file.size);
-    // Check file size (max 500MB)
     if (file.size > 500 * 1024 * 1024) {
       this.toastService.presentToast('error' as any, 'File is too large. Maximum size is 500MB.');
       return;
     }
 
-    // Check file type - expanded to include script files
     const allowedTypes = ['.h5', '.pb', '.pt', '.pth', '.onnx', '.pkl', '.joblib', '.model', '.py', '.js', '.ts', '.ipynb'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
     
@@ -230,7 +262,6 @@ export class ModelUploadPage implements OnInit {
     }
 
     this.selectedFile = file;
-    console.log('File accepted:', file.name, 'Type:', fileExtension);
   }
 
   removeFile() {
@@ -253,10 +284,21 @@ export class ModelUploadPage implements OnInit {
     formData.append('modelName', formValue.modelName);
     formData.append('description', formValue.description);
     formData.append('topicId', formValue.topicId);
+    if (formValue.subtopicId) {
+      formData.append('subtopicId', String(formValue.subtopicId));
+    }
     formData.append('codeFile', this.selectedFile!);
 
     fetch('http://localhost:5183/api/ModelFile/create-model-with-file', {
       method: 'POST',
+      headers: (() => {
+        const headers: Record<string, string> = {};
+        try {
+          const token = localStorage.getItem('token');
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+        } catch {}
+        return headers;
+      })(),
       body: formData
     })
       .then(async response => {
