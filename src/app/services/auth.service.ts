@@ -52,6 +52,7 @@ export interface User {
   Username?: string;
   Email?: string;
   Role?: string;
+  ProfilePictureUrl?: string;
   Token?: string;
   token?: string;
 }
@@ -106,6 +107,7 @@ export class AuthService {
       username: user.username || user.Username || '',
       email: user.email || user.Email || '',
       role: user.role || user.Role || 'user',
+      profilePictureUrl: user.profilePictureUrl || user.ProfilePictureUrl || '/assets/default-avatar.png',
       // Preserve token if present
       Token: user.Token || user.token,
       token: user.Token || user.token,
@@ -113,7 +115,8 @@ export class AuthService {
       UserId: user.userId || user.UserId || 0,
       Username: user.username || user.Username || '',
       Email: user.email || user.Email || '',
-      Role: user.role || user.Role || 'user'
+      Role: user.role || user.Role || 'user',
+      ProfilePictureUrl: user.profilePictureUrl || user.ProfilePictureUrl || '/assets/default-avatar.png'
     };
   }
 

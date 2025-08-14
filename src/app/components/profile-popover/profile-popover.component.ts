@@ -1,9 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { 
   IonIcon, IonButton, PopoverController 
 } from '@ionic/angular/standalone';
+import { UserService } from '../../services/user.service';
 import { addIcons } from 'ionicons';
 import { 
   callOutline, businessOutline, calendarOutline, informationCircleOutline,
@@ -17,18 +18,39 @@ import {
   standalone: true,
   imports: [CommonModule, IonIcon, IonButton]
 })
-export class ProfilePopoverComponent {
+export class ProfilePopoverComponent implements OnInit {
   @Input() userProfile: any;
+  cachedProfilePictureUrl: string = '/assets/default-avatar.png';
 
   constructor(
     private router: Router,
-    private popoverController: PopoverController
+    private popoverController: PopoverController,
+    private userService: UserService
   ) {
     // Register icons
     addIcons({
       callOutline, businessOutline, calendarOutline, informationCircleOutline,
       createOutline, personOutline
     });
+  }
+
+  ngOnInit() {
+    this.updateProfilePictureUrl();
+  }
+
+  private updateProfilePictureUrl() {
+    console.log('ProfilePopover: Updating profile picture URL:', this.userProfile?.profilePictureUrl);
+    
+    this.cachedProfilePictureUrl = this.userService.processProfilePictureUrl(
+      this.userProfile?.profilePictureUrl,
+      this.userProfile?.userId
+    );
+    
+    console.log('ProfilePopover: Profile picture URL updated to:', this.cachedProfilePictureUrl);
+  }
+
+  getProfilePictureUrl(): string {
+    return this.cachedProfilePictureUrl;
   }
 
   async editProfile() {
@@ -46,6 +68,8 @@ export class ProfilePopoverComponent {
   }
 
   onImageError(event: any) {
+    console.warn('ProfilePopover: Profile picture failed to load, using default avatar');
     event.target.src = '/assets/default-avatar.png';
+    this.cachedProfilePictureUrl = '/assets/default-avatar.png';
   }
 }

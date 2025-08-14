@@ -1,9 +1,9 @@
 <div class="profile-icon-wrapper" (click)="showProfilePopover($event)">
   <div class="profile-avatar">
     <img 
-      [src]="userProfile?.profilePictureUrl || '/assets/default-avatar.png'" 
+      [src]="getProfilePictureUrl()" 
       [alt]="userProfile?.username || 'User'"
-      class="avatar-image"
+      [class]="'avatar-image ' + size"
       (error)="onImageError($event)"
     />
     <div class="online-indicator" *ngIf="isOnline"></div>

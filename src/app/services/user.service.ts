@@ -233,7 +233,7 @@ export class UserService {
 
   // Profile Management Methods
   getUserProfile(userId: number): Observable<any> {
-    const url = `${this.API_URL}/User/${userId}`;
+    const url = `${this.API_URL}/User/profile/${userId}`;
     return this.http.get<any>(url).pipe(
       catchError(this.handleError)
     );
@@ -247,14 +247,29 @@ export class UserService {
   }
 
   uploadProfilePicture(formData: FormData): Observable<any> {
-    const url = `${this.API_URL}/User/profile-picture/upload`;
+    const url = `${this.API_URL}/User/upload-profile-picture`;
     return this.http.post<any>(url, formData).pipe(
-      catchError(this.handleError)
+      tap(response => {
+        console.log('Upload profile picture response:', response);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.log('Upload profile picture error status:', error.status);
+        console.log('Upload profile picture error response:', error.error);
+        
+        // Handle successful upload that returns 204 No Content or similar
+        if (error.status >= 200 && error.status < 300) {
+          console.log('Upload was successful despite error status');
+          // Return empty success response
+          return of({ success: true });
+        }
+        
+        return this.handleError(error);
+      })
     );
   }
 
   deleteProfilePicture(userId: number): Observable<any> {
-    const url = `${this.API_URL}/User/profile-picture/${userId}`;
+    const url = `${this.API_URL}/User/delete-profile-picture/${userId}`;
     return this.http.delete<any>(url).pipe(
       catchError(this.handleError)
     );
@@ -286,5 +301,46 @@ export class UserService {
     return this.http.put<any>(url, phoneData).pipe(
       catchError(this.handleError)
     );
+  }
+
+  // Utility method to process profile picture URL
+  processProfilePictureUrl(profilePictureUrl: string | undefined | null, userId?: number): string {
+    console.log('ProcessProfilePictureUrl input:', profilePictureUrl, 'userId:', userId);
+    
+    // If we have a userId, use the new backend endpoint for profile pictures
+    if (userId) {
+      // Check if it's the default profile picture path
+      if (!profilePictureUrl || 
+          profilePictureUrl === '/assets/default-avatar.png' ||
+          profilePictureUrl === '/images/Profile.png' ||
+          profilePictureUrl.trim() === '') {
+        console.log('Using default avatar for userId:', userId);
+        return '/assets/default-avatar.png';
+      }
+      
+      // Use the new backend endpoint for serving profile pictures
+      const endpointUrl = `${environment.apiUrl}/api/User/profile-picture-image/${userId}`;
+      console.log('Using backend endpoint for profile picture:', endpointUrl);
+      return endpointUrl;
+    }
+    
+    // Fallback to old logic if no userId provided
+    if (!profilePictureUrl || 
+        profilePictureUrl === '/assets/default-avatar.png' ||
+        profilePictureUrl.trim() === '') {
+      console.log('Using default avatar (no userId)');
+      return '/assets/default-avatar.png';
+    }
+    
+    // Check if the URL is a relative path and convert to absolute if needed
+    if (profilePictureUrl.startsWith('/') && !profilePictureUrl.startsWith('//')) {
+      // If it's a relative path, make it absolute to the backend server
+      const fullUrl = `${environment.apiUrl}${profilePictureUrl}`;
+      console.log('Converted relative URL to absolute:', fullUrl);
+      return fullUrl;
+    }
+    
+    console.log('Using URL as-is:', profilePictureUrl);
+    return profilePictureUrl;
   }
 } 
