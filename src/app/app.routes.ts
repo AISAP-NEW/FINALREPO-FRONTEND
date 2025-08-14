@@ -118,9 +118,18 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/database-maintenance.page').then(m => m.DatabaseMaintenancePage)
       },
       {
-        path: 'access-levels',
-        loadComponent: () => import('./pages/access-levels/access-levels.component')
-          .then(m => m.AccessLevelsComponent)
+        path: 'project-access-requests',
+        loadComponent: () => import('./pages/project-access-requests/project-access-requests.component')
+          .then(m => m.ProjectAccessRequestsComponent),
+        canActivate: [RolesGuard],
+        data: { roles: ['Developer', 'LeadDeveloper', 'Lead Developer'] }
+      },
+      {
+        path: 'role-promotion-requests',
+        loadComponent: () => import('./pages/role-promotion-requests/role-promotion-requests.component')
+          .then(m => m.RolePromotionRequestsComponent),
+        canActivate: [RolesGuard],
+        data: { roles: ['Admin'] }
       },
       {
         path: 'taxonomy-management',

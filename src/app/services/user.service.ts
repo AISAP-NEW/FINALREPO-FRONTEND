@@ -307,17 +307,8 @@ export class UserService {
   processProfilePictureUrl(profilePictureUrl: string | undefined | null, userId?: number): string {
     console.log('ProcessProfilePictureUrl input:', profilePictureUrl, 'userId:', userId);
     
-    // If we have a userId, use the new backend endpoint for profile pictures
+    // If we have a userId, always try the backend endpoint first for profile pictures
     if (userId) {
-      // Check if it's the default profile picture path
-      if (!profilePictureUrl || 
-          profilePictureUrl === '/assets/default-avatar.png' ||
-          profilePictureUrl === '/images/Profile.png' ||
-          profilePictureUrl.trim() === '') {
-        console.log('Using default avatar for userId:', userId);
-        return '/assets/default-avatar.png';
-      }
-      
       // Use the new backend endpoint for serving profile pictures
       const endpointUrl = `${environment.apiUrl}/api/User/profile-picture-image/${userId}`;
       console.log('Using backend endpoint for profile picture:', endpointUrl);
@@ -342,5 +333,13 @@ export class UserService {
     
     console.log('Using URL as-is:', profilePictureUrl);
     return profilePictureUrl;
+  }
+
+  // Get profile picture URL by username (for access requests)
+  getProfilePictureUrlByUsername(username: string): string {
+    // For now, we'll use a default avatar since we don't have userId
+    // TODO: Backend needs to include UserId in ProjectAccessRequestSummaryDTO
+    console.log('Getting profile picture for username:', username);
+    return '/assets/default-avatar.png';
   }
 } 

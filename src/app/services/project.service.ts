@@ -14,6 +14,7 @@ export interface Project {
   estimatedTimeline: string;
   createdDate: string;
   isActive: boolean;
+  isAvailable?: boolean;
   createdByUserId: number;
   createdByUsername: string;
   members: ProjectMember[];
@@ -49,6 +50,11 @@ export interface PendingAccessRequest {
   username: string;
   email: string;
   requestDate: Date;
+  profilePicture?: string | null;
+}
+
+export interface PendingAccessRequestWithProject extends PendingAccessRequest {
+  projectName: string;
 }
 
 export interface AccessApprovalDTO {
@@ -123,6 +129,7 @@ export class ProjectService {
       estimatedTimeline: apiProject.EstimatedTimeline,
       createdDate: apiProject.CreatedDate,
       isActive: typeof apiProject.IsActive === 'boolean' ? apiProject.IsActive : true,
+      isAvailable: typeof apiProject.IsAvailable === 'boolean' ? apiProject.IsAvailable : false,
       createdByUserId: apiProject.CreatedByUserId,
       createdByUsername: apiProject.CreatedByUsername || 'Unknown User',
       members: (apiProject.Members || []).map((member: any) => ({
@@ -408,7 +415,8 @@ export class ProjectService {
   }
 
   getPendingRequests(projectId: number, leadDeveloperId: number): Observable<PendingAccessRequest[]> {
-    return this.http.get<any[]>(`${this.API_URL}/ProjectMember/pendingRequests/${projectId}?leadDeveloperId=${leadDeveloperId}`).pipe(
+    console.log(`Calling: ${this.API_URL}/ProjectMember/pendingRequests?projectId=${projectId}&leadDeveloperId=${leadDeveloperId}`);
+    return this.http.get<any[]>(`${this.API_URL}/ProjectMember/pendingRequests?projectId=${projectId}&leadDeveloperId=${leadDeveloperId}`).pipe(
       map(requests => {
         if (!Array.isArray(requests)) {
           console.error('Invalid requests response:', requests);
@@ -428,16 +436,21 @@ export class ProjectService {
   }
 
   approveAccess(approvalDto: AccessApprovalDTO): Observable<any> {
-    const url = `${this.API_URL}/ProjectMember/approveAccess`;
+    const url = `${this.API_URL}/Project/review-access-request`;
     const body = {
-      UserId: approvalDto.userId,
-      ProjectId: approvalDto.projectId,
-      LeadDeveloperId: approvalDto.leadDeveloperId
+      RequestId: approvalDto.userId, // This should be requestId, but we're using userId as identifier for now
+      ReviewedBy: approvalDto.leadDeveloperId,
+      IsApproved: true,
+      AssignedRole: 'Developer',
+      ReviewerComments: 'Approved via access request management'
     };
-    return this.http.post(url, body).pipe(
+    console.log('Approving access with URL:', url, 'Body:', body);
+    return this.http.put(url, body).pipe(
+      tap(response => console.log('Approve access response:', response)),
       catchError(error => {
-        // If it's a 204 No Content, consider it a success
-        if (error.status === 204) {
+        console.error('Approve access error:', error);
+        // If it's a 200/204, consider it a success
+        if (error.status === 200 || error.status === 204) {
           return of({ message: 'Access approved successfully' });
         }
         return this.handleError(error);
@@ -446,16 +459,21 @@ export class ProjectService {
   }
 
   denyAccess(approvalDto: AccessApprovalDTO): Observable<any> {
-    const url = `${this.API_URL}/ProjectMember/denyAccess`;
+    const url = `${this.API_URL}/Project/review-access-request`;
     const body = {
-      UserId: approvalDto.userId,
-      ProjectId: approvalDto.projectId,
-      LeadDeveloperId: approvalDto.leadDeveloperId
+      RequestId: approvalDto.userId, // This should be requestId, but we're using userId as identifier for now
+      ReviewedBy: approvalDto.leadDeveloperId,
+      IsApproved: false,
+      RejectionReason: 'Denied via access request management',
+      ReviewerComments: 'Denied via access request management'
     };
-    return this.http.post(url, body).pipe(
+    console.log('Denying access with URL:', url, 'Body:', body);
+    return this.http.put(url, body).pipe(
+      tap(response => console.log('Deny access response:', response)),
       catchError(error => {
-        // If it's a 204 No Content, consider it a success
-        if (error.status === 204) {
+        console.error('Deny access error:', error);
+        // If it's a 200/204, consider it a success
+        if (error.status === 200 || error.status === 204) {
           return of({ message: 'Access denied successfully' });
         }
         return this.handleError(error);
@@ -463,7 +481,7 @@ export class ProjectService {
     );
   }
 
-  requestAccess(projectId: number): Observable<any> {
+  requestAccess(projectId: number, message?: string): Observable<any> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       return throwError(() => new Error('No user logged in'));
@@ -476,13 +494,18 @@ export class ProjectService {
 
     const request = {
       ProjectId: projectId,
-      UserId: userId
+      UserId: userId,
+      Message: message || ''
     };
 
-    return this.http.post(`${this.API_URL}/ProjectMember/requestAccess`, request).pipe(
+    return this.http.post(`${this.API_URL}/Project/request-access`, request).pipe(
+      tap(response => {
+        console.log('Request access response:', response);
+      }),
       catchError(error => {
-        // If it's a 204 No Content, consider it a success
-        if (error.status === 204) {
+        console.error('Request access error:', error);
+        // If it's a 200/204, consider it a success
+        if (error.status === 200 || error.status === 204) {
           return of({ message: 'Access request submitted successfully' });
         }
         return this.handleError(error);
@@ -504,6 +527,216 @@ export class ProjectService {
     return this.http.get<any[]>(`${this.API_URL}/Project/All?userId=${userId}`).pipe(
       map(apiProjects => apiProjects.map(apiProject => this.convertProject(apiProject))),
       catchError(this.handleError)
+    );
+  }
+
+  // Get available projects for developers to request access
+  getAvailableProjects(): Observable<Project[]> {
+    return this.http.get<any[]>(`${this.API_URL}/Project/available`).pipe(
+      tap(response => {
+        console.log('Available projects API response:', response);
+      }),
+      map(apiProjects => {
+        if (!Array.isArray(apiProjects)) {
+          console.error('Invalid available projects response:', apiProjects);
+          throw new Error('Invalid response format from server');
+        }
+        return apiProjects.map(apiProject => this.convertProject(apiProject));
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  // Get all pending requests for all projects that the user manages (Lead Developer only)
+  getAllPendingRequestsForUser(leadDeveloperId: number): Observable<PendingAccessRequestWithProject[]> {
+    console.log('🔍 SERVICE DEBUG: Getting all pending requests for lead developer:', leadDeveloperId);
+    
+    // First get all projects for the user
+    return this.getProjects().pipe(
+      switchMap(projects => {
+        console.log('🔍 SERVICE DEBUG: Projects loaded for pending requests:', projects);
+        
+        const leadProjects = projects.filter(project => 
+          project.members.some(member => {
+            console.log(`🔍 SERVICE DEBUG: Checking member - userId: ${member.userId}, role: ${member.role}, leadDevId: ${leadDeveloperId}`);
+            const isLeadDev = member.role === 'LeadDeveloper' || member.role === 'Lead Developer' || member.role === 'leaddeveloper';
+            const isMatchingUser = member.userId === leadDeveloperId;
+            console.log(`🔍 SERVICE DEBUG: isLeadDev: ${isLeadDev}, isMatchingUser: ${isMatchingUser}`);
+            return isMatchingUser && isLeadDev;
+          })
+        );
+        
+        console.log('🔍 SERVICE DEBUG: Lead developer projects:', leadProjects);
+
+        if (leadProjects.length === 0) {
+          console.log('🔍 SERVICE DEBUG: No projects found for lead developer');
+          console.log('🔍 SERVICE DEBUG: Trying to get ALL projects to debug...');
+          
+          // Let's try getting requests from ALL projects as a fallback for debugging
+          const allProjectObservables = projects.map(project => {
+            console.log(`🔍 SERVICE DEBUG: Testing project: ${project.name} (${project.projectId})`);
+            return this.getProjectAccessRequests(project.projectId, leadDeveloperId).pipe(
+              map(requests => {
+                console.log(`🔍 SERVICE DEBUG: Requests for ANY project ${project.name}:`, requests);
+                return requests.map(request => ({
+                  // Map ProjectAccessRequestSummaryDTO fields
+                  projectMemberId: request.requestId || request.RequestId,
+                  projectId: project.projectId,
+                  userId: request.userId || request.UserId, // Now available from backend
+                  username: request.username || request.Username,
+                  email: request.userEmail || request.UserEmail,
+                  requestDate: new Date(request.requestDate || request.RequestDate),
+                  projectName: request.projectName || project.name,
+                  message: request.message || request.Message,
+                  status: request.status || request.Status,
+                  // Profile picture will be fetched using userId via UserService
+                  profilePicture: null
+                }));
+              }),
+              catchError(error => {
+                console.warn(`🔍 SERVICE DEBUG: Error loading requests for ANY project ${project.name}:`, error);
+                return of([]);
+              })
+            );
+          });
+
+          if (allProjectObservables.length === 0) {
+            return of([]);
+          }
+
+          // Combine all the observables and flatten the results
+          return allProjectObservables.reduce((acc, current) => {
+            return acc.pipe(
+              switchMap(accRequests => 
+                current.pipe(
+                  map(currentRequests => [...accRequests, ...currentRequests])
+                )
+              )
+            );
+          }, of([] as PendingAccessRequestWithProject[]));
+        }
+
+        // Get pending requests for each project using new API
+        const requestObservables = leadProjects.map(project => {
+          console.log(`🔍 SERVICE DEBUG: Getting pending requests for project: ${project.name} (${project.projectId})`);
+          return this.getProjectAccessRequests(project.projectId, leadDeveloperId).pipe(
+            map(requests => {
+              console.log(`🔍 SERVICE DEBUG: Requests for project ${project.name}:`, requests);
+              return requests.map(request => ({
+                // Map ProjectAccessRequestSummaryDTO fields
+                projectMemberId: request.requestId || request.RequestId,
+                projectId: project.projectId,
+                userId: request.userId || request.UserId, // Now available from backend
+                username: request.username || request.Username,
+                email: request.userEmail || request.UserEmail,
+                requestDate: new Date(request.requestDate || request.RequestDate),
+                projectName: request.projectName || project.name,
+                message: request.message || request.Message,
+                status: request.status || request.Status,
+                // Profile picture will be fetched using userId via UserService
+                profilePicture: null
+              }));
+            }),
+            catchError(error => {
+              console.warn(`🔍 SERVICE DEBUG: Error loading requests for project ${project.name}:`, error);
+              return of([]);
+            })
+          );
+        });
+
+        // Use forkJoin to combine all observables
+        if (requestObservables.length === 0) {
+          return of([]);
+        }
+
+        // Combine all the observables and flatten the results
+        return requestObservables.reduce((acc, current) => {
+          return acc.pipe(
+            switchMap(accRequests => 
+              current.pipe(
+                map(currentRequests => [...accRequests, ...currentRequests])
+              )
+            )
+          );
+        }, of([] as PendingAccessRequestWithProject[]));
+      }),
+      tap(allRequests => console.log('All pending requests combined:', allRequests)),
+      catchError(error => {
+        console.error('Error in getAllPendingRequestsForUser:', error);
+        return this.handleError(error);
+      })
+    );
+  }
+
+  // Get access requests for a specific project using new API
+  getProjectAccessRequests(projectId: number, requesterId: number): Observable<any[]> {
+    // Based on your backend: GET api/Project/access-requests/{projectId}?requesterId={requesterId}
+    const url = `${this.API_URL}/Project/access-requests/${projectId}?requesterId=${requesterId}`;
+    console.log('🔍 SERVICE DEBUG: Calling API:', url);
+    
+    return this.http.get<any[]>(url).pipe(
+      tap(response => {
+        console.log('🔍 SERVICE DEBUG: Project access requests response:', response);
+      }),
+      map(requests => {
+        if (!Array.isArray(requests)) {
+          console.error('🔍 SERVICE DEBUG: Invalid project access requests response:', requests);
+          throw new Error('Invalid response format from server');
+        }
+        // Filter for pending requests - backend returns ProjectAccessRequestSummaryDTO
+        // ProjectAccessRequestStatus enum: Pending = 0, Approved = 1, Denied = 2
+        const pendingRequests = requests.filter(request => {
+          const status = request.status || request.Status;
+          const isPending = status === 'Pending' || status === 0 || status === 'pending';
+          console.log('🔍 SERVICE DEBUG: Request status check - status:', status, 'isPending:', isPending);
+          return isPending;
+        });
+        console.log('🔍 SERVICE DEBUG: Filtered pending requests:', pendingRequests);
+        return pendingRequests;
+      }),
+      catchError(error => {
+        console.error('🔍 SERVICE DEBUG: API Error:', error);
+        return this.handleError(error);
+      })
+    );
+  }
+
+  // Review access request using new API
+  reviewAccessRequest(reviewDto: any): Observable<any> {
+    const url = `${this.API_URL}/Project/review-access-request`;
+    console.log('Reviewing access request with URL:', url, 'Body:', reviewDto);
+    return this.http.put(url, reviewDto).pipe(
+      tap(response => console.log('Review access request response:', response)),
+      catchError(error => {
+        console.error('Review access request error:', error);
+        // If it's a 200/204, consider it a success
+        if (error.status === 200 || error.status === 204) {
+          return of({ message: 'Access request reviewed successfully' });
+        }
+        return this.handleError(error);
+      })
+    );
+  }
+
+  // Update project availability (Lead Developer only)
+  updateProjectAvailability(projectId: number, isAvailable: boolean, updatedBy: number): Observable<any> {
+    const url = `${this.API_URL}/Project/availability`;
+    const body = {
+      ProjectId: projectId,
+      IsAvailable: isAvailable,
+      UpdatedBy: updatedBy
+    };
+    console.log('Updating project availability with URL:', url, 'Body:', body);
+    return this.http.put(url, body).pipe(
+      tap(response => console.log('Update project availability response:', response)),
+      catchError(error => {
+        console.error('Update project availability error:', error);
+        // If it's a 200/204, consider it a success
+        if (error.status === 200 || error.status === 204) {
+          return of({ message: 'Project availability updated successfully' });
+        }
+        return this.handleError(error);
+      })
     );
   }
 } 
