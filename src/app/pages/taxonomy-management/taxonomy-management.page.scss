@@ -49,7 +49,6 @@
 	--color: var(--ion-color-primary);
 }
 
-
 .left {
 	min-width: 0;
 }
@@ -63,6 +62,94 @@
 	display: flex;
 	gap: 8px;
 	margin-top: 12px;
+}
+
+/* Improved clickability for topics and subtopics */
+.topic-item ion-item, .subtopic-item ion-item {
+	cursor: pointer;
+	--background-hover: rgba(var(--ion-color-primary-rgb), 0.08);
+	--background-activated: rgba(var(--ion-color-primary-rgb), 0.12);
+	transition: background-color 0.2s ease;
+	border-radius: 6px;
+	margin: 2px 0;
+}
+
+.topic-item ion-item:hover, .subtopic-item ion-item:hover {
+	--background: rgba(var(--ion-color-primary-rgb), 0.08);
+}
+
+.topic-item ion-item:active, .subtopic-item ion-item:active {
+	--background: rgba(var(--ion-color-primary-rgb), 0.12);
+}
+
+/* Better visual hierarchy */
+.topic-item ion-item {
+	--border-radius: 8px;
+	--background: var(--ion-color-light);
+	margin: 4px 0;
+}
+
+.subtopic-item ion-item {
+	--border-radius: 6px;
+	--background: var(--ion-background-color);
+	margin: 2px 0;
+	border-left: 3px solid var(--ion-color-medium);
+}
+
+/* Selection indicators */
+.topic-item ion-item.selected, .subtopic-item ion-item.selected {
+	--background: rgba(var(--ion-color-primary-rgb), 0.1);
+	--color: var(--ion-color-primary);
+	border-left-color: var(--ion-color-primary);
+}
+
+/* Improved button styling */
+ion-button[fill="clear"] {
+	--color: var(--ion-color-medium);
+	--color-hover: var(--ion-color-primary);
+	--color-activated: var(--ion-color-primary);
+}
+
+ion-button[fill="clear"][color="danger"] {
+	--color: var(--ion-color-danger);
+	--color-hover: var(--ion-color-danger-shade);
+	--color-activated: var(--ion-color-danger-shade);
+}
+
+/* Better spacing and typography */
+.topic-item h2, .subtopic-item h2 {
+	font-weight: 600;
+	margin: 0 0 4px 0;
+}
+
+.topic-item p, .subtopic-item p {
+	margin: 0;
+	color: var(--ion-color-medium);
+	font-size: 0.9em;
+}
+
+/* Accordion improvements */
+ion-accordion {
+	margin-bottom: 8px;
+}
+
+ion-accordion ion-item[slot="header"] {
+	--background: var(--ion-color-light);
+	--border-radius: 8px;
+	margin-bottom: 4px;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+	.layout {
+		grid-template-columns: 1fr;
+		gap: 12px;
+		padding: 8px;
+	}
+	
+	.sidebar ion-card, .right ion-card {
+		position: static;
+	}
 }
 
 

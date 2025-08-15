@@ -55,6 +55,10 @@ export interface User {
   ProfilePictureUrl?: string;
   Token?: string;
   token?: string;
+  // GitHub Authentication Fields
+  GitHubId?: string;
+  GitHubUsername?: string;
+  AuthenticationMethod?: string;
 }
 
 export interface LoginResponse {
@@ -68,6 +72,10 @@ export interface LoginResponse {
   username?: string;
   email?: string;
   role?: string;
+  // GitHub Authentication Fields
+  GitHubId?: string;
+  GitHubUsername?: string;
+  AuthenticationMethod?: string;
 }
 
 export interface RegisterResponse {
@@ -108,7 +116,7 @@ export class AuthService {
       email: user.email || user.Email || '',
       role: user.role || user.Role || 'user',
       profilePictureUrl: user.profilePictureUrl || user.ProfilePictureUrl || '/assets/default-avatar.png',
-      // Preserve token if present
+      // Preserve token if present - handle both cases
       Token: user.Token || user.token,
       token: user.Token || user.token,
       // Keep original properties
@@ -116,7 +124,11 @@ export class AuthService {
       Username: user.username || user.Username || '',
       Email: user.email || user.Email || '',
       Role: user.role || user.Role || 'user',
-      ProfilePictureUrl: user.profilePictureUrl || user.ProfilePictureUrl || '/assets/default-avatar.png'
+      ProfilePictureUrl: user.profilePictureUrl || user.ProfilePictureUrl || '/assets/default-avatar.png',
+      // GitHub Authentication Fields - handle both cases
+      GitHubId: user.GitHubId || user.githubId,
+      GitHubUsername: user.GitHubUsername || user.githubUsername,
+      AuthenticationMethod: user.AuthenticationMethod || user.authenticationMethod || 'Local'
     };
   }
 
@@ -147,6 +159,26 @@ export class AuthService {
       }),
       catchError(this.handleError)
     );
+  }
+
+  /**
+   * Handle GitHub authentication response
+   */
+  handleGitHubAuth(githubResponse: any): void {
+    console.log('Handling GitHub authentication response:', githubResponse);
+    
+    // Store token
+    if (githubResponse.token) {
+      try { localStorage.setItem('token', githubResponse.token); } catch {}
+    }
+    
+    // Normalize and store user data
+    const user = this.normalizeUser(githubResponse);
+    this.currentUserSubject.next(user);
+    this.isAuthenticatedSubject.next(true);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    
+    console.log('GitHub user authenticated and stored:', user);
   }
 
   register(userData: RegisterDTO): Observable<any> {
@@ -197,4 +229,20 @@ export class AuthService {
   isAuthenticated(): boolean { return this.isAuthenticatedSubject.value; }
   isLoggedIn(): boolean { return this.isAuthenticated(); }
   getCurrentUserId(): number { const user = this.getCurrentUser(); if (!user) throw new Error('No user logged in'); return user.userId || user.UserId || 0; }
+  
+  /**
+   * Check if the current user authenticated via GitHub
+   */
+  isGitHubUser(): boolean {
+    const user = this.getCurrentUser();
+    return user ? (user.AuthenticationMethod === 'GitHub' || user.AuthenticationMethod === 'Both') : false;
+  }
+
+  /**
+   * Check if the current user has a linked GitHub account
+   */
+  hasGitHubAccount(): boolean {
+    const user = this.getCurrentUser();
+    return user ? !!(user.GitHubId || user.GitHubUsername) : false;
+  }
 } 

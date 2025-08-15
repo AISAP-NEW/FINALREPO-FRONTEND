@@ -18,20 +18,18 @@
                 </ion-card-header>
                 <ion-card-content>
                     <ion-list>
-                        <ion-item button [class.active]="selectedSection() === 'dashboard'" (click)="selectedSection.set('dashboard')">Dashboard</ion-item>
-                        <ion-item button [class.active]="selectedSection() === 'categories'" (click)="selectedSection.set('categories')">Categories</ion-item>
-                        <ion-item button [class.active]="selectedSection() === 'topics'" (click)="selectedSection.set('topics')">Topics</ion-item>
-                        <ion-item button [class.active]="selectedSection() === 'subtopics'" (click)="selectedSection.set('subtopics')">Subtopics</ion-item>
-                        <ion-item button [class.active]="selectedSection() === 'user-management'" (click)="selectedSection.set('user-management')">User Management</ion-item>
+                        <ion-item button [class.active]="selectedSection() === 'categories'" (click)="changeSection('categories')">Categories</ion-item>
+                        <ion-item button [class.active]="selectedSection() === 'topics'" (click)="changeSection('topics')">Topics</ion-item>
+                        <ion-item button [class.active]="selectedSection() === 'subtopics'" (click)="changeSection('subtopics')">Subtopics</ion-item>
                     </ion-list>
                 </ion-card-content>
             </ion-card>
         </div>
-        <div class="left" *ngIf="selectedSection() !== 'user-management'">
+        <div class="left">
             <ion-list>
                 <ion-accordion-group>
                     <ion-accordion *ngFor="let c of filteredCategories()" [value]="c.Category_ID">
-                        <ion-item slot="header" (click)="selectCategory(c)">
+                        <ion-item slot="header" button (click)="selectCategory(c)">
                             <ion-label>
                                 <h2>{{ c.CategoryName }}</h2>
                                 <p>{{ c.Description }}</p>
@@ -45,7 +43,9 @@
                         <div class="pad" slot="content">
                             <ion-item-divider color="light">Topics</ion-item-divider>
                             <div *ngFor="let t of (topicsByCategory()[c.Category_ID] || [])" class="topic-item">
-                                <ion-item (click)="selectTopic(t, c.Category_ID)">
+                                <ion-item button 
+                                    [class.selected]="selectedTopicId() === t.Topic_ID"
+                                    (click)="selectTopic(t, c.Category_ID)">
                                     <ion-label>
                                         <strong>{{ t.TopicName }}</strong>
                                         <p>{{ t.Description }}</p>
@@ -59,7 +59,9 @@
                                 <div class="subtopics">
                                     <ion-item-divider color="light">Subtopics</ion-item-divider>
                                     <div *ngFor="let s of (subtopicsByTopic()[t.Topic_ID] || [])" class="subtopic-item">
-                                        <ion-item (click)="selectSubtopic(s, t.Topic_ID)">
+                                        <ion-item button 
+                                            [class.selected]="selectedSubtopicId() === s.Subtopic_ID"
+                                            (click)="selectSubtopic(s, t.Topic_ID)">
                                             <ion-label>
                                                 {{ s.SubtopicName }}
                                                 <p>{{ s.Description }}</p>
@@ -78,7 +80,7 @@
             </ion-list>
         </div>
 
-        <div class="right" *ngIf="selectedSection() !== 'user-management'">
+        <div class="right">
             <ion-card>
                 <ion-card-header>
                     <ion-card-title>Editor</ion-card-title>
@@ -96,7 +98,7 @@
                         </ion-item>
                         <div class="row-end" *ngIf="canCreateOrUpdate">
                             <ion-button size="small" (click)="saveCategory(sc)"><ion-icon name="save-outline"></ion-icon>Save</ion-button>
-                            <ion-button size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteCategory(sc)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
+                            <ion-button fill="clear" size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteCategory(sc)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
                         </div>
                     </div>
 
@@ -118,7 +120,7 @@
                         </ion-item>
                         <div class="row-end" *ngIf="canCreateOrUpdate">
                             <ion-button size="small" (click)="saveTopic(st)"><ion-icon name="save-outline"></ion-icon>Save</ion-button>
-                            <ion-button size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteTopic(st, selectedCategoryId()!)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
+                            <ion-button fill="clear" size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteTopic(st, selectedCategoryId()!)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
                         </div>
                     </div>
 
@@ -140,7 +142,7 @@
                         </ion-item>
                         <div class="row-end" *ngIf="canCreateOrUpdate">
                             <ion-button size="small" (click)="saveSubtopic(ss)"><ion-icon name="save-outline"></ion-icon>Save</ion-button>
-                            <ion-button size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteSubtopic(ss, selectedTopicId()!)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
+                            <ion-button fill="clear" size="small" color="danger" *ngIf="canDelete" (click)="confirmDeleteSubtopic(ss, selectedTopicId()!)"><ion-icon name="trash-outline"></ion-icon>Delete</ion-button>
                         </div>
                     </div>
 
@@ -151,11 +153,6 @@
                     </div>
                 </ion-card-content>
             </ion-card>
-        </div>
-
-        <!-- RBAC panel -->
-        <div class="rbac" *ngIf="selectedSection() === 'user-management'">
-            <app-rbac-panel></app-rbac-panel>
         </div>
     </div>
 

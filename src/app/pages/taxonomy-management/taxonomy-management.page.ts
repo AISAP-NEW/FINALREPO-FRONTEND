@@ -33,6 +33,7 @@ import { addOutline, createOutline, trashOutline, saveOutline, closeOutline, boo
 import { TaxonomyService, Category, Topic, Subtopic } from '../../services/taxonomy.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { environment } from '../../../environments/environment';
 
 type AppRole = 'IT Admin' | 'Lead Developer' | 'Developer' | string;
 
@@ -108,8 +109,8 @@ export class TaxonomyManagementPage implements OnInit {
 		return (this.subtopicsByTopic()[tid] || []).find(s => s.Subtopic_ID === sid) || null;
 	});
 
-	// Left nav section selection
-	selectedSection = signal<'dashboard' | 'categories' | 'topics' | 'subtopics' | 'user-management'>('categories');
+	// Left nav section selection - removed dashboard and user-management
+	selectedSection = signal<'categories' | 'topics' | 'subtopics'>('categories');
 
 	// Inline edit tracking
 	editingCategoryId = signal<number | null>(null);
@@ -145,6 +146,7 @@ export class TaxonomyManagementPage implements OnInit {
 		private fb: FormBuilder,
 		private alertCtrl: AlertController
 	) {
+		console.log('TaxonomyManagementPage constructor called');
 		addIcons({ addOutline, createOutline, trashOutline, saveOutline, closeOutline, bookOutline, swapHorizontalOutline });
 		this.categoryForm = this.fb.group({
 			CategoryName: ['', [Validators.required, Validators.minLength(2)]],
@@ -167,28 +169,43 @@ export class TaxonomyManagementPage implements OnInit {
 		this.search.set(value);
 	}
 
-	// Selection handlers
+	// Selection handlers - improved with better error handling and logging
 	selectCategory(c: Category): void {
+		console.log('Selecting category:', c);
 		this.selectedCategoryId.set(c.Category_ID);
 		this.selectedTopicId.set(null);
 		this.selectedSubtopicId.set(null);
 		this.categoryForm.reset({ CategoryName: c.CategoryName, Description: c.Description || '' });
+		// Set section to categories when selecting a category
+		this.selectedSection.set('categories');
 	}
 
 	selectTopic(t: Topic, categoryId: number): void {
+		console.log('Selecting topic:', t, 'from category:', categoryId);
 		this.selectedCategoryId.set(categoryId);
 		this.selectedTopicId.set(t.Topic_ID);
 		this.selectedSubtopicId.set(null);
 		this.topicForm.reset({ TopicName: t.TopicName, Description: t.Description || '', Category_ID: categoryId });
+		// Set section to topics when selecting a topic
+		this.selectedSection.set('topics');
 	}
 
 	selectSubtopic(s: Subtopic, topicId: number): void {
+		console.log('Selecting subtopic:', s, 'from topic:', topicId);
 		// Find owning category for completeness
 		const catId = Number(Object.entries(this.topicsByCategory()).find(([, list]) => list.some(x => x.Topic_ID === topicId))?.[0]) || null;
 		if (catId != null) this.selectedCategoryId.set(catId);
 		this.selectedTopicId.set(topicId);
 		this.selectedSubtopicId.set(s.Subtopic_ID);
 		this.subtopicForm.reset({ SubtopicName: s.SubtopicName, Description: s.Description || '', Topic_ID: topicId });
+		// Set section to subtopics when selecting a subtopic
+		this.selectedSection.set('subtopics');
+	}
+
+	// Handle section changes
+	changeSection(section: 'categories' | 'topics' | 'subtopics'): void {
+		console.log('Changing section to:', section);
+		this.selectedSection.set(section);
 	}
 
 	startCreateCategory(): void {
@@ -196,6 +213,7 @@ export class TaxonomyManagementPage implements OnInit {
 		this.selectedTopicId.set(null);
 		this.selectedSubtopicId.set(null);
 		this.categoryForm.reset({ CategoryName: '', Description: '' });
+		this.selectedSection.set('categories');
 	}
 
 	startCreateTopicForSelectedCategory(): void {
@@ -203,46 +221,158 @@ export class TaxonomyManagementPage implements OnInit {
 		this.selectedTopicId.set(null);
 		this.selectedSubtopicId.set(null);
 		this.topicForm.reset({ TopicName: '', Description: '', Category_ID: this.selectedCategoryId() });
+		this.selectedSection.set('topics');
 	}
 
 	startCreateSubtopicForSelectedTopic(): void {
 		if (this.selectedTopicId() == null) return;
 		this.selectedSubtopicId.set(null);
 		this.subtopicForm.reset({ SubtopicName: '', Description: '', Topic_ID: this.selectedTopicId() });
+		this.selectedSection.set('subtopics');
 	}
 
 	ngOnInit(): void {
+		console.log('TaxonomyManagementPage ngOnInit called');
 		this.role = this.auth.getCurrentUser()?.role || this.auth.getCurrentUser()?.Role || '';
+		console.log('User role:', this.role);
+		console.log('Current user:', this.auth.getCurrentUser());
+		
+		// Test API connection first
+		this.testApiConnection();
+		
+		// Then load categories
 		this.loadCategories();
 	}
 
+	private testApiConnection(): void {
+		console.log('Testing API connection...');
+		console.log('Environment API URL:', environment.apiUrl);
+		
+		// Test if we can reach the API
+		fetch(`${environment.apiUrl}/api/Category`)
+			.then(response => {
+				console.log('API connection test response:', {
+					status: response.status,
+					statusText: response.statusText,
+					ok: response.ok,
+					contentType: response.headers.get('content-type'),
+					server: response.headers.get('server')
+				});
+				if (response.ok) {
+					console.log('✅ API is reachable');
+				} else {
+					console.log('❌ API returned error status:', response.status);
+				}
+			})
+			.catch(error => {
+				console.error('❌ API connection test failed:', error);
+				console.error('This usually means:');
+				console.error('1. Backend is not running');
+				console.error('2. Backend is running on a different port');
+				console.error('3. CORS is not configured properly');
+				console.error('4. Network issue');
+				
+				// Try a different approach - test with a simple ping
+				console.log('Trying alternative connection test...');
+				fetch(`${environment.apiUrl}/api/Category`, { 
+					method: 'HEAD',
+					mode: 'cors'
+				}).then(res => {
+					console.log('Alternative test result:', res.status);
+				}).catch(err => {
+					console.error('Alternative test also failed:', err);
+				});
+			});
+	}
+
 	private loadCategories(): void {
+		console.log('Loading categories...');
+		console.log('API URL:', environment.apiUrl);
+		console.log('Full categories URL:', `${environment.apiUrl}/api/Category`);
+		
 		this.taxonomy.getCategories().subscribe({
 			next: cats => {
+				console.log('Categories loaded successfully:', cats);
 				this.categories.set(cats || []);
+				console.log('Categories set in component:', this.categories());
+				
 				// Preload topics for each category
-				for (const c of this.categories()) {
-					this.loadTopics(c.Category_ID);
+				if (cats && cats.length > 0) {
+					console.log('Preloading topics for', cats.length, 'categories');
+					for (const c of this.categories()) {
+						console.log('Loading topics for category:', c.CategoryName, 'ID:', c.Category_ID);
+						this.loadTopics(c.Category_ID);
+					}
+				} else {
+					console.log('No categories found, skipping topic loading');
 				}
 			},
-			error: () => this.toast.showError('Failed to load categories')
+			error: (error) => {
+				console.error('Error loading categories:', error);
+				console.error('Error details:', {
+					message: error.message,
+					status: error.status,
+					statusText: error.statusText,
+					url: error.url
+				});
+				this.toast.showError('Failed to load categories');
+			}
 		});
 	}
 
 	private loadTopics(categoryId: number): void {
+		console.log('Loading topics for category:', categoryId);
+		console.log('Full topics URL:', `${environment.apiUrl}/api/Category/topics-by-category/${categoryId}`);
+		
 		this.taxonomy.getTopicsByCategory(categoryId).subscribe({
 			next: tops => {
+				console.log('Topics loaded successfully for category', categoryId, ':', tops);
 				this.topicsByCategory.update(map => ({ ...map, [categoryId]: tops || [] }));
-				for (const t of tops || []) this.loadSubtopics(t.Topic_ID);
+				console.log('Updated topicsByCategory:', this.topicsByCategory());
+				
+				if (tops && tops.length > 0) {
+					console.log('Preloading subtopics for', tops.length, 'topics in category', categoryId);
+					for (const t of tops || []) {
+						console.log('Loading subtopics for topic:', t.TopicName, 'ID:', t.Topic_ID);
+						this.loadSubtopics(t.Topic_ID);
+					}
+				} else {
+					console.log('No topics found for category', categoryId, ', skipping subtopic loading');
+				}
 			},
-			error: () => this.toast.showError('Failed to load topics')
+			error: (error) => {
+				console.error('Error loading topics for category', categoryId, ':', error);
+				console.error('Error details:', {
+					message: error.message,
+					status: error.status,
+					statusText: error.statusText,
+					url: error.url
+				});
+				this.toast.showError('Failed to load topics');
+			}
 		});
 	}
 
 	private loadSubtopics(topicId: number): void {
+		console.log('Loading subtopics for topic:', topicId);
+		console.log('Full subtopics URL:', `${environment.apiUrl}/api/Topic/${topicId}/subtopics`);
+		
 		this.taxonomy.getSubtopicsByTopic(topicId).subscribe({
-			next: subs => this.subtopicsByTopic.update(map => ({ ...map, [topicId]: subs || [] })),
-			error: () => this.toast.showError('Failed to load subtopics')
+			next: subs => {
+				console.log('Subtopics loaded successfully for topic', topicId, ':', subs);
+				this.subtopicsByTopic.update(map => ({ ...map, [topicId]: subs || [] }));
+				console.log('Updated subtopicsByTopic:', this.subtopicsByTopic());
+			},
+			error: (error) => {
+				console.error('Error loading subtopics for topic', topicId, ':', error);
+				console.error('Error details:', {
+					message: error.message,
+					status: error.status,
+					statusText: error.statusText,
+					url: error.url
+				});
+				this.toast.showError('Failed to load subtopics');
+			}
 		});
 	}
 

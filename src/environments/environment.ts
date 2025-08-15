@@ -4,13 +4,15 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5183'
+  apiUrl: 'http://localhost:5183',
+  github: {
+    clientId: 'Ov23livUfr8NwtXapQUb',
+    redirectUri: 'http://localhost:8101/login' // This is correct
+  }
 };
-
 /*
  * For easier debugging in development mode, you can import the following file
  * to ignore zone related error stack frames such as `zone.run`, `zoneDelegate.invokeTask`.
- *
  * This import should be commented out in production mode because it will have a negative impact
  * on performance if an error is thrown.
  */

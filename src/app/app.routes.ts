@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/landing/landing.page').then(m => m.LandingPage)
   },
   {
+    path: 'api/auth/GitHubAuth/callback',
+    loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent)
+  },
+  {
     path: 'login',
     loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent)
   },
@@ -129,13 +133,13 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/role-promotion-requests/role-promotion-requests.component')
           .then(m => m.RolePromotionRequestsComponent),
         canActivate: [RolesGuard],
-        data: { roles: ['Admin'] }
+        data: { roles: ['Admin', 'Developer', 'LeadDeveloper', 'Lead Developer'] }
       },
       {
         path: 'taxonomy-management',
         loadComponent: () => import('./pages/taxonomy-management/taxonomy-management.page').then(m => m.TaxonomyManagementPage),
         canActivate: [RolesGuard],
-        data: { roles: ['IT Admin', 'Lead Developer'] }
+        data: { roles: ['IT Admin', 'Lead Developer', 'LeadDeveloper', 'Developer', 'Admin'] }
       },
       {
         path: 'notifications',

@@ -28,26 +28,28 @@ export interface RolePromotionRequestDTO {
 }
 
 export interface RolePromotionRequestSummaryDTO {
-  requestId: number;
-  username: string;
-  currentRole: string;
-  requestedRole: string;
-  status: PromotionRequestStatus;
-  requestDate: Date;
-  justification?: string;
+  RequestId: number;
+  UserId: number;
+  Username: string;
+  CurrentRole: string;
+  RequestedRole: string;
+  Status: PromotionRequestStatus;
+  RequestDate: Date;
+  Justification?: string;
 }
 
 export interface UserPromotionRequestDTO {
-  requestId: number;
-  currentRole: string;
-  requestedRole: string;
-  justification?: string;
-  status: PromotionRequestStatus;
-  requestDate: Date;
-  reviewedDate?: Date;
-  reviewedByUsername?: string;
-  adminComments?: string;
-  rejectionReason?: string;
+  RequestId: number;
+  UserId: number;
+  CurrentRole: string;
+  RequestedRole: string;
+  Justification?: string;
+  Status: PromotionRequestStatus;
+  RequestDate: Date;
+  ReviewedDate?: Date;
+  ReviewedByUsername?: string;
+  AdminComments?: string;
+  RejectionReason?: string;
 }
 
 export interface ReviewRolePromotionRequestDTO {
