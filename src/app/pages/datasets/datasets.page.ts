@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { DatasetService, Dataset } from '../../services/dataset.service';
 import { DatasetCardComponent } from '../../components/dataset-card/dataset-card.component';
 import { ThumbnailService } from '../../services/thumbnail.service';
+import { TestDataService } from '../../services/test-data.service';
 
 @Component({
   selector: 'app-datasets',
@@ -29,7 +30,8 @@ export class DatasetsComponent implements OnInit {
 
   constructor(
     private datasetService: DatasetService,
-    private thumbnailService: ThumbnailService
+    private thumbnailService: ThumbnailService,
+    private testDataService: TestDataService
   ) {}
 
   ngOnInit() {
@@ -108,5 +110,22 @@ export class DatasetsComponent implements OnInit {
     // Optimistically remove from current lists
     this.datasets = this.datasets.filter(d => d.datasetId !== datasetId);
     this.filteredDatasets = this.filteredDatasets.filter(d => d.datasetId !== datasetId);
+  }
+
+  async generateCsv() {
+    try {
+      const blob = await this.testDataService.generateCsv().toPromise();
+      if (!blob) return;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'test-data.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to generate CSV', e);
+    }
   }
 } 

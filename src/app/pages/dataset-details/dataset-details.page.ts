@@ -10,6 +10,7 @@ import { finalize } from 'rxjs/operators';
 import { IonCardSubtitle, IonChip } from '@ionic/angular/standalone';
 import { Pipe, PipeTransform } from '@angular/core';
 import { ToastService } from '../../services/toast.service';
+import { FeatureTargetProcessingService, ProcessingOptions } from '../../services/feature-target-processing.service';
 @Pipe({name: 'truncate'})
 export class TruncatePipe implements PipeTransform {
   transform(value: string, limit = 15): string {
@@ -143,22 +144,20 @@ export class DatasetDetailsPage implements OnInit {
     private datasetOps: DatasetOperationsService,
     private datasetService: DatasetService,
     private http: HttpClient,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private ftService: FeatureTargetProcessingService
   ) {}
 
-  ngOnInit(): void {
-    this.datasetId = this.route.snapshot.paramMap.get('id');
-    if (this.datasetId) {
-      this.loadDatasetInfo();
-      this.fetchJsonPreview();
-      // Also load datasetInfo for template
-      this.datasetService.getDatasetContent(this.datasetId).subscribe(
-        (info) => { this.datasetInfo = info; },
-        (err) => { this.datasetInfo = null; }
-      );
-    } else {
-      this.isLoading = false;
-    }
+  ngOnInit() {
+    this.route.params.subscribe(params => {
+      this.datasetId = params['id'];
+      if (this.datasetId) {
+        this.loadDatasetInfo();
+        this.fetchJsonPreview();
+        this.loadSchema();
+        this.refreshSelectedColumns(); // Load column roles on init
+      }
+    });
   }
 
   get hasPreviewData(): boolean {
@@ -167,6 +166,50 @@ export class DatasetDetailsPage implements OnInit {
 
   get previewRowCount(): number {
     return this.previewData.data.length;
+  }
+
+  // Check if processing pipeline can be run
+  get canRunPipeline(): boolean {
+    return !!(this.selectedColumns?.target && this.selectedColumns?.features?.length);
+  }
+
+  // Check if there are processing results to show
+  get hasProcessingResults(): boolean {
+    return !!(this.summary.qualityScore || this.summary.rowsProcessed || this.summary.splitRatio);
+  }
+
+  // Helper methods for the enhanced UI
+  getStepIcon(step: string): string {
+    switch (step) {
+      case 'validation': return 'checkmark-circle-outline';
+      case 'preprocess': return 'settings-outline';
+      case 'split': return 'git-branch-outline';
+      default: return 'help-circle-outline';
+    }
+  }
+
+  getStatusClass(status: string | undefined): string {
+    if (!status) return 'status-not-started';
+    switch (status) {
+      case 'Completed': return 'status-completed';
+      case 'In Progress': return 'status-in-progress';
+      case 'Failed': return 'status-failed';
+      default: return 'status-not-started';
+    }
+  }
+
+  getStepButtonText(step: string): string {
+    const status = this.status[step as keyof typeof this.status];
+    if (status === 'Completed') return 'Re-run';
+    if (status === 'In Progress') return 'Running...';
+    if (status === 'Failed') return 'Retry';
+    return 'Run';
+  }
+
+  // Show results modal
+  showResultsModal(): void {
+    // TODO: Implement results modal
+    this.toastService.showInfo('Results modal coming soon!');
   }
 
   get totalRowCount(): number {
@@ -235,15 +278,33 @@ export class DatasetDetailsPage implements OnInit {
     this.datasetOps.getDatasetSchema(this.datasetId).subscribe({
       next: (schemaResponse: any) => {
         try {
-          if (!schemaResponse || !Array.isArray(schemaResponse)) {
+          let fields: any[] = [];
+
+          // Handle multiple possible backend shapes
+          if (Array.isArray(schemaResponse)) {
+            fields = schemaResponse;
+          } else if (schemaResponse?.schema && Array.isArray(schemaResponse.schema)) {
+            fields = schemaResponse.schema;
+          } else if (schemaResponse?.Columns && Array.isArray(schemaResponse.Columns)) {
+            // Newer enriched schema shape
+            fields = schemaResponse.Columns.map((c: any) => ({
+              name: c.Name || c.name,
+              type: c.DataType || c.Type || 'string',
+              nullable: c.IsRequired !== true,
+              sampleValues: c.SampleValues || c.Sample || []
+            }));
+          }
+
+          if (!Array.isArray(fields) || fields.length === 0) {
             throw new Error('Invalid schema response format');
           }
 
-          this.previewData.schema = schemaResponse.map((field: any) => ({
-            name: field.name || 'unknown',
-            type: field.type || 'string',
-            nullable: field.nullable !== false,
-            sampleValues: field.sampleValues || []
+          // Normalize to previewData.schema shape
+          this.previewData.schema = fields.map((field: any) => ({
+            name: field.name || field.columnName || 'unknown',
+            type: field.type || field.dataType || 'string',
+            nullable: field.nullable !== false && field.isRequired !== true,
+            sampleValues: field.sampleValues || field.samples || []
           }));
 
           if (this.previewData.data.length > 0) {
@@ -428,6 +489,286 @@ splitDataset(train?: number, test?: number): void {
       });
   }
 
+  // ===== Feature/Target processing (subset) =====
+  selectedColumns: { target: string; features: string[] } | null = null;
+  subsetPreview: { headers: string[]; rows: any[] } = { headers: [], rows: [] };
+  status: { validation?: string; preprocess?: string; split?: string } = {};
+  processing = false;
+  summary: { rowsProcessed?: number; splitRatio?: string; qualityScore?: number } = {};
+
+  refreshSelectedColumns(): void {
+    if (!this.datasetId) return;
+    
+    // Call the new backend endpoint to retrieve current column roles
+    this.http.get<any>(`http://localhost:5183/api/Dataset/${this.datasetId}/column-roles`).subscribe({
+      next: (response: any) => {
+        console.log('Column roles response:', response);
+        
+        if (response?.hasColumnRoles) {
+          // Backend indicates roles are set, use the response data
+          this.selectedColumns = {
+            target: response.targetColumn || response.target,
+            features: response.featureColumns || response.features || []
+          };
+          
+          // Load subset preview with the selected columns
+          this.loadSubsetPreview();
+          
+          // Show success message
+          this.toastService.showSuccess('Column roles loaded successfully');
+        } else {
+          // No roles set yet
+          this.selectedColumns = null;
+          this.subsetPreview = { headers: [], rows: [] };
+          console.log('No column roles set for this dataset');
+        }
+      },
+      error: (error) => {
+        console.error('Error loading column roles:', error);
+        this.selectedColumns = null;
+        this.subsetPreview = { headers: [], rows: [] };
+        
+        // Show user-friendly error message
+        if (error.status === 404) {
+          this.toastService.showWarning('No column roles found for this dataset');
+        } else {
+          this.toastService.showError('Failed to load column roles: ' + (error?.message || 'Unknown error'));
+        }
+      }
+    });
+  }
+
+  // Method to manually set column roles (for testing or manual override)
+  setColumnRoles(target: string, features: string[]): void {
+    if (!this.datasetId) return;
+    
+    const payload = {
+      target: target,
+      features: features
+    };
+    
+    this.datasetService.saveColumnRoles(this.datasetId, payload).subscribe({
+      next: (response) => {
+        console.log('Column roles saved:', response);
+        this.toastService.showSuccess('Column roles saved successfully');
+        // Refresh to load the new roles
+        this.refreshSelectedColumns();
+      },
+      error: (error) => {
+        console.error('Error saving column roles:', error);
+        this.toastService.showError('Failed to save column roles: ' + (error?.message || 'Unknown error'));
+      }
+    });
+  }
+
+  // Method to auto-detect column roles
+  autoDetectColumnRoles(): void {
+    if (!this.datasetId) return;
+    
+    this.toastService.showInfo('Auto-detecting column roles...');
+    
+    this.datasetService.autoDetectColumnRoles(this.datasetId).subscribe({
+      next: (response) => {
+        console.log('Auto-detected column roles:', response);
+        this.toastService.showSuccess('Column roles auto-detected successfully');
+        // Refresh to load the new roles
+        this.refreshSelectedColumns();
+      },
+      error: (error) => {
+        console.error('Error auto-detecting column roles:', error);
+        this.toastService.showError('Failed to auto-detect column roles: ' + (error?.message || 'Unknown error'));
+      }
+    });
+  }
+
+  private loadSubsetPreview(): void {
+    if (!this.datasetId || !this.selectedColumns) return;
+    // Build subset headers: features + target
+    const headers = [...(this.selectedColumns.features || [])];
+    if (this.selectedColumns.target) headers.push(this.selectedColumns.target);
+    if (!headers.length) { this.subsetPreview = { headers: [], rows: [] }; return; }
+    // Use existing json preview and project columns
+    const pageSize = 10;
+    this.fetchJsonPreview(1, pageSize);
+    setTimeout(() => {
+      if (!this.previewRows || !this.previewRows.length) return;
+      const rows = this.previewRows.slice(0, pageSize).map(r => {
+        const obj: any = {};
+        headers.forEach(h => obj[h] = r[h]);
+        return obj;
+      });
+      this.subsetPreview = { headers, rows };
+    }, 300);
+  }
+
+  private mark(statusKey: 'validation'|'preprocess'|'split', value: string) { this.status = { ...this.status, [statusKey]: value }; }
+
+  runValidation(): void {
+    if (!this.datasetId || !this.selectedColumns?.target || !this.selectedColumns?.features?.length) {
+      this.toastService.showWarning('Please select target and feature columns first');
+      return;
+    }
+    
+    const targetColumn = this.selectedColumns.target;
+    const featureColumns = this.selectedColumns.features;
+    
+    if (!targetColumn || !featureColumns.length) {
+      this.toastService.showWarning('Invalid column selection');
+      return;
+    }
+    
+    this.processing = true; this.mark('validation','In Progress');
+    this.ftService.validate(this.datasetId, targetColumn, featureColumns)
+      .pipe(finalize(() => this.processing = false))
+      .subscribe({
+        next: (res: any) => { 
+          this.mark('validation','Completed'); 
+          this.summary.qualityScore = res?.QualityScore || res?.qualityScore;
+          this.toastService.showSuccess(`Validation completed! Quality score: ${res?.QualityScore || 'N/A'}`);
+        },
+        error: (err) => { 
+          this.mark('validation','Failed'); 
+          this.toastService.showError('Validation failed: ' + (err?.error?.message || 'Unknown error'));
+        }
+      });
+  }
+
+  runPreprocess(): void {
+    if (!this.datasetId || !this.selectedColumns?.target || !this.selectedColumns?.features?.length) {
+      this.toastService.showWarning('Please select target and feature columns first');
+      return;
+    }
+    
+    const targetColumn = this.selectedColumns.target;
+    const featureColumns = this.selectedColumns.features;
+    
+    if (!targetColumn || !featureColumns.length) {
+      this.toastService.showWarning('Invalid column selection');
+      return;
+    }
+    
+    this.processing = true; this.mark('preprocess','In Progress');
+    const opts: ProcessingOptions = { handleMissingValues: true, removeDuplicates: true, fixDataTypes: true, scalingMethod: 'standard' };
+    this.ftService.preprocess(this.datasetId, targetColumn, featureColumns, opts)
+      .pipe(finalize(() => this.processing = false))
+      .subscribe({
+        next: (res: any) => { 
+          this.mark('preprocess','Completed'); 
+          this.summary.rowsProcessed = res?.ProcessedRowCount || res?.processedRowCount;
+          this.toastService.showSuccess(`Preprocessing completed! Processed ${res?.ProcessedRowCount || 'N/A'} rows`);
+        },
+        error: (err) => { 
+          this.mark('preprocess','Failed'); 
+          this.toastService.showError('Preprocessing failed: ' + (err?.error?.message || 'Unknown error'));
+        }
+      });
+  }
+
+  runSplit(): void {
+    if (!this.datasetId || !this.selectedColumns?.target || !this.selectedColumns?.features?.length) {
+      this.toastService.showWarning('Please select target and feature columns first');
+      return;
+    }
+    
+    const targetColumn = this.selectedColumns.target;
+    const featureColumns = this.selectedColumns.features;
+    
+    if (!targetColumn || !featureColumns.length) {
+      this.toastService.showWarning('Invalid column selection');
+      return;
+    }
+    
+    this.processing = true; this.mark('split','In Progress');
+    const opts: ProcessingOptions = { trainRatio: this.splitTrain, testRatio: this.splitTest, randomSeed: 42, stratify: true };
+    this.ftService.split(this.datasetId, targetColumn, featureColumns, opts)
+      .pipe(finalize(() => this.processing = false))
+      .subscribe({
+        next: (res: any) => { 
+          this.mark('split','Completed'); 
+          this.summary.splitRatio = res?.SplitRatio || `${this.splitTrain}:${this.splitTest}`;
+          this.toastService.showSuccess(`Split completed! ${res?.TrainingRowCount || 'N/A'} train, ${res?.TestRowCount || 'N/A'} test`);
+        },
+        error: (err) => { 
+          this.mark('split','Failed'); 
+          this.toastService.showError('Split failed: ' + (err?.error?.message || 'Unknown error'));
+        }
+      });
+  }
+
+  runAll(): void {
+    if (!this.datasetId || !this.selectedColumns?.target || !this.selectedColumns?.features?.length) {
+      this.toastService.showWarning('Please select target and feature columns first');
+      return;
+    }
+    
+    // Ensure we have valid values with proper typing
+    const targetColumn = this.selectedColumns.target;
+    const featureColumns = this.selectedColumns.features;
+    
+    if (!targetColumn || !featureColumns || !featureColumns.length) {
+      this.toastService.showWarning('Invalid column selection');
+      return;
+    }
+    
+    // Explicit type guard to ensure TypeScript knows these are non-null
+    if (typeof targetColumn !== 'string' || !Array.isArray(featureColumns)) {
+      this.toastService.showWarning('Invalid column types');
+      return;
+    }
+    
+    // Use a proper null check before the call
+    if (!targetColumn || !featureColumns || !featureColumns.length) {
+      this.toastService.showWarning('Please select target and feature columns.');
+      return;
+    }
+
+    // TypeScript type narrowing should work after the null check
+    // But if it doesn't, we'll use explicit type assertion
+    const targetCol = targetColumn as string;
+    const featureCols = featureColumns as string[];
+    
+    this.processing = true;
+    const opts: ProcessingOptions = { handleMissingValues: true, removeDuplicates: true, fixDataTypes: true, scalingMethod: 'standard', trainRatio: this.splitTrain, testRatio: this.splitTest, randomSeed: 42, stratify: true };
+    
+    // Chain the operations since we don't have a single processAll endpoint
+    this.ftService.validate(this.datasetId, targetCol, featureCols).subscribe({
+      next: (valRes: any) => {
+        this.mark('validation', 'Completed');
+        this.summary.qualityScore = valRes?.QualityScore;
+
+        this.ftService.preprocess(this.datasetId!, targetCol, featureCols, opts).subscribe({
+          next: (preRes: any) => {
+            this.mark('preprocess', 'Completed');
+            this.summary.rowsProcessed = preRes?.ProcessedRowCount;
+
+            this.ftService.split(this.datasetId!, targetCol, featureCols, opts).subscribe({
+              next: (splitRes: any) => {
+                this.mark('split', 'Completed');
+                this.summary.splitRatio = splitRes?.SplitRatio;
+                this.processing = false;
+                this.toastService.showSuccess('Full pipeline completed successfully!');
+              },
+              error: (err) => {
+                this.mark('split', 'Failed');
+                this.processing = false;
+                this.toastService.showError('Split failed: ' + (err?.error?.message || 'Unknown error'));
+              }
+            });
+          },
+          error: (err) => {
+            this.mark('preprocess', 'Failed');
+            this.processing = false;
+            this.toastService.showError('Preprocessing failed: ' + (err?.error?.message || 'Unknown error'));
+          }
+        });
+      },
+      error: (err) => {
+        this.mark('validation', 'Failed');
+        this.processing = false;
+        this.toastService.showError('Validation failed: ' + (err?.error?.message || 'Unknown error'));
+      }
+    });
+  }
   downloadDataset(format: string): void {
     if (!this.datasetId) {
       this.error = 'No dataset ID found.';
@@ -545,14 +886,33 @@ splitDataset(train?: number, test?: number): void {
       .subscribe({
         next: (result: any) => {
           this.latestPreprocessResult = result;
-          this.toastService.presentToast('success', '✅ Preprocessing request accepted and is being processed asynchronously!', 3500);
+          this.toastService.showSuccess('Preprocessing request accepted and is being processed asynchronously!');
         },
         error: (err) => {
           this.error = 'Preprocessing failed: ' + (err?.message || err);
-          this.toastService.presentToast('error', '❌ Preprocessing failed: ' + (err?.message || err), 3500);
+          this.toastService.showError('Preprocessing failed: ' + (err?.message || err));
         }
       });
   }
 
+  downloadResult(type: 'train' | 'test'): void {
+    if (!this.datasetId) {
+      this.toastService.showWarning('No dataset ID found');
+      return;
+    }
+    
+    // For now, show a placeholder - you can implement actual download logic later
+    this.toastService.showInfo(`${type.charAt(0).toUpperCase() + type.slice(1)} download not yet implemented`);
+  }
+
+  downloadReport(): void {
+    if (!this.datasetId) {
+      this.toastService.showWarning('No dataset ID found');
+      return;
+    }
+    
+    // For now, show a placeholder - you can implement actual report download later
+    this.toastService.showInfo('Report download not yet implemented');
+  }
  
 }

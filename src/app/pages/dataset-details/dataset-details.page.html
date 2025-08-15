@@ -166,6 +166,241 @@
 
   <!-- Operations Tab Content -->
   <div *ngIf="activeTab === 'operations' && !isLoading">
+         <!-- Enhanced Processing Dashboard -->
+     <div class="processing-dashboard">
+       <!-- Header Section -->
+       <div class="dashboard-header">
+         <h2 class="dashboard-title">
+           <ion-icon name="analytics-outline" class="title-icon"></ion-icon>
+           Feature & Target Processing
+         </h2>
+         <p class="dashboard-subtitle">Process your selected columns through the ML pipeline</p>
+       </div>
+
+       <!-- Main Dashboard Grid -->
+       <ion-grid class="dashboard-grid">
+         <ion-row>
+           <!-- Left Column - Controls & Status -->
+           <ion-col size="12" size-lg="4">
+             <!-- Column Selection Card -->
+             <ion-card class="dashboard-card column-card">
+               <ion-card-header class="card-header-gradient">
+                 <ion-card-title class="card-title">
+                   <ion-icon name="layers-outline" class="card-icon"></ion-icon>
+                   Column Configuration
+                 </ion-card-title>
+                 <ion-card-subtitle class="card-subtitle">Features & Target Selection</ion-card-subtitle>
+               </ion-card-header>
+               <ion-card-content class="card-content">
+                 <div *ngIf="selectedColumns; else noColRoles" class="column-info">
+                   <div class="column-item target-column">
+                     <ion-icon name="target" class="column-icon"></ion-icon>
+                     <div class="column-details">
+                       <span class="column-label">Target Column</span>
+                       <span class="column-value">{{ selectedColumns?.target || '—' }}</span>
+                     </div>
+                   </div>
+                   <div class="column-item feature-columns">
+                     <ion-icon name="grid-outline" class="column-icon"></ion-icon>
+                     <div class="column-details">
+                       <span class="column-label">Feature Columns</span>
+                       <div class="feature-tags">
+                         <ion-chip *ngFor="let feature of selectedColumns?.features || []" color="primary" size="small">
+                           {{ feature }}
+                         </ion-chip>
+                       </div>
+                     </div>
+                   </div>
+                   <ion-button expand="block" fill="clear" size="small" (click)="refreshSelectedColumns()" class="refresh-btn">
+                     <ion-icon name="refresh" slot="start"></ion-icon>
+                     Refresh Configuration
+                   </ion-button>
+                 </div>
+                 <ng-template #noColRoles>
+                   <div class="no-columns-state">
+                     <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>
+                     <p class="state-message">No column roles configured yet</p>
+                     <p class="state-description">Set up your target and feature columns to begin processing</p>
+                     <div class="action-buttons">
+                       <ion-button expand="block" color="primary" (click)="autoDetectColumnRoles()" class="action-btn">
+                         <ion-icon name="magic" slot="start"></ion-icon>
+                         Auto-Detect
+                       </ion-button>
+                       <ion-button expand="block" fill="outline" color="medium" (click)="refreshSelectedColumns()" class="action-btn">
+                         <ion-icon name="refresh" slot="start"></ion-icon>
+                         Refresh
+                       </ion-button>
+                     </div>
+                   </div>
+                 </ng-template>
+               </ion-card-content>
+             </ion-card>
+
+             <!-- Processing Pipeline Card -->
+             <ion-card class="dashboard-card pipeline-card">
+               <ion-card-header class="card-header-gradient">
+                 <ion-card-title class="card-title">
+                   <ion-icon name="git-branch-outline" class="card-icon"></ion-icon>
+                   Processing Pipeline
+                 </ion-card-title>
+                 <ion-card-subtitle class="card-subtitle">ML Workflow Status</ion-card-subtitle>
+               </ion-card-header>
+               <ion-card-content class="card-content">
+                 <div class="pipeline-steps">
+                   <div class="pipeline-step" [class.completed]="status.validation==='Completed'" [class.failed]="status.validation==='Failed'" [class.in-progress]="status.validation==='In Progress'">
+                     <div class="step-header">
+                       <div class="step-icon">
+                         <ion-icon [name]="getStepIcon('validation')" class="step-icon-svg"></ion-icon>
+                       </div>
+                       <div class="step-info">
+                         <span class="step-label">Data Validation</span>
+                         <span class="step-status" [class]="getStatusClass(status.validation)">
+                           {{ status.validation || 'Not Started' }}
+                         </span>
+                       </div>
+                     </div>
+                     <ion-button fill="outline" size="small" (click)="runValidation()" [disabled]="processing || !canRunPipeline" class="step-action">
+                       {{ getStepButtonText('validation') }}
+                     </ion-button>
+                   </div>
+
+                   <div class="pipeline-step" [class.completed]="status.preprocess==='Completed'" [class.failed]="status.preprocess==='Failed'" [class.in-progress]="status.preprocess==='In Progress'">
+                     <div class="step-header">
+                       <div class="step-icon">
+                         <ion-icon [name]="getStepIcon('preprocess')" class="step-icon-svg"></ion-icon>
+                       </div>
+                       <div class="step-info">
+                         <span class="step-label">Data Preprocessing</span>
+                         <span class="step-status" [class]="getStatusClass(status.preprocess)">
+                           {{ status.preprocess || 'Not Started' }}
+                         </span>
+                       </div>
+                     </div>
+                     <ion-button fill="outline" size="small" (click)="runPreprocess()" [disabled]="processing || !canRunPipeline" class="step-action">
+                       {{ getStepButtonText('preprocess') }}
+                     </ion-button>
+                   </div>
+
+                   <div class="pipeline-step" [class.completed]="status.split==='Completed'" [class.failed]="status.split==='Failed'" [class.in-progress]="status.split==='In Progress'">
+                     <div class="step-header">
+                       <div class="step-icon">
+                         <ion-icon [name]="getStepIcon('split')" class="step-icon-svg"></ion-icon>
+                       </div>
+                       <div class="step-info">
+                         <span class="step-label">Train/Test Split</span>
+                         <span class="step-status" [class]="getStatusClass(status.split)">
+                           {{ status.split || 'Not Started' }}
+                         </span>
+                       </div>
+                     </div>
+                     <ion-button fill="outline" size="small" (click)="runSplit()" [disabled]="processing || !canRunPipeline" class="step-action">
+                       {{ getStepButtonText('split') }}
+                     </ion-button>
+                   </div>
+                 </div>
+
+                 <ion-button expand="block" (click)="runAll()" [disabled]="processing || !canRunPipeline" class="pipeline-action-btn">
+                   <ion-icon name="play" slot="start"></ion-icon>
+                   Run Complete Pipeline
+                 </ion-button>
+               </ion-card-content>
+             </ion-card>
+           </ion-col>
+
+           <!-- Right Column - Preview & Results -->
+           <ion-col size="12" size-lg="8">
+             <!-- Data Preview Card -->
+             <ion-card class="dashboard-card preview-card">
+               <ion-card-header class="card-header-gradient">
+                 <ion-card-title class="card-title">
+                   <ion-icon name="eye-outline" class="card-icon"></ion-icon>
+                   Selected Data Preview
+                 </ion-card-title>
+                 <ion-card-subtitle class="card-subtitle">Preview of your selected features and target</ion-card-subtitle>
+               </ion-card-header>
+               <ion-card-content class="card-content">
+                 <div *ngIf="subsetPreview.headers.length; else noSubset" class="preview-content">
+                   <div class="preview-table-container">
+                     <table class="preview-table">
+                       <thead>
+                         <tr>
+                           <th *ngFor="let header of subsetPreview.headers" class="table-header">{{ header }}</th>
+                         </tr>
+                       </thead>
+                       <tbody>
+                         <tr *ngFor="let row of subsetPreview.rows" class="table-row">
+                           <td *ngFor="let header of subsetPreview.headers" class="table-cell">{{ row[header] }}</td>
+                         </tr>
+                       </tbody>
+                     </table>
+                   </div>
+                   <div class="preview-info">
+                     <ion-chip color="success" size="small">
+                       <ion-icon name="checkmark-circle" slot="start"></ion-icon>
+                       {{ subsetPreview.rows.length }} rows loaded
+                     </ion-chip>
+                   </div>
+                 </div>
+                 <ng-template #noSubset>
+                   <div class="no-preview-state">
+                     <ion-icon name="tablet-portrait-outline" class="preview-icon"></ion-icon>
+                     <p class="state-message">No data preview available</p>
+                     <p class="state-description">Select columns and run processing to see preview data</p>
+                   </div>
+                 </ng-template>
+               </ion-card-content>
+             </ion-card>
+
+             <!-- Results Summary Card -->
+             <ion-card class="dashboard-card results-card" *ngIf="hasProcessingResults">
+               <ion-card-header class="card-header-gradient">
+                 <ion-card-title class="card-title">
+                   <ion-icon name="trophy-outline" class="card-icon"></ion-icon>
+                   Processing Results
+                 </ion-card-title>
+                 <ion-card-subtitle class="card-subtitle">Summary of completed operations</ion-card-subtitle>
+               </ion-card-header>
+               <ion-card-content class="card-content">
+                 <div class="results-grid">
+                   <div class="result-item" *ngIf="summary.qualityScore">
+                     <div class="result-icon quality">
+                       <ion-icon name="star" class="result-icon-svg"></ion-icon>
+                     </div>
+                     <div class="result-details">
+                       <span class="result-label">Quality Score</span>
+                       <span class="result-value">{{ summary.qualityScore }}%</span>
+                     </div>
+                   </div>
+                   <div class="result-item" *ngIf="summary.rowsProcessed">
+                     <div class="result-icon processed">
+                       <ion-icon name="checkmark-circle" class="result-icon-svg"></ion-icon>
+                     </div>
+                     <div class="result-details">
+                       <span class="result-label">Rows Processed</span>
+                       <span class="result-value">{{ summary.rowsProcessed }}</span>
+                     </div>
+                   </div>
+                   <div class="result-item" *ngIf="summary.splitRatio">
+                     <div class="result-icon split">
+                       <ion-icon name="git-branch" class="result-icon-svg"></ion-icon>
+                     </div>
+                     <div class="result-details">
+                       <span class="result-label">Split Ratio</span>
+                       <span class="result-value">{{ summary.splitRatio }}</span>
+                     </div>
+                   </div>
+                 </div>
+                 <ion-button expand="block" fill="outline" color="primary" (click)="showResultsModal()" class="results-action-btn">
+                   <ion-icon name="document-text-outline" slot="start"></ion-icon>
+                   View Detailed Results
+                 </ion-button>
+               </ion-card-content>
+             </ion-card>
+           </ion-col>
+         </ion-row>
+       </ion-grid>
+     </div>
+
     <ion-card>
       <ion-card-header>
         <ion-card-title>Dataset Operations</ion-card-title>

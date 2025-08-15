@@ -314,6 +314,25 @@ export class DatasetService {
     return this.http.post<{ message: string; datasetId: string }>(`${this.datasetUrl}/define`, formData);
   }
 
+  /**
+   * Save manual column roles (target and features) for a dataset
+   */
+  saveColumnRoles(datasetId: string, roles: { fileName?: string; target: string; features: string[] }): Observable<any> {
+    if (!datasetId) throw new Error('Dataset ID is required');
+    const url = `${this.datasetUrl}/${datasetId}/column-roles`;
+    return this.http.post(url, roles);
+  }
+
+  /**
+   * Ask backend to auto-detect column roles. Optionally include fileName when multiple CSVs were uploaded.
+   */
+  autoDetectColumnRoles(datasetId: string, fileName?: string): Observable<any> {
+    if (!datasetId) throw new Error('Dataset ID is required');
+    const url = `${this.datasetUrl}/${datasetId}/column-roles/auto`;
+    const body = fileName ? { fileName } : {};
+    return this.http.post(url, body);
+  }
+
   validateDataset(datasetId: string): Observable<ValidationResponse> {
     return this.http.post<ValidationResponse>(`${this.datasetUrl}/validate/${datasetId}`, {});
   }

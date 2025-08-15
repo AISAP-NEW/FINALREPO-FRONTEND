@@ -1,0 +1,66 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Select columns</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <p class="muted">Choose which columns your model should learn from and which single column it should predict. You can auto-detect or set them manually now; you can always change this later.</p>
+
+  <div *ngIf="(files?.length || 0) > 1" class="ion-margin-bottom">
+    <ion-item>
+      <ion-label>CSV file</ion-label>
+      <ion-select [value]="selectedFileIndex" (ionChange)="onFileChange($any($event.detail).value)">
+        <ion-select-option *ngFor="let f of files; let idx = index" [value]="idx">{{ f.name }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+  </div>
+
+  <ion-item>
+    <ion-label position="stacked">Target column (value to predict)</ion-label>
+    <ion-select [value]="selectedTarget" (ionChange)="selectedTarget = $any($event.detail).value" aria-label="Target column (value to predict)">
+      <ion-select-option *ngFor="let h of headers" [value]="h">{{ h }}</ion-select-option>
+    </ion-select>
+    <ion-note class="note">Pick the outcome you want the model to predict (one column).</ion-note>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="stacked">Feature columns (inputs)</ion-label>
+    <ion-select [value]="selectedFeatures" (ionChange)="selectedFeatures = $any($event.detail).value" multiple="true" aria-label="Feature columns (inputs)">
+      <ion-select-option *ngFor="let h of headers" [value]="h">{{ h }}</ion-select-option>
+    </ion-select>
+    <ion-note class="note">Select columns the model can use as inputs. Avoid IDs or leakage.</ion-note>
+  </ion-item>
+
+  <div class="ion-margin-top">
+    <ion-button expand="block" color="medium" (click)="autoDetect()" aria-label="Auto-detect roles">Auto detect</ion-button>
+    <ion-note class="note">Auto will set the last header column as Target and the rest as Features.</ion-note>
+  </div>
+
+  <ion-item *ngIf="error" color="danger" lines="none" class="ion-margin-top">
+    <ion-label>{{ error }}</ion-label>
+  </ion-item>
+  <div *ngIf="warningList.length" class="ion-padding-start">
+    <ion-note color="warning">Some columns were not found and were ignored: {{ warningList.join(', ') }}</ion-note>
+  </div>
+
+  <div class="summary" *ngIf="selectedTarget || selectedFeatures.length">
+    <p><strong>CSV file:</strong> {{ fileName }}</p>
+    <p><strong>Target:</strong> {{ selectedTarget || '—' }}</p>
+    <p><strong>Features:</strong> {{ selectedFeatures.join(', ') || '—' }}</p>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="skip()" color="medium" aria-label="Skip and set later">Skip for now</ion-button>
+      <ion-button (click)="cancel()" color="light">Cancel</ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="useSelection()" aria-label="Use selection and continue">Use selection</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>
+
+

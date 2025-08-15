@@ -5,6 +5,8 @@ import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } 
 import { DatasetService, CreateDatasetDTO } from '../../services/dataset.service';
 import { Router } from '@angular/router';
 import { ToastService } from '../../services/toast.service';
+import { ModalController } from '@ionic/angular';
+import { SelectColumnsModalComponent } from '../../components/select-columns-modal/select-columns-modal.component';
 
 @Component({
   selector: 'app-dataset-form',
@@ -116,7 +118,8 @@ export class DatasetFormPage {
     private formBuilder: FormBuilder,
     private datasetService: DatasetService,
     private router: Router,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private modalCtrl: ModalController
   ) {
     this.datasetForm = this.formBuilder.group({
       datasetName: ['', [Validators.required]],
@@ -128,6 +131,10 @@ export class DatasetFormPage {
     const element = event.target as HTMLInputElement;
     if (element.files) {
       this.selectedFiles = Array.from(element.files);
+      // Open modal to select roles if at least one CSV
+      if (this.selectedFiles.length > 0) {
+        this.openSelectColumnsModal();
+      }
     }
   }
 
@@ -158,9 +165,25 @@ export class DatasetFormPage {
       };
 
       this.datasetService.createDataset(data).subscribe({
-        next: (response) => {
+        next: async (response) => {
           console.log('Dataset created:', response);
           this.toastService.presentToast('success', 'Dataset created successfully!');
+          // If user already selected roles in modal earlier, prompt to apply now
+          if (this._pendingRoles) {
+            try {
+              await this.datasetService.saveColumnRoles(response.datasetId, this._pendingRoles).toPromise();
+              this.toastService.presentToast('success', 'Column roles saved.');
+            } catch (e) {
+              this.toastService.presentToast('warning' as any, 'Failed to save column roles. You can set them later on the details page.');
+            }
+          } else if (this._autoRequested) {
+            try {
+              await this.datasetService.autoDetectColumnRoles(response.datasetId, this._autoFileName).toPromise();
+              this.toastService.presentToast('success', 'Auto-detected roles applied.');
+            } catch (e) {
+              this.toastService.presentToast('warning' as any, 'Auto-detect failed. You can set roles later.');
+            }
+          }
           // Navigate back to datasets page
           this.router.navigate(['/datasets']);
         },
@@ -174,4 +197,39 @@ export class DatasetFormPage {
       });
     }
   }
+
+  private async openSelectColumnsModal() {
+    const modal = await this.modalCtrl.create({
+      component: SelectColumnsModalComponent,
+      componentProps: {
+        files: this.selectedFiles,
+        defaultFileIndex: 0
+      }
+    });
+
+    await modal.present();
+    const result = await modal.onDidDismiss();
+
+    if (result.role === 'auto') {
+      // queue auto apply after dataset is created
+      this._autoRequested = true;
+      this._autoFileName = result.data?.fileName || undefined;
+      this.toastService.presentToast('success', 'Auto-detected roles will be applied after creation.');
+    } else if (result.role === 'confirm') {
+      // queue manual roles after creation
+      this._pendingRoles = {
+        fileName: result.data?.fileName,
+        target: result.data?.target,
+        features: result.data?.features || []
+      } as any;
+      this.toastService.presentToast('success', 'Column roles will be saved after creation.');
+    } else if (result.role === 'skip') {
+      // do nothing; can set later
+    }
+  }
+
+  // Temporary holders for roles to be saved after dataset is created
+  private _pendingRoles: { fileName?: string; target: string; features: string[] } | null = null;
+  private _autoRequested = false;
+  private _autoFileName: string | undefined;
 } 
