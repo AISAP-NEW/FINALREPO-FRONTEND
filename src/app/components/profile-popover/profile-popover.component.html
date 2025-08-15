@@ -1,7 +1,7 @@
 <div class="profile-popover-content">
   <div class="profile-header">
     <img 
-      [src]="userProfile?.profilePictureUrl || '/assets/default-avatar.png'" 
+      [src]="getProfilePictureUrl()" 
       [alt]="userProfile?.username || 'User'"
       class="popover-avatar"
       (error)="onImageError($event)"

@@ -15,6 +15,15 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonText,
+  IonSplitPane,
+  IonMenu,
+  IonMenuButton,
+  IonButtons,
+  IonBadge,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
   ToastController,
   AlertController
 } from '@ionic/angular/standalone';
@@ -26,176 +35,253 @@ import {
   checkmarkOutline,
   closeOutline,
   briefcaseOutline,
-  alertCircleOutline
+  alertCircleOutline,
+  menuOutline,
+  peopleOutline,
+  trendingUpOutline,
+  listOutline
 } from 'ionicons/icons';
-import { ProjectService, Project } from '../../services/project.service';
+import { ProjectService, Project, PendingAccessRequestWithProject } from '../../services/project.service';
+import { RolePromotionService, RolePromotionRequestSummaryDTO, PromotionRequestStatus } from '../../services/role-promotion.service';
 import { AuthService } from '../../services/auth.service';
 import { firstValueFrom } from 'rxjs';
-
-interface PendingRequest {
-  projectMemberId: number;
-  projectId: number;
-  userId: number;
-  username: string;
-  email: string;
-  requestDate: Date;
-  projectName?: string;
-}
 
 @Component({
   selector: 'app-access-levels',
   template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Access Requests</ion-title>
-      </ion-toolbar>
-    </ion-header>
+    <ion-split-pane contentId="main-content">
+      <!-- Sidebar Menu -->
+      <ion-menu contentId="main-content" type="overlay">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Request Management</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content>
+          <ion-list>
+            <ion-item 
+              button 
+              [class.selected]="selectedView === 'project-access'"
+              (click)="selectView('project-access')">
+              <ion-icon name="people-outline" slot="start"></ion-icon>
+              <ion-label>Project Access Requests</ion-label>
+              <ion-badge 
+                *ngIf="pendingProjectRequests.length > 0" 
+                color="warning" 
+                slot="end">
+                {{ pendingProjectRequests.length }}
+              </ion-badge>
+            </ion-item>
+            
+            <ion-item 
+              button 
+              [class.selected]="selectedView === 'role-promotion'"
+              (click)="selectView('role-promotion')"
+              *ngIf="currentUserRole === 'Admin'">
+              <ion-icon name="trending-up-outline" slot="start"></ion-icon>
+              <ion-label>Role Promotion Requests</ion-label>
+              <ion-badge 
+                *ngIf="pendingRolePromotions.length > 0" 
+                color="primary" 
+                slot="end">
+                {{ pendingRolePromotions.length }}
+              </ion-badge>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ion-menu>
 
-    <ion-content class="ion-padding">
-      <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
-        <ion-refresher-content></ion-refresher-content>
-      </ion-refresher>
+      <!-- Main Content -->
+      <div class="ion-page" id="main-content">
+        <ion-header>
+          <ion-toolbar>
+            <ion-buttons slot="start">
+              <ion-menu-button></ion-menu-button>
+            </ion-buttons>
+            <ion-title>{{ getPageTitle() }}</ion-title>
+          </ion-toolbar>
+        </ion-header>
 
-      <!-- Loading State -->
-      <div *ngIf="loading" class="ion-text-center ion-padding">
-        <ion-spinner></ion-spinner>
-        <p>Loading requests...</p>
-      </div>
+        <ion-content class="ion-padding">
+          <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+            <ion-refresher-content></ion-refresher-content>
+          </ion-refresher>
 
-      <!-- Error State -->
-      <div *ngIf="error" class="ion-padding">
-        <ion-item color="danger">
-          <ion-icon name="alert-circle-outline" slot="start"></ion-icon>
-          <ion-label class="ion-text-wrap">{{ error }}</ion-label>
-        </ion-item>
-      </div>
+          <!-- Loading State -->
+          <div *ngIf="loading" class="ion-text-center ion-padding">
+            <ion-spinner></ion-spinner>
+            <p>Loading requests...</p>
+          </div>
 
-      <!-- Data State -->
-      <ion-list *ngIf="!loading && !error">
-        <div *ngFor="let project of projects">
-          <ion-item lines="none" class="project-header">
-            <ion-icon name="briefcase-outline" slot="start"></ion-icon>
-            <ion-label>
-              <h2>{{ project.name }}</h2>
-              <p>
-                <ion-chip [color]="getPendingRequestsForProject(project).length > 0 ? 'warning' : 'medium'" size="small">
-                  {{ getPendingRequestsForProject(project).length }} Pending Requests
-                </ion-chip>
-              </p>
-            </ion-label>
-          </ion-item>
+          <!-- Error State -->
+          <div *ngIf="error" class="ion-padding">
+            <ion-item color="danger">
+              <ion-icon name="alert-circle-outline" slot="start"></ion-icon>
+              <ion-label class="ion-text-wrap">{{ error }}</ion-label>
+            </ion-item>
+          </div>
 
-          <ion-item *ngFor="let request of getPendingRequestsForProject(project)" class="request-item">
-            <ion-icon name="person-outline" slot="start" color="medium"></ion-icon>
-            <ion-label>
-              <h3>{{ request.username }}</h3>
-              <p>
-                <ion-icon name="mail-outline"></ion-icon>
-                {{ request.email }}
-              </p>
-              <p>
-                <ion-icon name="time-outline"></ion-icon>
-                Requested: {{ request.requestDate | date:'medium' }}
-              </p>
-            </ion-label>
-            <div class="action-buttons" slot="end">
-              <ion-button
-                fill="clear"
-                color="success"
-                [disabled]="processingRequest === request.projectMemberId"
-                (click)="approveRequest(request)">
-                <ion-spinner *ngIf="processingRequest === request.projectMemberId"></ion-spinner>
-                <ion-icon *ngIf="processingRequest !== request.projectMemberId" name="checkmark-outline"></ion-icon>
-              </ion-button>
-              <ion-button
-                fill="clear"
-                color="danger"
-                [disabled]="processingRequest === request.projectMemberId"
-                (click)="denyRequest(request)">
-                <ion-icon name="close-outline"></ion-icon>
-              </ion-button>
+          <!-- Project Access Requests -->
+          <div *ngIf="!loading && !error && selectedView === 'project-access'">
+            <ion-card *ngFor="let request of pendingProjectRequests" class="request-card">
+              <ion-card-header>
+                <ion-card-title>
+                  <ion-icon name="person-outline"></ion-icon>
+                  {{ request.username }}
+                </ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="request-details">
+                  <p><strong>Project:</strong> {{ request.projectName }}</p>
+                  <p><strong>Email:</strong> {{ request.email }}</p>
+                  <p><strong>Requested:</strong> {{ request.requestDate | date:'medium' }}</p>
+                </div>
+                <div class="action-buttons">
+                  <ion-button 
+                    fill="solid" 
+                    color="success"
+                    [disabled]="processingRequest === request.projectMemberId"
+                    (click)="approveProjectRequest(request)">
+                    <ion-spinner *ngIf="processingRequest === request.projectMemberId"></ion-spinner>
+                    <ion-icon *ngIf="processingRequest !== request.projectMemberId" name="checkmark-outline" slot="start"></ion-icon>
+                    Approve
+                  </ion-button>
+                  <ion-button 
+                    fill="outline" 
+                    color="danger"
+                    [disabled]="processingRequest === request.projectMemberId"
+                    (click)="denyProjectRequest(request)">
+                    <ion-icon name="close-outline" slot="start"></ion-icon>
+                    Deny
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Empty State for Project Requests -->
+            <div *ngIf="pendingProjectRequests.length === 0" class="ion-text-center ion-padding">
+              <ion-text color="medium">
+                <h2>No Pending Project Access Requests</h2>
+                <p>All project access requests have been processed.</p>
+              </ion-text>
             </div>
-          </ion-item>
+          </div>
 
-          <div *ngIf="getPendingRequestsForProject(project).length === 0" class="ion-text-center ion-padding-vertical request-empty">
+          <!-- Role Promotion Requests -->
+          <div *ngIf="!loading && !error && selectedView === 'role-promotion' && currentUserRole === 'Admin'">
+            <ion-card *ngFor="let request of pendingRolePromotions" class="request-card">
+              <ion-card-header>
+                <ion-card-title>
+                  <ion-icon name="trending-up-outline"></ion-icon>
+                  {{ request.username }}
+                </ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="request-details">
+                  <p><strong>Current Role:</strong> {{ request.currentRole }}</p>
+                  <p><strong>Requested Role:</strong> {{ request.requestedRole }}</p>
+                  <p><strong>Requested:</strong> {{ request.requestDate | date:'medium' }}</p>
+                  <p *ngIf="request.justification"><strong>Justification:</strong> {{ request.justification }}</p>
+                </div>
+                <div class="action-buttons">
+                  <ion-button 
+                    fill="solid" 
+                    color="success"
+                    [disabled]="processingPromotion === request.requestId"
+                    (click)="approveRolePromotion(request)">
+                    <ion-spinner *ngIf="processingPromotion === request.requestId"></ion-spinner>
+                    <ion-icon *ngIf="processingPromotion !== request.requestId" name="checkmark-outline" slot="start"></ion-icon>
+                    Approve
+                  </ion-button>
+                  <ion-button 
+                    fill="outline" 
+                    color="danger"
+                    [disabled]="processingPromotion === request.requestId"
+                    (click)="denyRolePromotion(request)">
+                    <ion-icon name="close-outline" slot="start"></ion-icon>
+                    Deny
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+
+            <!-- Empty State for Role Promotion Requests -->
+            <div *ngIf="pendingRolePromotions.length === 0" class="ion-text-center ion-padding">
+              <ion-text color="medium">
+                <h2>No Pending Role Promotion Requests</h2>
+                <p>All role promotion requests have been processed.</p>
+              </ion-text>
+            </div>
+          </div>
+
+          <!-- Unauthorized for Role Promotions -->
+          <div *ngIf="!loading && !error && selectedView === 'role-promotion' && currentUserRole !== 'Admin'" class="ion-text-center ion-padding">
             <ion-text color="medium">
-              <p>No pending requests for this project</p>
+              <h2>Access Denied</h2>
+              <p>Only administrators can view role promotion requests.</p>
             </ion-text>
           </div>
-        </div>
-
-        <!-- Empty State -->
-        <div *ngIf="projects.length === 0" class="ion-text-center ion-padding">
-          <ion-text color="medium">
-            <h2>No Projects Found</h2>
-            <p>You don't have any projects that you can manage access for.</p>
-          </ion-text>
-        </div>
-      </ion-list>
-    </ion-content>
+        </ion-content>
+      </div>
+    </ion-split-pane>
   `,
   styles: [`
-    .project-header {
-      --background: var(--ion-color-light);
-      margin-top: 16px;
-      border-radius: 8px 8px 0 0;
+    .selected {
+      --background: var(--ion-color-primary);
+      --color: white;
     }
-    .request-item {
-      margin-left: 16px;
-      --padding-start: 16px;
-      --padding-end: 16px;
-      --padding-top: 12px;
-      --padding-bottom: 12px;
-      --background: var(--ion-color-light-shade);
-      margin-bottom: 1px;
-    }
-    .request-empty {
-      margin-left: 16px;
-      border-bottom: 1px solid var(--ion-color-light);
-      background: var(--ion-color-light-shade);
-      padding: 16px;
+    
+    .request-card {
       margin-bottom: 16px;
     }
-    ion-item ion-label h2 {
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--ion-color-dark);
+    
+    .request-details {
+      margin-bottom: 16px;
     }
-    ion-item ion-label h3 {
-      font-weight: 500;
-      margin-bottom: 4px;
-      color: var(--ion-color-dark);
+    
+    .request-details p {
+      margin: 8px 0;
+      color: var(--ion-color-medium);
     }
-    ion-item ion-label p {
+    
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    ion-card-title {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 4px 0;
-      color: var(--ion-color-medium);
+      font-size: 1.2em;
     }
-    ion-item ion-label p ion-icon {
-      font-size: 16px;
-      min-width: 16px;
-      color: var(--ion-color-medium);
+    
+    ion-card-title ion-icon {
+      color: var(--ion-color-primary);
     }
-    ion-item ion-icon[slot="start"] {
-      color: var(--ion-color-medium);
-      font-size: 24px;
-      margin-right: 16px;
+    
+    ion-menu ion-item {
+      --padding-start: 16px;
     }
-    .action-buttons {
-      display: flex;
-      gap: 4px;
+    
+    ion-menu ion-item.selected {
+      --background: var(--ion-color-primary-tint);
+      --color: var(--ion-color-primary-contrast);
     }
-    ion-button {
-      margin: 0;
+    
+    ion-menu ion-item.selected ion-icon {
+      color: var(--ion-color-primary-contrast);
     }
-    ion-chip {
-      margin: 4px 0 0 0;
+    
+    ion-badge {
+      font-size: 0.8em;
     }
-    ion-spinner {
-      width: 20px;
-      height: 20px;
+    
+    @media (max-width: 768px) {
+      .action-buttons {
+        flex-direction: column;
+      }
     }
   `],
   standalone: true,
@@ -214,18 +300,35 @@ interface PendingRequest {
     IonChip,
     IonRefresher,
     IonRefresherContent,
-    IonText
+    IonText,
+    IonSplitPane,
+    IonMenu,
+    IonMenuButton,
+    IonButtons,
+    IonBadge,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent
   ]
 })
 export class AccessLevelsComponent implements OnInit {
   loading = true;
   error: string | null = null;
-  projects: Project[] = [];
-  pendingRequests: PendingRequest[] = [];
+  selectedView: 'project-access' | 'role-promotion' = 'project-access';
+  currentUserRole: string = '';
+  
+  // Project access requests
+  pendingProjectRequests: PendingAccessRequestWithProject[] = [];
   processingRequest: number | null = null;
+  
+  // Role promotion requests  
+  pendingRolePromotions: RolePromotionRequestSummaryDTO[] = [];
+  processingPromotion: number | null = null;
 
   constructor(
     private projectService: ProjectService,
+    private rolePromotionService: RolePromotionService,
     private authService: AuthService,
     private toastController: ToastController,
     private alertController: AlertController
@@ -237,18 +340,37 @@ export class AccessLevelsComponent implements OnInit {
       checkmarkOutline,
       closeOutline,
       briefcaseOutline,
-      alertCircleOutline
+      alertCircleOutline,
+      menuOutline,
+      peopleOutline,
+      trendingUpOutline,
+      listOutline
     });
   }
 
   ngOnInit() {
+    this.getCurrentUserRole();
     this.loadData();
+  }
+
+  getCurrentUserRole() {
+    const currentUser = this.authService.getCurrentUser();
+    this.currentUserRole = currentUser?.role || currentUser?.Role || '';
+  }
+
+  selectView(view: 'project-access' | 'role-promotion') {
+    this.selectedView = view;
+  }
+
+  getPageTitle(): string {
+    return this.selectedView === 'project-access' 
+      ? 'Project Access Requests' 
+      : 'Role Promotion Requests';
   }
 
   async loadData() {
     this.loading = true;
     this.error = null;
-    this.pendingRequests = [];
     
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -258,31 +380,31 @@ export class AccessLevelsComponent implements OnInit {
         return;
       }
 
-      // Get all projects for the user
-      this.projects = await firstValueFrom(this.projectService.getAllProjects());
-      console.log('Loaded projects:', this.projects);
-      
-      // Get pending requests for each project
-      for (const project of this.projects) {
+      const userId = currentUser.userId || currentUser.UserId || 0;
+
+      // Load project access requests (for Lead Developers)
+      if (this.currentUserRole === 'LeadDeveloper') {
         try {
-          const requests = await firstValueFrom(
-            this.projectService.getPendingRequests(project.projectId, currentUser.userId || currentUser.UserId || 0)
+          this.pendingProjectRequests = await firstValueFrom(
+            this.projectService.getAllPendingRequestsForUser(userId)
           );
-          console.log(`Loaded requests for project ${project.name}:`, requests);
-          
-          if (requests && requests.length > 0) {
-            this.pendingRequests.push(...requests.map(r => ({
-              ...r,
-              projectName: project.name
-            })));
-          }
+          console.log('Loaded project access requests:', this.pendingProjectRequests);
         } catch (error) {
-          console.error(`Error loading requests for project ${project.name}:`, error);
-          // Continue loading other projects
+          console.error('Error loading project requests:', error);
         }
       }
 
-      console.log('All pending requests:', this.pendingRequests);
+      // Load role promotion requests (for Admins)
+      if (this.currentUserRole === 'Admin') {
+        try {
+          this.pendingRolePromotions = await firstValueFrom(
+            this.rolePromotionService.getPendingRequests()
+          );
+          console.log('Loaded role promotion requests:', this.pendingRolePromotions);
+        } catch (error) {
+          console.error('Error loading role promotion requests:', error);
+        }
+      }
       
       this.loading = false;
     } catch (error: any) {
@@ -292,11 +414,8 @@ export class AccessLevelsComponent implements OnInit {
     }
   }
 
-  getPendingRequestsForProject(project: Project): PendingRequest[] {
-    return this.pendingRequests.filter(request => request.projectId === project.projectId);
-  }
-
-  async approveRequest(request: PendingRequest) {
+  // Project Access Request Methods
+  async approveProjectRequest(request: PendingAccessRequestWithProject) {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.showToast('No user logged in', 'danger');
@@ -305,7 +424,7 @@ export class AccessLevelsComponent implements OnInit {
 
     const alert = await this.alertController.create({
       header: 'Confirm Approval',
-      message: `Are you sure you want to approve access for ${request.username}?`,
+      message: `Are you sure you want to approve access for ${request.username} to project "${request.projectName}"?`,
       buttons: [
         {
           text: 'Cancel',
@@ -314,7 +433,7 @@ export class AccessLevelsComponent implements OnInit {
         {
           text: 'Approve',
           role: 'confirm',
-          handler: () => this.processApproval(request, currentUser.userId || currentUser.UserId || 0)
+          handler: () => this.processProjectApproval(request, currentUser.userId || currentUser.UserId || 0)
         }
       ]
     });
@@ -322,7 +441,7 @@ export class AccessLevelsComponent implements OnInit {
     await alert.present();
   }
 
-  private async processApproval(request: PendingRequest, leadDeveloperId: number) {
+  private async processProjectApproval(request: PendingAccessRequestWithProject, leadDeveloperId: number) {
     this.processingRequest = request.projectMemberId;
 
     try {
@@ -342,7 +461,7 @@ export class AccessLevelsComponent implements OnInit {
     }
   }
 
-  async denyRequest(request: PendingRequest) {
+  async denyProjectRequest(request: PendingAccessRequestWithProject) {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.showToast('No user logged in', 'danger');
@@ -351,7 +470,7 @@ export class AccessLevelsComponent implements OnInit {
 
     const alert = await this.alertController.create({
       header: 'Confirm Rejection',
-      message: `Are you sure you want to deny access for ${request.username}?`,
+      message: `Are you sure you want to deny access for ${request.username} to project "${request.projectName}"?`,
       buttons: [
         {
           text: 'Cancel',
@@ -361,7 +480,7 @@ export class AccessLevelsComponent implements OnInit {
           text: 'Deny',
           role: 'confirm',
           cssClass: 'danger',
-          handler: () => this.processDenial(request, currentUser.userId || currentUser.UserId || 0)
+          handler: () => this.processProjectDenial(request, currentUser.userId || currentUser.UserId || 0)
         }
       ]
     });
@@ -369,7 +488,7 @@ export class AccessLevelsComponent implements OnInit {
     await alert.present();
   }
 
-  private async processDenial(request: PendingRequest, leadDeveloperId: number) {
+  private async processProjectDenial(request: PendingAccessRequestWithProject, leadDeveloperId: number) {
     this.processingRequest = request.projectMemberId;
 
     try {
@@ -386,6 +505,113 @@ export class AccessLevelsComponent implements OnInit {
       this.showToast(error.message || 'Failed to deny request', 'danger');
     } finally {
       this.processingRequest = null;
+    }
+  }
+
+  // Role Promotion Request Methods
+  async approveRolePromotion(request: RolePromotionRequestSummaryDTO) {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.showToast('No user logged in', 'danger');
+      return;
+    }
+
+    const alert = await this.alertController.create({
+      header: 'Confirm Role Promotion',
+      message: `Are you sure you want to promote ${request.username} from ${request.currentRole} to ${request.requestedRole}?`,
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Approve',
+          role: 'confirm',
+          handler: () => this.processRolePromotionApproval(request, currentUser.userId || currentUser.UserId || 0)
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  private async processRolePromotionApproval(request: RolePromotionRequestSummaryDTO, adminId: number) {
+    this.processingPromotion = request.requestId;
+
+    try {
+      await firstValueFrom(this.rolePromotionService.reviewPromotionRequest({
+        requestId: request.requestId,
+        reviewedBy: adminId,
+        isApproved: true,
+        adminComments: `Promotion approved by admin.`
+      }));
+
+      this.showToast('Role promotion approved', 'success');
+      await this.loadData(); // Refresh the list
+    } catch (error: any) {
+      console.error('Error approving role promotion:', error);
+      this.showToast(error.message || 'Failed to approve role promotion', 'danger');
+    } finally {
+      this.processingPromotion = null;
+    }
+  }
+
+  async denyRolePromotion(request: RolePromotionRequestSummaryDTO) {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.showToast('No user logged in', 'danger');
+      return;
+    }
+
+    const alert = await this.alertController.create({
+      header: 'Deny Role Promotion',
+      message: `Are you sure you want to deny the promotion request for ${request.username}?`,
+      inputs: [
+        {
+          name: 'reason',
+          type: 'textarea',
+          placeholder: 'Reason for denial (optional)',
+          attributes: {
+            maxlength: 500
+          }
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Deny',
+          role: 'confirm',
+          cssClass: 'danger',
+          handler: (data) => this.processRolePromotionDenial(request, currentUser.userId || currentUser.UserId || 0, data.reason)
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  private async processRolePromotionDenial(request: RolePromotionRequestSummaryDTO, adminId: number, reason: string) {
+    this.processingPromotion = request.requestId;
+
+    try {
+      await firstValueFrom(this.rolePromotionService.reviewPromotionRequest({
+        requestId: request.requestId,
+        reviewedBy: adminId,
+        isApproved: false,
+        rejectionReason: reason || 'Request denied by admin.',
+        adminComments: `Promotion denied by admin.`
+      }));
+
+      this.showToast('Role promotion denied', 'success');
+      await this.loadData(); // Refresh the list
+    } catch (error: any) {
+      console.error('Error denying role promotion:', error);
+      this.showToast(error.message || 'Failed to deny role promotion', 'danger');
+    } finally {
+      this.processingPromotion = null;
     }
   }
 

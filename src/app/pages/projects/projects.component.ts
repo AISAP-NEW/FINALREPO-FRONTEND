@@ -25,9 +25,9 @@ import {
   IonSearchbar
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { 
-  addOutline, 
-  timeOutline, 
+import {
+  addOutline,
+  timeOutline,
   checkmarkCircleOutline,
   closeCircleOutline,
   hourglassOutline,
@@ -41,7 +41,9 @@ import {
   handRightOutline,
   personOutline,
   searchOutline,
-  closeOutline
+  closeOutline,
+  globeOutline,
+  globe
 } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
 import { ProjectService, Project } from '../../services/project.service';
@@ -96,6 +98,10 @@ import { AuthService } from '../../services/auth.service';
                   <ion-icon [name]="project.isActive ? 'checkmark-circle-outline' : 'close-circle-outline'"></ion-icon>
                   <ion-label>{{ project.isActive ? 'Active' : 'Inactive' }}</ion-label>
                 </ion-chip>
+                <ion-chip *ngIf="project.isAvailable" color="tertiary" size="small">
+                  <ion-icon name="globe-outline"></ion-icon>
+                  <ion-label>Available for Requests</ion-label>
+                </ion-chip>
                 <ion-chip color="tertiary" size="small">
                   <ion-icon name="people-outline"></ion-icon>
                   <ion-label>{{ project.members.length }} members</ion-label>
@@ -128,6 +134,15 @@ import { AuthService } from '../../services/auth.service';
 
               <!-- Management Buttons - Only show if user can manage -->
               <ng-container *ngIf="canManageProject(project)">
+                <!-- Availability Toggle - Only for Lead Developers who are project creators -->
+                <ion-button 
+                  *ngIf="canToggleAvailability(project)"
+                  fill="clear" 
+                  [color]="project.isAvailable ? 'warning' : 'tertiary'"
+                  (click)="toggleProjectAvailability(project); $event.stopPropagation()"
+                  [title]="project.isAvailable ? 'Mark as unavailable for requests' : 'Mark as available for requests'">
+                  <ion-icon [name]="project.isAvailable ? 'globe' : 'globe-outline'"></ion-icon>
+                </ion-button>
                 <ion-button 
                   fill="clear" 
                   color="primary" 
@@ -341,7 +356,9 @@ export class ProjectsComponent implements OnInit {
       handRightOutline,
       personOutline,
       searchOutline,
-      closeOutline
+      closeOutline,
+      globeOutline,
+      globe
     });
   }
 
@@ -702,5 +719,75 @@ export class ProjectsComponent implements OnInit {
       console.error('Error requesting access:', error);
       this.showToast('Failed to request access', 'danger');
     }
+  }
+
+  // Check if user can toggle project availability
+  canToggleAvailability(project: Project): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return false;
+    
+    // Only Lead Developers who are the project creator can toggle availability
+    return currentUser.role === 'LeadDeveloper' && project.createdByUserId === currentUser.userId;
+  }
+
+  // Toggle project availability
+  async toggleProjectAvailability(project: Project) {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.showToast('No user logged in', 'danger');
+      return;
+    }
+
+    if (!this.canToggleAvailability(project)) {
+      this.showToast('You do not have permission to change project availability', 'danger');
+      return;
+    }
+
+    const newAvailability = !project.isAvailable;
+    const action = newAvailability ? 'available for access requests' : 'unavailable for access requests';
+
+    const alert = await this.alertController.create({
+      header: 'Change Project Availability',
+      message: `Are you sure you want to mark "${project.name}" as ${action}?`,
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Confirm',
+          handler: async () => {
+            try {
+              const userId = currentUser.userId || currentUser.UserId;
+              if (!userId) {
+                throw new Error('Invalid user ID');
+              }
+              
+              await firstValueFrom(
+                this.projectService.updateProjectAvailability(
+                  project.projectId, 
+                  newAvailability, 
+                  userId
+                )
+              );
+              
+              // Update the project in the local array
+              project.isAvailable = newAvailability;
+              this.applySearch(); // Refresh the filtered list
+              
+              this.showToast(
+                `Project marked as ${action} successfully`, 
+                'success'
+              );
+            } catch (error) {
+              console.error('Error updating project availability:', error);
+              this.showToast('Failed to update project availability', 'danger');
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
   }
 } 

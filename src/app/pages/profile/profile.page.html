@@ -1,173 +1,273 @@
-<ion-header [translucent]="true">
+<ion-header [translucent]="true" class="mlflow-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>Profile</ion-title>
+    <ion-title class="header-title">
+      <ion-icon name="person-circle" slot="start"></ion-icon>
+      User Profile
+    </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="toggleEditMode()">
+      <ion-button (click)="toggleEditMode()" [disabled]="isSaving" class="edit-button">
         <ion-icon [name]="isEditMode ? 'checkmark' : 'create'" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <div class="profile-container">
-    <!-- Profile Picture Section -->
-    <div class="profile-picture-section">
-      <div class="profile-picture-wrapper">
-        <img 
-          [src]="userProfile.profilePictureUrl || '/assets/default-avatar.png'" 
-          alt="Profile Picture"
-          class="profile-picture"
-          (error)="onImageError($event)"
-        />
-        <div class="profile-picture-overlay" *ngIf="isEditMode">
+<ion-content [fullscreen]="true" class="mlflow-content">
+  <!-- Loading Spinner -->
+  <div class="loading-container" *ngIf="isLoading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading profile...</p>
+  </div>
+
+  <div class="profile-container" *ngIf="!isLoading">
+    <!-- Profile Header Card -->
+    <div class="profile-header-card">
+      <div class="profile-picture-section">
+        <div class="profile-picture-wrapper">
+          <img 
+            [src]="getProfilePictureUrl()" 
+            alt="Profile Picture"
+            class="profile-picture"
+            (error)="onImageError($event)"
+          />
+          <div class="profile-picture-overlay" *ngIf="isEditMode">
+            <ion-button 
+              fill="clear" 
+              color="light" 
+              (click)="presentProfilePictureOptions()"
+              class="overlay-button"
+            >
+              <ion-icon name="camera" slot="icon-only"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+        
+        <div class="profile-info">
+          <h2 class="profile-name">{{ userProfile.firstName || userProfile.username }} {{ userProfile.lastName || '' }}</h2>
+          <div class="profile-role-badge">
+            <ion-badge color="primary">{{ userProfile.role }}</ion-badge>
+          </div>
+          <p class="profile-email">{{ userProfile.email }}</p>
+        </div>
+      </div>
+      
+      <!-- Profile Picture Status -->
+      <div *ngIf="profilePictureFile && isEditMode" class="profile-picture-status">
+        <ion-note color="success">
+          <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+          Profile picture selected. Click save to upload.
+        </ion-note>
+      </div>
+      
+      <!-- Debug Info (only show in development) -->
+      <div class="debug-info" *ngIf="isEditMode">
+        <ion-note color="medium">
+          <ion-icon name="information-circle" slot="start"></ion-icon>
+          Debug: Raw URL: {{ userProfile.profilePictureUrl || 'Not set' }}
+        </ion-note>
+        <ion-note color="medium">
+          <ion-icon name="link" slot="start"></ion-icon>
+          Debug: Processed URL: {{ getProfilePictureUrl() }}
+        </ion-note>
+        <div class="debug-buttons">
           <ion-button 
             fill="clear" 
-            color="light" 
-            (click)="presentProfilePictureOptions()"
-            class="overlay-button"
+            size="small" 
+            color="medium"
+            (click)="refreshProfile()"
           >
-            <ion-icon name="camera" slot="icon-only"></ion-icon>
+            <ion-icon name="refresh" slot="start"></ion-icon>
+            Refresh
+          </ion-button>
+          <ion-button 
+            fill="clear" 
+            size="small" 
+            color="medium"
+            (click)="testProfilePictureUrl()"
+          >
+            <ion-icon name="checkmark-circle" slot="start"></ion-icon>
+            Test URL
+          </ion-button>
+          <ion-button 
+            fill="clear" 
+            size="small" 
+            color="medium"
+            (click)="forceRefreshProfilePicture()"
+          >
+            <ion-icon name="camera" slot="start"></ion-icon>
+            Force Refresh
           </ion-button>
         </div>
       </div>
-      <h2 class="profile-name">{{ userProfile.firstName }} {{ userProfile.lastName }}</h2>
-      <p class="profile-role">{{ userProfile.role }}</p>
     </div>
 
     <!-- Profile Information Form -->
     <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
       
-      <!-- Personal Information Section -->
-      <div class="form-section">
-        <h3 class="section-title">Personal Information</h3>
+      <!-- Personal Information Card -->
+      <div class="info-card">
+        <div class="card-header">
+          <ion-icon name="person" class="card-icon"></ion-icon>
+          <h3 class="card-title">Personal Information</h3>
+        </div>
         
-        <ion-item>
-          <ion-label position="stacked">First Name</ion-label>
-          <ion-input 
-            formControlName="firstName"
-            [readonly]="!isEditMode"
-            placeholder="Enter your first name"
-          ></ion-input>
-        </ion-item>
+        <div class="card-content">
+          <div class="form-row">
+            <ion-item class="form-item">
+              <ion-label position="stacked">First Name</ion-label>
+              <ion-input 
+                formControlName="firstName"
+                [readonly]="!isEditMode"
+                placeholder="Enter your first name"
+                class="mlflow-input"
+              ></ion-input>
+            </ion-item>
 
-        <ion-item>
-          <ion-label position="stacked">Last Name</ion-label>
-          <ion-input 
-            formControlName="lastName"
-            [readonly]="!isEditMode"
-            placeholder="Enter your last name"
-          ></ion-input>
-        </ion-item>
+            <ion-item class="form-item">
+              <ion-label position="stacked">Last Name</ion-label>
+              <ion-input 
+                formControlName="lastName"
+                [readonly]="!isEditMode"
+                placeholder="Enter your last name"
+                class="mlflow-input"
+              ></ion-input>
+            </ion-item>
+          </div>
 
-        <ion-item>
-          <ion-label position="stacked">Username</ion-label>
-          <ion-input 
-            formControlName="username"
-            [readonly]="!isEditMode"
-            placeholder="Enter your username"
-          ></ion-input>
-        </ion-item>
+          <div class="form-row">
+            <ion-item class="form-item">
+              <ion-label position="stacked">Username</ion-label>
+              <ion-input 
+                formControlName="username"
+                [readonly]="!isEditMode"
+                placeholder="Enter your username"
+                class="mlflow-input"
+              ></ion-input>
+            </ion-item>
 
-        <ion-item>
-          <ion-label position="stacked">Email</ion-label>
-          <ion-input 
-            formControlName="email"
-            type="email"
-            [readonly]="!isEditMode"
-            placeholder="Enter your email"
-          ></ion-input>
-        </ion-item>
+            <ion-item class="form-item">
+              <ion-label position="stacked">Email</ion-label>
+              <ion-input 
+                formControlName="email"
+                type="email"
+                [readonly]="!isEditMode"
+                placeholder="Enter your email"
+                class="mlflow-input"
+              ></ion-input>
+            </ion-item>
+          </div>
 
-        <ion-item>
-          <ion-label position="stacked">Phone Number</ion-label>
-          <ion-input 
-            formControlName="phoneNumber"
-            type="tel"
-            [readonly]="!isEditMode"
-            placeholder="Enter your phone number"
-          ></ion-input>
-        </ion-item>
+          <div class="form-row">
+            <ion-item class="form-item">
+              <ion-label position="stacked">Phone Number</ion-label>
+              <ion-input 
+                formControlName="phoneNumber"
+                type="tel"
+                [readonly]="!isEditMode"
+                placeholder="Enter your phone number"
+                class="mlflow-input"
+              ></ion-input>
+            </ion-item>
 
-        <ion-item>
-          <ion-label position="stacked">Date of Birth</ion-label>
-          <ion-datetime 
-            formControlName="dateOfBirth"
-            display-format="DD/MM/YYYY"
-            picker-format="DD MM YYYY"
-            [disabled]="!isEditMode"
-            placeholder="Select your date of birth"
-          ></ion-datetime>
-        </ion-item>
+            <ion-item class="form-item">
+              <ion-label position="stacked">Date of Birth</ion-label>
+              <ion-input 
+                formControlName="dateOfBirth"
+                type="date"
+                [readonly]="!isEditMode"
+                placeholder="Select your date of birth"
+                class="mlflow-input"
+              ></ion-input>
+              <ion-note slot="helper" *ngIf="!isEditMode && userProfile.dateOfBirth">
+                {{ formatDate(userProfile.dateOfBirth) }}
+              </ion-note>
+            </ion-item>
+          </div>
+
+          <ion-item class="form-item full-width">
+            <ion-label position="stacked">Bio</ion-label>
+            <ion-textarea 
+              formControlName="bio"
+              [readonly]="!isEditMode"
+              placeholder="Tell us about yourself"
+              rows="4"
+              class="mlflow-textarea"
+            ></ion-textarea>
+          </ion-item>
+        </div>
       </div>
 
-      <!-- Professional Information Section -->
-      <div class="form-section">
-        <h3 class="section-title">Professional Information</h3>
+      <!-- Professional Information Card -->
+      <div class="info-card">
+        <div class="card-header">
+          <ion-icon name="briefcase" class="card-icon"></ion-icon>
+          <h3 class="card-title">Professional Information</h3>
+        </div>
         
-        <ion-item>
-          <ion-label position="stacked">Role</ion-label>
-          <ion-input 
-            [value]="userProfile.role"
-            readonly
-            class="readonly-field"
-          ></ion-input>
-          <ion-note slot="helper">Role can only be changed by administrators</ion-note>
-        </ion-item>
+        <div class="card-content">
+          <div class="form-row">
+            <ion-item class="form-item">
+              <ion-label position="stacked">Role</ion-label>
+              <ion-input 
+                [value]="userProfile.role"
+                readonly
+                class="readonly-field"
+              ></ion-input>
+              <ion-note slot="helper">Role can only be changed by administrators</ion-note>
+            </ion-item>
 
-        <ion-item>
-          <ion-label position="stacked">Business Email</ion-label>
-          <ion-input 
-            [value]="userProfile.businessEmail"
-            readonly
-            class="readonly-field"
-          ></ion-input>
-          <ion-note slot="helper">Business email is managed by the system</ion-note>
-        </ion-item>
-
-        <ion-item>
-          <ion-label position="stacked">Bio</ion-label>
-          <ion-textarea 
-            formControlName="bio"
-            [readonly]="!isEditMode"
-            placeholder="Tell us about yourself"
-            rows="4"
-          ></ion-textarea>
-        </ion-item>
+            <ion-item class="form-item">
+              <ion-label position="stacked">Business Email</ion-label>
+              <ion-input 
+                [value]="userProfile.businessEmail"
+                readonly
+                class="readonly-field"
+              ></ion-input>
+              <ion-note slot="helper">Business email is managed by the system</ion-note>
+            </ion-item>
+          </div>
+        </div>
       </div>
 
-      <!-- Account Information Section -->
-      <div class="form-section">
-        <h3 class="section-title">Account Information</h3>
+      <!-- Account Information Card -->
+      <div class="info-card">
+        <div class="card-header">
+          <ion-icon name="settings" class="card-icon"></ion-icon>
+          <h3 class="card-title">Account Information</h3>
+        </div>
         
-        <ion-item>
-          <ion-label position="stacked">Member Since</ion-label>
-          <ion-input 
-            [value]="userProfile.createdAt | date:'medium'"
-            readonly
-            class="readonly-field"
-          ></ion-input>
-        </ion-item>
+        <div class="card-content">
+          <div class="form-row">
+            <ion-item class="form-item">
+              <ion-label position="stacked">Member Since</ion-label>
+              <ion-input 
+                [value]="userProfile.createdAt | date:'medium'"
+                readonly
+                class="readonly-field"
+              ></ion-input>
+            </ion-item>
 
-        <ion-item>
-          <ion-label position="stacked">Last Updated</ion-label>
-          <ion-input 
-            [value]="userProfile.updatedAt | date:'medium'"
-            readonly
-            class="readonly-field"
-          ></ion-input>
-        </ion-item>
+            <ion-item class="form-item">
+              <ion-label position="stacked">Last Updated</ion-label>
+              <ion-input 
+                [value]="userProfile.updatedAt | date:'medium'"
+                readonly
+                class="readonly-field"
+              ></ion-input>
+            </ion-item>
+          </div>
 
-        <ion-item *ngIf="userProfile.isFirstLogin">
-          <ion-label>
-            <h3>Welcome to AISAP!</h3>
-            <p>This is your first login. Please update your profile information.</p>
-          </ion-label>
-          <ion-icon name="information-circle" color="primary" slot="end"></ion-icon>
-        </ion-item>
+          <ion-item *ngIf="userProfile.isFirstLogin" class="welcome-item">
+            <ion-label>
+              <h3>Welcome to AISAP!</h3>
+              <p>This is your first login. Please update your profile information.</p>
+            </ion-label>
+            <ion-icon name="information-circle" color="primary" slot="end"></ion-icon>
+          </ion-item>
+        </div>
       </div>
 
       <!-- Action Buttons -->
@@ -177,8 +277,10 @@
           type="submit" 
           [disabled]="profileForm.invalid || isSaving"
           color="primary"
+          class="mlflow-button primary"
         >
-          <ion-icon name="save" slot="start"></ion-icon>
+          <ion-spinner name="crescent" *ngIf="isSaving"></ion-spinner>
+          <ion-icon name="save" slot="start" *ngIf="!isSaving"></ion-icon>
           {{ isSaving ? 'Saving...' : 'Save Changes' }}
         </ion-button>
 
@@ -188,6 +290,7 @@
           color="medium"
           (click)="cancelEdit()"
           [disabled]="isSaving"
+          class="mlflow-button secondary"
         >
           <ion-icon name="close" slot="start"></ion-icon>
           Cancel
@@ -201,6 +304,7 @@
           fill="outline" 
           color="warning"
           (click)="changePassword()"
+          class="mlflow-button warning"
         >
           <ion-icon name="lock-closed" slot="start"></ion-icon>
           Change Password
@@ -211,6 +315,7 @@
           fill="outline" 
           color="danger"
           (click)="confirmDeleteAccount()"
+          class="mlflow-button danger"
         >
           <ion-icon name="trash" slot="start"></ion-icon>
           Delete Account
@@ -218,12 +323,6 @@
       </div>
 
     </form>
-  </div>
-
-  <!-- Loading Spinner -->
-  <div class="loading-container" *ngIf="isLoading">
-    <ion-spinner name="crescent"></ion-spinner>
-    <p>Loading profile...</p>
   </div>
 
 </ion-content>

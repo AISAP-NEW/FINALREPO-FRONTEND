@@ -209,12 +209,25 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
                 </ion-item>
               </ion-menu-toggle>
 
-              <ion-menu-toggle auto-hide="false">
-                <ion-item routerLink="/access-levels" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
-                  <ion-icon slot="start" name="key-outline"></ion-icon>
-                  <ion-label>Access Levels</ion-label>
+              <!-- Access Management Dropdown Section -->
+              <ion-item button (click)="toggleAccessDropdown()" lines="none" detail="false" [class.selected]="isAccessDropdownOpen">
+                <ion-icon slot="start" name="key-outline"></ion-icon>
+                <ion-label>Access Management</ion-label>
+                <ion-icon slot="end" [name]="isAccessDropdownOpen ? 'chevron-up' : 'chevron-down'"></ion-icon>
+              </ion-item>
+              
+              <!-- Access Management Dropdown Items -->
+              <div class="access-dropdown" [class.open]="isAccessDropdownOpen">
+                <ion-item (click)="navigateToAccess('project-requests')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="people-outline"></ion-icon>
+                  <ion-label>Project Access Requests</ion-label>
                 </ion-item>
-              </ion-menu-toggle>
+                
+                <ion-item (click)="navigateToAccess('role-requests')" lines="none" detail="false" class="dropdown-item">
+                  <ion-icon slot="start" name="trending-up-outline"></ion-icon>
+                  <ion-label>Role Promotion Requests</ion-label>
+                </ion-item>
+              </div>
 
               <ion-menu-toggle auto-hide="false">
                 <ion-item routerLink="/notifications" routerDirection="root" lines="none" detail="false" routerLinkActive="selected">
@@ -398,6 +411,20 @@ import { takeUntil, retryWhen, delay, take, catchError } from 'rxjs/operators';
       max-height: 400px;
     }
 
+    /* Access Management Dropdown Styles */
+    .access-dropdown {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out;
+      background: var(--ion-color-light);
+      margin-left: 16px;
+      border-radius: 4px;
+    }
+
+    .access-dropdown.open {
+      max-height: 200px;
+    }
+
     .dropdown-item {
       --padding-start: 20px;
       --padding-end: 10px;
@@ -532,6 +559,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   isLoadingNotifications = false;
   hasNewNotifications = false;
   isReportsDropdownOpen = false;
+  isAccessDropdownOpen = false;
   private destroy$ = new Subject<void>();
   private notificationUpdate$ = new BehaviorSubject<void>(undefined);
   private readonly POLLING_INTERVAL = 10000; // Poll every 10 seconds
@@ -727,5 +755,18 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   navigateToReport(reportType: string) {
     this.isReportsDropdownOpen = false;
     this.router.navigate(['/reports'], { queryParams: { type: reportType } });
+  }
+
+  toggleAccessDropdown() {
+    this.isAccessDropdownOpen = !this.isAccessDropdownOpen;
+  }
+
+  navigateToAccess(accessType: string) {
+    this.isAccessDropdownOpen = false;
+    if (accessType === 'project-requests') {
+      this.router.navigate(['/project-access-requests']);
+    } else if (accessType === 'role-requests') {
+      this.router.navigate(['/role-promotion-requests']);
+    }
   }
 } 
